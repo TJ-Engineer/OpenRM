@@ -59,6 +59,7 @@ const NAV_ITEMS = [
 
 const PLATFORM_ITEMS = [
   { id: "storage", label: "Object storage", icon: Cloud },
+  { id: "api", label: "API & SDK", icon: Code2, count: "v1" },
   { id: "integrations", label: "Integrations", icon: Zap, count: "1" },
   { id: "architecture", label: "Architecture", icon: Boxes },
 ];
@@ -232,7 +233,7 @@ const TOUR_STEPS = [
   {
     eyebrow: "04 / Open foundation",
     title: "Own the platform—and the data.",
-    body: "Rust services, PostgreSQL persistence, portable S3-compatible storage, and a versioned connector plane—starting with Jira—provide a secure, self-hostable foundation.",
+    body: "Rust services, a versioned REST/OpenAPI contract, PostgreSQL, portable S3-compatible storage, and a connector plane—starting with Jira—provide a secure, self-hostable foundation.",
     icon: Boxes,
     target: "architecture",
   },
@@ -314,6 +315,7 @@ function App() {
           {page === "reviews" && <Reviews {...pageProps} />}
           {page === "verification" && <Verification {...pageProps} />}
           {page === "storage" && <Storage {...pageProps} />}
+          {page === "api" && <RestApi {...pageProps} />}
           {page === "integrations" && <Integrations {...pageProps} />}
           {page === "architecture" && <Architecture {...pageProps} />}
         </section>
@@ -497,6 +499,7 @@ function Overview({ navigate, notify }) {
         <TechPill icon={Code2} label="Rust services" detail="Memory-safe core" />
         <TechPill icon={Database} label="PostgreSQL" detail="Immutable revisions" />
         <TechPill icon={Cloud} label="S3 compatible" detail="Portable objects" />
+        <TechPill icon={Code2} label="REST / OpenAPI" detail="Versioned contract" />
         <button className="text-button light" onClick={() => navigate("architecture")}>See architecture <ArrowRight size={14} /></button>
       </section>
     </>
@@ -916,6 +919,94 @@ function ObjectRow({ icon: Icon, name, type, linked, size, date }) {
   return <div className="object-row"><span className="object-name"><i><Icon size={17} /></i><span><strong>{name}</strong><small>{type}</small></span></span><code>{linked}</code><span className="integrity-ok"><ShieldCheck size={14} /> SHA-256 verified</span><span>{size}</span><span>{date}</span></div>;
 }
 
+function RestApi({ notify }) {
+  const endpoints = [
+    ["GET", "/v1/projects/{project_id}/requirements", "List controlled requirements", "Read"],
+    ["POST", "/v1/projects/{project_id}/requirements", "Create a draft requirement", "Write"],
+    ["GET", "/v1/requirements/{requirement_id}/revisions", "Read immutable revision history", "Read"],
+    ["POST", "/v1/changesets", "Commit an atomic controlled change", "Write"],
+    ["POST", "/v1/baselines", "Create a protected project snapshot", "Governed"],
+    ["GET", "/v1/trace/paths", "Traverse typed relationships", "Read"],
+  ];
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="Developer platform • REST + OpenAPI 3.1"
+        title={<>Automation through an <em>open contract.</em></>}
+        description="A resource-oriented JSON API exposes controlled content, revisions, traceability, reviews, baselines, and evidence without coupling clients to the Rust implementation."
+        actions={<button className="secondary-button" onClick={() => notify("Illustrative OpenAPI 3.1 contract prepared")}><FileText size={15} /> Export OpenAPI</button>}
+      />
+
+      <div className="api-hero-grid">
+        <section className="panel api-contract-card">
+          <div className="api-contract-heading">
+            <span className="api-version">v1</span>
+            <div><span className="status-pill connected"><CircleDot size={11} /> CONTRACT READY</span><h2>OpenCM REST API</h2><p>Stable resources, explicit revisions, and consistent HTTP semantics.</p></div>
+          </div>
+          <div className="api-base-url"><span>Base URL</span><code>https://api.opencm.example/v1</code><button className="icon-button" onClick={() => notify("API base URL copied in demo")}><ClipboardCheck size={15} /></button></div>
+          <div className="api-badges"><span>JSON</span><span>OpenAPI 3.1</span><span>OAuth 2.0 / OIDC</span><span>Cursor pagination</span><span>Idempotency keys</span></div>
+        </section>
+
+        <section className="panel api-policy-card">
+          <div className="panel-heading compact"><div><span className="panel-kicker">Contract guarantees</span><h2>Predictable by design</h2></div><ShieldCheck size={18} /></div>
+          <PolicyRow label="Versioning" value="URI major version" />
+          <PolicyRow label="Concurrency" value="ETag + If-Match" />
+          <PolicyRow label="Errors" value="RFC 9457 problems" />
+          <PolicyRow label="Tracing" value="Request + audit IDs" />
+          <PolicyRow label="Compatibility" value="Additive within v1" />
+        </section>
+      </div>
+
+      <section className="panel endpoint-panel">
+        <div className="panel-heading compact"><div><span className="panel-kicker">Representative resources</span><h2>REST endpoint catalog</h2></div><span className="roadmap-chip">Illustrative contract</span></div>
+        <div className="endpoint-head"><span>Method</span><span>Resource</span><span>Purpose</span><span>Policy</span></div>
+        {endpoints.map(([method, path, purpose, policy]) => <EndpointRow key={`${method}-${path}`} method={method} path={path} purpose={purpose} policy={policy} />)}
+      </section>
+
+      <div className="api-detail-grid">
+        <section className="panel api-example-card">
+          <div className="panel-heading compact"><div><span className="panel-kicker">Atomic change example</span><h2>Create a changeset</h2></div><code>application/json</code></div>
+          <pre><code>{`POST /v1/changesets
+Authorization: Bearer <token>
+Idempotency-Key: 782fb6d5-...
+If-Match: "project-r42"
+
+{
+  "project_id": "AURORA-2",
+  "message": "Clarify failover tolerance",
+  "operations": [
+    { "op": "replace", "artifact": "SYS-184",
+      "field": "tolerance", "value": "±2°" }
+  ]
+}`}</code></pre>
+        </section>
+
+        <section className="panel api-principles-card">
+          <div className="panel-heading compact"><div><span className="panel-kicker">Interface model</span><h2>REST plus events</h2></div><Activity size={18} /></div>
+          <ApiPrinciple icon={Boxes} title="Resource oriented" body="Projects, artifacts, revisions, changesets, baselines, reviews, and evidence have stable URLs." />
+          <ApiPrinciple icon={GitCommitHorizontal} title="Revision aware" body="Every mutation creates history; exact states are addressable and never overwritten in place." />
+          <ApiPrinciple icon={Zap} title="Webhook complemented" body="Signed, replayable events notify Jira and other consumers after committed state changes." />
+          <ApiPrinciple icon={Code2} title="SDK generated" body="OpenAPI drives TypeScript and Rust clients while curl remains a first-class option." />
+        </section>
+      </div>
+
+      <section className="integration-callout api-callout">
+        <div><span className="panel-kicker">Architecture commitment</span><h2>The UI and connectors consume the same public API.</h2><p>No privileged backdoor contract: browser, Jira adapter, CLI, and customer automation share the governed `/v1` surface.</p></div>
+        <button className="primary-button" onClick={() => notify("REST API included in the 90-day vertical slice")}>Include API in vertical slice <ArrowRight size={15} /></button>
+      </section>
+    </>
+  );
+}
+
+function EndpointRow({ method, path, purpose, policy }) {
+  return <div className="endpoint-row"><span className={`method-badge ${method.toLowerCase()}`}>{method}</span><code>{path}</code><span>{purpose}</span><small>{policy}</small></div>;
+}
+
+function ApiPrinciple({ icon: Icon, title, body }) {
+  return <div className="api-principle"><i><Icon size={16} /></i><span><strong>{title}</strong><small>{body}</small></span></div>;
+}
+
 function Integrations({ notify }) {
   return (
     <>
@@ -1006,12 +1097,13 @@ function Architecture() {
         <div className="architecture-layer frontend-layer">
           <ArchitectureBox icon={Code2} label="React + TypeScript" detail="Responsive web workspace" />
           <ArchitectureBox icon={Users} label="OIDC identity" detail="Enterprise SSO ready" />
-          <ArchitectureBox icon={Activity} label="OpenAPI client" detail="Typed API contracts" />
+          <ArchitectureBox icon={Activity} label="API consumers" detail="Web • SDK • CLI • integrations" />
         </div>
         <div className="architecture-arrow"><ArrowRight size={18} /></div>
         <div className="architecture-label">CONTROL PLANE</div>
         <div className="architecture-layer rust-layer">
           <ArchitectureBox icon={ServerCog} label="Rust services" detail="Axum • Tokio • SQLx" feature />
+          <ArchitectureBox icon={Code2} label="REST API" detail="/v1 • OpenAPI 3.1 • JSON" feature />
           <ArchitectureBox icon={GitCommitHorizontal} label="Revision engine" detail="Git-style changesets" feature />
           <ArchitectureBox icon={ShieldCheck} label="Policy & audit" detail="RBAC • immutable events" feature />
           <ArchitectureBox icon={PackageCheck} label="Async workers" detail="Imports • reports • webhooks" feature />
