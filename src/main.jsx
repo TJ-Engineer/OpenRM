@@ -59,6 +59,7 @@ const NAV_ITEMS = [
 
 const PLATFORM_ITEMS = [
   { id: "storage", label: "Object storage", icon: Cloud },
+  { id: "integrations", label: "Integrations", icon: Zap, count: "1" },
   { id: "architecture", label: "Architecture", icon: Boxes },
 ];
 
@@ -231,7 +232,7 @@ const TOUR_STEPS = [
   {
     eyebrow: "04 / Open foundation",
     title: "Own the platform—and the data.",
-    body: "Rust services, PostgreSQL persistence, and portable S3-compatible object storage provide a secure, self-hostable foundation.",
+    body: "Rust services, PostgreSQL persistence, portable S3-compatible storage, and a versioned connector plane—starting with Jira—provide a secure, self-hostable foundation.",
     icon: Boxes,
     target: "architecture",
   },
@@ -313,6 +314,7 @@ function App() {
           {page === "reviews" && <Reviews {...pageProps} />}
           {page === "verification" && <Verification {...pageProps} />}
           {page === "storage" && <Storage {...pageProps} />}
+          {page === "integrations" && <Integrations {...pageProps} />}
           {page === "architecture" && <Architecture {...pageProps} />}
         </section>
       </main>
@@ -914,6 +916,83 @@ function ObjectRow({ icon: Icon, name, type, linked, size, date }) {
   return <div className="object-row"><span className="object-name"><i><Icon size={17} /></i><span><strong>{name}</strong><small>{type}</small></span></span><code>{linked}</code><span className="integrity-ok"><ShieldCheck size={14} /> SHA-256 verified</span><span>{size}</span><span>{date}</span></div>;
 }
 
+function Integrations({ notify }) {
+  return (
+    <>
+      <PageHeader
+        eyebrow="Integration roadmap • Connector framework"
+        title={<>Connect delivery work to <em>controlled intent.</em></>}
+        description="A planned Jira Software connector keeps execution visible without making Jira the system of record for requirements, baselines, or approvals."
+        actions={<button className="secondary-button" onClick={() => notify("Jira connector design review added to the roadmap")}><ClipboardCheck size={15} /> Review connector plan</button>}
+      />
+
+      <div className="integration-hero-grid">
+        <section className="panel connector-card jira-card">
+          <div className="connector-heading">
+            <div className="jira-mark" aria-hidden="true">J</div>
+            <div><span className="status-pill planned">PLANNED • PHASE 2</span><h2>Jira Software Cloud + Data Center</h2><p>Bidirectional issue links and governed status synchronization.</p></div>
+          </div>
+          <div className="connector-capabilities">
+            <ConnectorCapability icon={Link2} title="Stable links" body="Relate Jira epics, stories, and defects to controlled OpenCM artifacts." />
+            <ConnectorCapability icon={Activity} title="Status signals" body="Bring delivery state into readiness views through approved mapping rules." />
+            <ConnectorCapability icon={MessageSquareText} title="Change context" body="Post revision and baseline references back to Jira without copying controlled content." />
+          </div>
+          <div className="connector-note"><ShieldCheck size={16} /><span><strong>Governance boundary</strong>OpenCM remains authoritative for requirements, revisions, baselines, approvals, and audit evidence.</span></div>
+        </section>
+
+        <section className="panel connector-policy-card">
+          <div className="panel-heading compact"><div><span className="panel-kicker">Connection policy</span><h2>Secure by default</h2></div><LockKeyhole size={18} /></div>
+          <PolicyRow label="Authentication" value="OAuth 2.0 / scoped PAT" />
+          <PolicyRow label="Inbound events" value="Signed webhooks" />
+          <PolicyRow label="Outbound writes" value="Allowlisted fields" />
+          <PolicyRow label="Reliability" value="Idempotent retry queue" />
+          <PolicyRow label="Audit" value="Actor + payload hash" />
+        </section>
+      </div>
+
+      <div className="integration-detail-grid">
+        <section className="panel mapping-panel">
+          <div className="panel-heading compact"><div><span className="panel-kicker">Proposed data contract</span><h2>Jira mapping preview</h2></div><span className="roadmap-chip">Configurable per project</span></div>
+          <div className="mapping-head"><span>OpenCM</span><span>Direction</span><span>Jira</span><span>Rule</span></div>
+          <MappingRow source="Artifact link" direction="↔" target="Remote issue link" rule="Stable IDs only" />
+          <MappingRow source="Owner" direction="←" target="Assignee" rule="Identity mapping" />
+          <MappingRow source="Delivery state" direction="←" target="Status" rule="Mapped vocabulary" />
+          <MappingRow source="Revision reference" direction="→" target="Comment / field" rule="No requirement text" />
+          <MappingRow source="Suspect link" direction="→" target="Flag / label" rule="Optional automation" />
+        </section>
+
+        <section className="panel roadmap-panel">
+          <div className="panel-heading compact"><div><span className="panel-kicker">Incremental delivery</span><h2>Connector roadmap</h2></div><GitBranch size={18} /></div>
+          <RoadmapStep number="01" phase="Foundation" title="Connector SDK" body="Versioned adapter contract, secret references, health checks, and audit events." />
+          <RoadmapStep number="02" phase="Jira pilot" title="Link + status sync" body="One design-partner project, configurable mappings, dry-run mode, and replayable webhooks." active />
+          <RoadmapStep number="03" phase="Scale" title="Governed automation" body="Approval-aware writes, admin templates, metrics, and additional ALM connectors." />
+        </section>
+      </div>
+
+      <section className="integration-callout">
+        <div><span className="panel-kicker">Funding message</span><h2>Jira is the first adapter—not a one-off integration.</h2><p>The same Rust connector contract can support Azure DevOps, GitHub, GitLab, and other delivery systems later.</p></div>
+        <button className="primary-button" onClick={() => notify("Connector SDK included in the proposed vertical slice")}>Include in vertical slice <ArrowRight size={15} /></button>
+      </section>
+    </>
+  );
+}
+
+function ConnectorCapability({ icon: Icon, title, body }) {
+  return <div className="connector-capability"><i><Icon size={17} /></i><span><strong>{title}</strong><small>{body}</small></span></div>;
+}
+
+function PolicyRow({ label, value }) {
+  return <div className="policy-row"><span>{label}</span><strong>{value}</strong><Check size={14} /></div>;
+}
+
+function MappingRow({ source, direction, target, rule }) {
+  return <div className="mapping-row"><strong>{source}</strong><span className="mapping-direction">{direction}</span><strong>{target}</strong><small>{rule}</small></div>;
+}
+
+function RoadmapStep({ number, phase, title, body, active }) {
+  return <div className={`roadmap-step ${active ? "active" : ""}`}><span className="roadmap-number">{number}</span><span><small>{phase}</small><strong>{title}</strong><p>{body}</p></span></div>;
+}
+
 function Architecture() {
   return (
     <>
@@ -936,6 +1015,13 @@ function Architecture() {
           <ArchitectureBox icon={GitCommitHorizontal} label="Revision engine" detail="Git-style changesets" feature />
           <ArchitectureBox icon={ShieldCheck} label="Policy & audit" detail="RBAC • immutable events" feature />
           <ArchitectureBox icon={PackageCheck} label="Async workers" detail="Imports • reports • webhooks" feature />
+        </div>
+        <div className="architecture-arrow"><ArrowRight size={18} /></div>
+        <div className="architecture-label">VERSIONED INTEGRATION PLANE • JIRA FIRST</div>
+        <div className="architecture-layer integration-layer">
+          <ArchitectureBox icon={Code2} label="Connector SDK" detail="Rust traits • versioned contracts" />
+          <ArchitectureBox icon={ClipboardCheck} label="Jira connector" detail="Planned • issues • status • links" />
+          <ArchitectureBox icon={Zap} label="Webhook gateway" detail="Signed events • retry queue" />
         </div>
         <div className="architecture-arrow"><ArrowRight size={18} /></div>
         <div className="architecture-label">PORTABLE DATA PLANE</div>

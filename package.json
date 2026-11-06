@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "provision:aws": "bash scripts/provision-aws.sh",
+    "deploy:aws": "bash scripts/deploy-aws.sh"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
