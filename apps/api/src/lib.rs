@@ -1,8 +1,12 @@
 pub mod auth;
 pub mod config;
+pub mod controlled_change;
 pub mod error;
+pub mod evidence;
+pub mod outbox;
 pub mod policy;
 pub mod projects;
+pub mod relationships;
 pub mod requirements;
 
 use std::time::Duration;
@@ -17,6 +21,7 @@ use axum::{
 use chrono::{DateTime, Utc};
 use config::Config;
 use error::ApiError;
+use evidence::EvidenceSigner;
 use policy::{Action, PolicyEngine, Principal};
 use serde::Serialize;
 use sqlx::{PgPool, postgres::PgPoolOptions};
@@ -35,6 +40,7 @@ pub struct AppState {
     pub auth: AuthVerifier,
     pub policy: PolicyEngine,
     pub build: BuildInfo,
+    pub evidence_signer: EvidenceSigner,
 }
 
 #[derive(Clone, Serialize)]
@@ -146,6 +152,54 @@ pub fn router(state: AppState) -> Router {
             "/api/v1/projects/{project_id}/requirements/{requirement_id}/compare",
             get(requirements::compare_requirement_revisions),
         )
+        .route(
+            "/api/v1/projects/{project_id}/relationship-types",
+            get(relationships::list_relationship_types),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/relationships",
+            get(relationships::list_relationships).post(relationships::create_relationship),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/relationships/{relationship_id}/resolve",
+            axum::routing::post(relationships::resolve_relationship),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/relationships/{relationship_id}/revisions",
+            get(relationships::list_relationship_revisions),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/trace/summary",
+            get(controlled_change::get_trace_summary),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/trace/matrix",
+            get(controlled_change::get_trace_matrix),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/trace/graph",
+            get(controlled_change::get_trace_graph),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/changesets",
+            get(controlled_change::list_changesets).post(controlled_change::create_changeset),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/changesets/{changeset_id}",
+            get(controlled_change::get_changeset),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/baselines",
+            get(controlled_change::list_baselines).post(controlled_change::create_baseline),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/baselines/compare",
+            get(controlled_change::compare_baselines),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/baselines/{baseline_id}/evidence",
+            get(controlled_change::export_evidence),
+        )
         .fallback(not_found)
         .with_state(state)
         .layer(PropagateRequestIdLayer::new(request_id_header.clone()))
@@ -221,7 +275,7 @@ async fn not_found() -> ApiError {
 #[cfg(test)]
 mod tests {
     use super::{AppState, BuildInfo, router};
-    use crate::{auth::AuthVerifier, policy::PolicyEngine};
+    use crate::{auth::AuthVerifier, evidence::EvidenceSigner, policy::PolicyEngine};
     use axum::{body::Body, http::Request};
     use http_body_util::BodyExt;
     use sqlx::postgres::PgPoolOptions;
@@ -235,6 +289,7 @@ mod tests {
             auth: AuthVerifier::dev(),
             policy: PolicyEngine,
             build: BuildInfo::current(),
+            evidence_signer: EvidenceSigner::development(),
         }
     }
 

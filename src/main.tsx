@@ -21,19 +21,15 @@ import {
   FileCheck2,
   FileClock,
   FileText,
-  Filter,
   GitBranch,
   GitCommitHorizontal,
-  GitCompareArrows,
   Link2,
   LockKeyhole,
   Menu,
   MessageSquareText,
   MoreHorizontal,
   PackageCheck,
-  PanelLeftClose,
   Play,
-  Plus,
   Search,
   ServerCog,
   ShieldCheck,
@@ -45,7 +41,9 @@ import {
   Zap,
 } from "lucide-react";
 import "./styles.css";
+import { BaselinesWorkspace } from "./baselines/BaselinesWorkspace";
 import { RequirementsWorkspace } from "./requirements/RequirementsWorkspace";
+import { TraceabilityWorkspace } from "./traceability/TraceabilityWorkspace";
 
 type PageHeaderProps = {
   eyebrow: React.ReactNode;
@@ -57,7 +55,7 @@ type PageHeaderProps = {
 const NAV_ITEMS = [
   { id: "overview", label: "Overview", icon: Columns3 },
   { id: "requirements", label: "Requirements", icon: FileText, count: "Live" },
-  { id: "traceability", label: "Traceability", icon: Link2, count: "7" },
+  { id: "traceability", label: "Traceability", icon: Link2, count: "Live" },
   { id: "baselines", label: "Baselines", icon: GitBranch },
   { id: "reviews", label: "Reviews", icon: ClipboardCheck, count: "2" },
   { id: "verification", label: "Verification", icon: TestTube2 },
@@ -103,9 +101,9 @@ const DEVELOPMENT_PHASES = [
     id: "phase-3",
     number: "03",
     name: "Change control",
-    window: "Ready",
-    status: "queued",
-    outcome: "Traceability, suspect links, baselines",
+    window: "Complete",
+    status: "complete",
+    outcome: "Protected impact-to-signed-baseline gate passed",
   },
   {
     id: "phase-4",
@@ -129,26 +127,26 @@ const DEVELOPMENT_WORKSTREAMS = [
   {
     name: "Product experience",
     icon: Columns3,
-    progress: 85,
-    status: "Requirements workflow live",
+    progress: 100,
+    status: "Phase 3 workflows live",
     tone: "mint",
-    now: "Shape traceability and controlled-change interactions",
+    now: "Decompose review packages and verification interactions",
   },
   {
     name: "Platform & API",
     icon: ServerCog,
-    progress: 68,
-    status: "Phase 2 API complete",
+    progress: 100,
+    status: "Phase 3 API protected",
     tone: "blue",
-    now: "Define typed relationship and changeset operations",
+    now: "Define review and verification contracts",
   },
   {
     name: "Data & versioning",
     icon: Database,
-    progress: 62,
-    status: "Workspace controls verified",
+    progress: 100,
+    status: "Signed baselines verified",
     tone: "mint",
-    now: "Add relationship revisions and immutable baselines",
+    now: "Preserve append-only and deterministic export controls",
   },
   {
     name: "Security & identity",
@@ -162,7 +160,7 @@ const DEVELOPMENT_WORKSTREAMS = [
     name: "Quality & delivery",
     icon: TestTube2,
     progress: 100,
-    status: "Phase 2 gate green",
+    status: "Phase 3 protected gate green",
     tone: "mint",
     now: "Keep all required checks green on protected main",
   },
@@ -194,7 +192,7 @@ const DEVELOPMENT_BACKLOG = [
   { id: "REQ-105", horizon: "now", priority: "P1", title: "Add folders, tags, attributes, and saved views", stream: "Product", effort: "5d", status: "Complete" },
   { id: "REQ-106", horizon: "now", priority: "P1", title: "Add import, export, comparison, accessibility, and E2E", stream: "Quality", effort: "4d", status: "Complete" },
   { id: "REQ-001", horizon: "now", priority: "P0", title: "Complete requirements vertical slice", stream: "Product", effort: "4w", status: "Complete" },
-  { id: "TRC-001", horizon: "next", priority: "P0", title: "Deliver traceability and baselines", stream: "Product", effort: "4w", status: "Ready" },
+  { id: "TRC-001", horizon: "next", priority: "P0", title: "Deliver traceability and baselines", stream: "Product", effort: "4w", status: "Local gate passed" },
 ];
 
 const COMMITS = [
@@ -221,54 +219,6 @@ const COMMITS = [
     time: "Yesterday",
     files: 38,
     color: "blue",
-  },
-];
-
-const TRACE_NODES = [
-  {
-    id: "NEED-07",
-    label: "Maintain controlled flight",
-    type: "Stakeholder need",
-    x: 7,
-    y: 38,
-    tone: "purple",
-    status: "covered",
-  },
-  {
-    id: "SYS-184",
-    label: "Maintain attitude during failover",
-    type: "System requirement",
-    x: 29,
-    y: 17,
-    tone: "blue",
-    status: "covered",
-  },
-  {
-    id: "SFT-041",
-    label: "Failover within 150 ms",
-    type: "Software requirement",
-    x: 51,
-    y: 38,
-    tone: "amber",
-    status: "suspect",
-  },
-  {
-    id: "VER-019",
-    label: "Verify failover timing",
-    type: "Verification",
-    x: 73,
-    y: 17,
-    tone: "mint",
-    status: "covered",
-  },
-  {
-    id: "RUN-109",
-    label: "HIL failover test run",
-    type: "Test run",
-    x: 73,
-    y: 63,
-    tone: "green",
-    status: "passed",
   },
 ];
 
@@ -305,7 +255,6 @@ const TOUR_STEPS = [
 
 function App() {
   const [page, setPage] = useState("overview");
-  const [selectedTrace, setSelectedTrace] = useState(TRACE_NODES[2]);
   const [tourOpen, setTourOpen] = useState(false);
   const [tourStep, setTourStep] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -331,8 +280,6 @@ function App() {
   const pageProps = {
     navigate,
     notify,
-    selectedTrace,
-    setSelectedTrace,
     reviewApproved,
     setReviewApproved,
   };
@@ -372,8 +319,8 @@ function App() {
           {page === "development" && <DevelopmentDashboard {...pageProps} />}
           {page === "overview" && <Overview {...pageProps} />}
           {page === "requirements" && <RequirementsWorkspace notify={notify} />}
-          {page === "traceability" && <Traceability {...pageProps} />}
-          {page === "baselines" && <Baselines {...pageProps} />}
+          {page === "traceability" && <TraceabilityWorkspace notify={notify} />}
+          {page === "baselines" && <BaselinesWorkspace notify={notify} />}
           {page === "reviews" && <Reviews {...pageProps} />}
           {page === "verification" && <Verification {...pageProps} />}
           {page === "storage" && <Storage {...pageProps} />}
@@ -421,7 +368,7 @@ function Sidebar({ page, open, onClose, onNavigate }) {
         <div className="brand-row">
           <div className="brand-mark"><GitBranch size={20} /></div>
           <div>
-            <div className="brand-name">open<span>CM</span></div>
+            <div className="brand-name">Open<span>RM</span></div>
             <div className="brand-subtitle">Funding preview</div>
           </div>
           <button className="sidebar-close icon-button" onClick={onClose} aria-label="Close menu"><X size={18} /></button>
@@ -483,7 +430,7 @@ function DevelopmentDashboard({ notify }) {
       .join("\n");
 
     try {
-      await navigator.clipboard.writeText(`OpenRM Phase 2 completion — current evidence\n${brief}`);
+      await navigator.clipboard.writeText(`OpenRM Phase 3 completion — current evidence\n${brief}`);
       notify("Current sprint brief copied");
     } catch {
       notify("Sprint brief is listed in IMPLEMENTATION_PLAN.md");
@@ -515,45 +462,46 @@ function DevelopmentDashboard({ notify }) {
       <section className="development-command panel">
         <div className="development-command-copy">
           <div className="phase-status-row">
-            <span className="phase-chip complete"><span /> Phase 2 complete</span>
+            <span className="phase-chip complete"><span /> Phase 3 complete</span>
             <span className="baseline-date">17-week beta path</span>
           </div>
           <p className="panel-kicker">Current delivery objective</p>
-          <h2>Carry controlled requirements into traceable change.</h2>
+          <h2>Protect the complete trace-to-baseline evidence path.</h2>
           <p>
-            Phase 2 now provides live authoring, isolated project roles, folders, tags, typed attributes, saved views,
-            immutable revisions, comparison, import and export, and append-only audit evidence. Protected API,
-            PostgreSQL, browser, and accessibility checks passed; Phase 3 traceability is ready to begin.
+            Phase 3 provides live graph, matrix, coverage, gap, suspect-impact, attributable changeset,
+            immutable baseline, comparison, and deterministic signed-export workflows. The PostgreSQL,
+            browser, accessibility, and protected hosted exit matrix passes; Phase 4 evidence workflows are next.
           </p>
           <div className="command-meta">
-            <span><GitBranch size={14} /> Stage: Phase 2 exit gate passed</span>
-            <span><BadgeCheck size={14} /> Next gate: Traceability and controlled change</span>
+            <span><GitBranch size={14} /> Stage: Phase 3 exit gate passed</span>
+            <span><BadgeCheck size={14} /> Next gate: Reviews and verification</span>
           </div>
         </div>
         <div className="gate-card">
           <div className="gate-card-head">
             <div>
-              <span>Phase 2 exit evidence</span>
-              <strong>7 / 7 evidence checks</strong>
+              <span>Phase 3 protected exit evidence</span>
+              <strong>8 / 8 evidence checks</strong>
             </div>
             <div className="gate-score complete">100%</div>
           </div>
           <div className="gate-checks">
-            <span className="complete"><CheckCircle2 size={13} /> Tenant-scoped project discovery</span>
-            <span className="complete"><CheckCircle2 size={13} /> Durable current state and revisions</span>
-            <span className="complete"><CheckCircle2 size={13} /> Idempotent creation and stale-edit rejection</span>
-            <span className="complete"><CheckCircle2 size={13} /> Project roles, organization, and search</span>
-            <span className="complete"><CheckCircle2 size={13} /> Append-only audit and revision evidence</span>
-            <span className="complete"><CheckCircle2 size={13} /> Comparison, import, and export</span>
-            <span className="complete"><CheckCircle2 size={13} /> Browser authoring and WCAG A/AA</span>
+            <span className="complete"><CheckCircle2 size={13} /> Directed exact-revision relationships</span>
+            <span className="complete"><CheckCircle2 size={13} /> Coverage, matrix, graph, and gaps</span>
+            <span className="complete"><CheckCircle2 size={13} /> Asynchronous suspect propagation</span>
+            <span className="complete"><CheckCircle2 size={13} /> Reviewer-only attributable disposition</span>
+            <span className="complete"><CheckCircle2 size={13} /> Parent-relative immutable changesets</span>
+            <span className="complete"><CheckCircle2 size={13} /> Signed baselines and comparison</span>
+            <span className="complete"><CheckCircle2 size={13} /> Deterministic evidence export</span>
+            <span className="complete"><CheckCircle2 size={13} /> Browser workflows and WCAG A/AA</span>
           </div>
         </div>
       </section>
 
       <div className="development-metrics">
         <DeliveryMetric icon={Columns3} value="10 / 10" label="Prototype surfaces" detail="Interaction model represented" tone="mint" />
-        <DeliveryMetric icon={ServerCog} value="9" label="Controlled capabilities" detail="Author, organize, compare, import, and export" tone="blue" />
-        <DeliveryMetric icon={TestTube2} value="15 + 6" label="Automated tests" detail="Rust, web unit, browser, and WCAG" tone="mint" />
+        <DeliveryMetric icon={ServerCog} value="16" label="Controlled capabilities" detail="Authoring, trace, change, baseline, and export" tone="blue" />
+        <DeliveryMetric icon={TestTube2} value="21 + 9" label="Automated tests" detail="Rust, web unit, browser, and WCAG" tone="mint" />
         <DeliveryMetric icon={AlertTriangle} value="4" label="Program risks" detail="Decisions accepted; controls remain" tone="red" />
       </div>
 
@@ -663,7 +611,7 @@ function DevelopmentDashboard({ notify }) {
 
       <div className="dashboard-source-note">
         <FileCheck2 size={16} />
-        <p><strong>Source of truth:</strong> Phase 2 completed on 8 November 2026. OpenRM CI run 42492278928 passed the web, API, PostgreSQL, browser, accessibility, isolation, and append-only history gates; Phase 3 is ready.</p>
+        <p><strong>Source of truth:</strong> Phase 3 passed its PostgreSQL, API, browser, accessibility, deterministic-export, isolation, append-only history, and protected hosted gates in OpenRM CI run 42499504834 on 8 November 2026.</p>
       </div>
     </>
   );
@@ -816,148 +764,8 @@ function StatusPill({ status }) {
   return <span className={`status-pill ${slug}`}>{status === "Approved" && <Check size={11} />}{status === "Suspect" && <AlertTriangle size={11} />}{status}</span>;
 }
 
-function Traceability({ selectedTrace, setSelectedTrace, notify }) {
-  return (
-    <>
-      <PageHeader
-        eyebrow="Digital thread • Live impact analysis"
-        title="Traceability"
-        description="Navigate design intent from stakeholder need to objective verification evidence."
-        actions={
-          <>
-            <button className="secondary-button"><Filter size={15} /> Configure view</button>
-            <button className="primary-button" onClick={() => notify("Trace report queued for export")}>Export trace report <ArrowRight size={15} /></button>
-          </>
-        }
-      />
-      <div className="trace-toolbar panel">
-        <div className="search-box"><Search size={16} /><input value="SYS-184" readOnly aria-label="Trace root" /></div>
-        <div className="trace-direction"><button className="active">Both directions</button><button>Upstream</button><button>Downstream</button></div>
-        <span className="toolbar-spacer" />
-        <span className="legend-dot covered">Covered</span>
-        <span className="legend-dot suspect">Suspect</span>
-        <span className="legend-dot gap">Gap</span>
-      </div>
-      <div className="trace-layout">
-        <section className="trace-canvas panel">
-          <div className="canvas-label">TRACE VIEW • 5 OF 23 RELATED ARTIFACTS</div>
-          <svg className="trace-lines" viewBox="0 0 1000 500" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M160 250 C245 250 250 145 340 145" />
-            <path d="M425 145 C485 145 485 250 555 250" />
-            <path className="suspect-line" d="M640 250 C705 250 705 145 775 145" />
-            <path d="M640 270 C705 270 705 375 775 375" />
-            <path d="M820 185 L820 335" />
-          </svg>
-          {TRACE_NODES.map((node) => (
-            <button
-              key={node.id}
-              className={`trace-node ${node.tone} ${selectedTrace.id === node.id ? "selected" : ""}`}
-              style={{ left: `${node.x}%`, top: `${node.y}%` }}
-              onClick={() => setSelectedTrace(node)}
-            >
-              <span className="trace-node-top"><code>{node.id}</code><i className={node.status} /></span>
-              <strong>{node.label}</strong>
-              <small>{node.type}</small>
-            </button>
-          ))}
-          <div className="canvas-controls"><button><Plus size={15} /></button><button>−</button><button><PanelLeftClose size={14} /></button></div>
-        </section>
-
-        <aside className="trace-inspector panel">
-          <div className="panel-kicker">Selected artifact</div>
-          <div className="trace-selected-id"><code>{selectedTrace.id}</code><span className={`status-pill ${selectedTrace.status}`}>{selectedTrace.status}</span></div>
-          <h2>{selectedTrace.label}</h2>
-          <p>This artifact participates in the controlled digital thread for compute-lane failover.</p>
-          <div className="impact-card">
-            <AlertTriangle size={17} />
-            <div><strong>Impact review required</strong><span>Upstream requirement changed in <code>c8a71f2</code></span></div>
-          </div>
-          <div className="trace-stats"><div><strong>2</strong><span>Upstream</span></div><div><strong>3</strong><span>Downstream</span></div><div><strong>1</strong><span>Open impact</span></div></div>
-          <div className="inspector-section"><label>Relationship path</label><div className="path-list"><span>System requirement</span><ArrowRight size={13} /><span>Software requirement</span><ArrowRight size={13} /><span>Verification</span></div></div>
-          <button className="primary-button full-width" onClick={() => notify("Impact marked reviewed in demo")}>Resolve impact <Check size={15} /></button>
-        </aside>
-      </div>
-      <div className="trace-summary-grid">
-        <MiniStat icon={BadgeCheck} value="93%" label="Bidirectional coverage" />
-        <MiniStat icon={Link2} value="4,862" label="Controlled relationships" />
-        <MiniStat icon={AlertTriangle} value="7" label="Suspect links" warning />
-        <MiniStat icon={Archive} value="0" label="Orphan artifacts" />
-      </div>
-    </>
-  );
-}
-
 function MiniStat({ icon: Icon, value, label, warning = false }) {
   return <div className={`mini-stat panel ${warning ? "warning" : ""}`}><Icon size={18} /><strong>{value}</strong><span>{label}</span></div>;
-}
-
-function Baselines({ notify }) {
-  const [selected, setSelected] = useState("BL-006");
-  const baselines = [
-    { id: "BL-006", name: "SRR candidate", date: "Nov 5, 2026", commit: "c8a71f2", artifacts: "1,248", locked: true },
-    { id: "BL-005", name: "Requirements freeze", date: "Oct 18, 2026", commit: "6bd11ae", artifacts: "1,210", locked: true },
-    { id: "BL-004", name: "Architecture review", date: "Sep 26, 2026", commit: "48fd120", artifacts: "1,083", locked: true },
-  ];
-  return (
-    <>
-      <PageHeader
-        eyebrow="Controlled history • Immutable snapshots"
-        title="Baselines & changesets"
-        description="Freeze decision points, compare exact states, and reconstruct every controlled change."
-        actions={<button className="primary-button" onClick={() => notify("Baseline creation wizard opened")}><Plus size={16} /> Create baseline</button>}
-      />
-      <div className="baseline-grid">
-        <section className="panel baseline-list">
-          <div className="panel-heading compact"><div><span className="panel-kicker">Protected baselines</span><h2>Project history</h2></div><button className="icon-button"><Filter size={16} /></button></div>
-          {baselines.map((baseline) => (
-            <button key={baseline.id} className={`baseline-card ${selected === baseline.id ? "selected" : ""}`} onClick={() => setSelected(baseline.id)}>
-              <span className="baseline-icon"><LockKeyhole size={17} /></span>
-              <span><code>{baseline.id}</code><strong>{baseline.name}</strong><small>{baseline.date} • {baseline.artifacts} artifacts</small></span>
-              <span className="baseline-commit"><GitCommitHorizontal size={13} /> {baseline.commit}</span>
-              <ChevronRight size={16} />
-            </button>
-          ))}
-        </section>
-
-        <section className="panel compare-panel">
-          <div className="compare-header">
-            <div><span className="panel-kicker">Baseline comparison</span><h2>BL-005 <GitCompareArrows size={18} /> BL-006</h2></div>
-            <button className="secondary-button" onClick={() => notify("Comparison report exported")}>Export comparison</button>
-          </div>
-          <div className="diff-summary">
-            <div className="added"><strong>+38</strong><span>Added</span></div>
-            <div className="modified"><strong>24</strong><span>Modified</span></div>
-            <div className="removed"><strong>−0</strong><span>Removed</span></div>
-            <div><strong>6</strong><span>Relationship changes</span></div>
-          </div>
-          <div className="diff-list">
-            <DiffRow id="SYS-184" title="Maintain attitude during failover" change="Tolerance clarified from ±3° to ±2°" type="modified" />
-            <DiffRow id="SYS-203" title="Record all command transitions" change="New audit requirement added" type="added" />
-            <DiffRow id="SFT-041" title="Failover within 150 milliseconds" change="Verification method changed" type="modified" />
-            <DiffRow id="VER-019" title="Verify compute-lane failover timing" change="HIL procedure allocated" type="added" />
-          </div>
-        </section>
-
-        <section className="panel branch-panel">
-          <div className="panel-heading compact"><div><span className="panel-kicker">Changeset graph</span><h2>Protected main line</h2></div><span className="branch-chip"><GitBranch size={13} /> main</span></div>
-          <div className="branch-timeline">
-            {[
-              ["c8a71f2", "SRR candidate baseline", "Today", "baseline"],
-              ["89d4b10", "Resolve review comments", "Today", "commit"],
-              ["17ec2aa", "Import supplier requirements", "Yesterday", "commit"],
-              ["6bd11ae", "Requirements freeze", "Oct 18", "baseline"],
-            ].map(([id, title, date, type], index) => (
-              <div className="branch-event" key={id}><span className={`branch-node ${type}`} />{index < 3 && <span className="branch-line" />}<code>{id}</code><strong>{title}</strong><small>{date}</small>{type === "baseline" && <span className="baseline-tag"><LockKeyhole size={11} /> baseline</span>}</div>
-            ))}
-          </div>
-        </section>
-      </div>
-    </>
-  );
-}
-
-function DiffRow({ id, title, change, type }) {
-  return <div className="diff-row"><span className={`diff-mark ${type}`}>{type === "added" ? "+" : "~"}</span><code>{id}</code><span><strong>{title}</strong><small>{change}</small></span><ChevronRight size={16} /></div>;
 }
 
 function Reviews({ notify, reviewApproved, setReviewApproved }) {

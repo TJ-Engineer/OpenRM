@@ -120,14 +120,33 @@ pub async fn create_project(
     .await
     .map_err(project_insert_error)?;
 
-    sqlx::query(
+    let requirement_type_id = sqlx::query_scalar::<_, Uuid>(
         r#"
         INSERT INTO artifact_types (organization_id, project_id, key, name)
         VALUES ($1, $2, 'REQUIREMENT', 'Requirement')
+        RETURNING id
         "#,
     )
     .bind(principal.organization_id)
     .bind(project_id)
+    .fetch_one(&mut *transaction)
+    .await
+    .map_err(database_error)?;
+    sqlx::query(
+        r#"
+        INSERT INTO relationship_types (
+            organization_id, project_id, key, name,
+            source_artifact_type_id, target_artifact_type_id,
+            max_targets_per_source, max_sources_per_target, propagates_suspect
+        )
+        VALUES
+            ($1, $2, 'DECOMPOSES_TO', 'Decomposes to', $3, $3, NULL, 1, true),
+            ($1, $2, 'DEPENDS_ON', 'Depends on', $3, $3, NULL, NULL, true)
+        "#,
+    )
+    .bind(principal.organization_id)
+    .bind(project_id)
+    .bind(requirement_type_id)
     .execute(&mut *transaction)
     .await
     .map_err(database_error)?;

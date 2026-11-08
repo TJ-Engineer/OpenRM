@@ -1,7 +1,7 @@
 # OpenRM implementation plan
 
 **Planning baseline:** 7 November 2026  
-**Current stage:** Phase 2 requirements vertical slice complete; Phase 3 ready
+**Current stage:** Phase 3 traceability and controlled change complete
 **Primary outcome:** Deliver a self-hostable configuration and requirements management platform with controlled change, end-to-end traceability, review evidence, and verification records.
 
 ## 1. Current state
@@ -22,13 +22,15 @@ What exists now:
 - GitHub Actions workflow for web, Rust, dependency audits, migrations, and an authenticated database-backed request.
 - Protected `main` branch requiring the `web`, `api`, and `database-path` GitHub Actions checks.
 - Completed requirements workspace with isolated projects, scoped roles, folders, tags, typed attributes, saved views, controlled authoring, immutable revisions, comparison, import/export, and audit evidence.
-- Browser end-to-end coverage for the primary authoring workflow plus automated WCAG 2 A/AA checks.
+- Directed typed relationships with exact revision evidence, asynchronous suspect propagation, reviewer dispositions, and trace graph, matrix, coverage, and gap queries.
+- Attributable changesets, immutable signed baselines, exact baseline comparison, deterministic evidence export, and stale-snapshot protection.
+- Browser end-to-end coverage for requirements, traceability, and baseline workflows plus automated WCAG 2 A/AA checks.
 
 What does not exist yet:
 
 - Deployed API/database environments and a connected production OIDC provider.
-- Production artifact, relationship, baseline, review, and verification endpoints.
-- Browser coverage for later traceability, baseline, review, and verification workflows.
+- Production deployment of the artifact, relationship, and baseline endpoints.
+- Review, approval, and verification endpoints and browser workflows.
 - Release automation, full observability, or recovery validation.
 - Live Jira or other connector implementations.
 
@@ -156,18 +158,26 @@ Exit evidence:
 
 **Outcome:** Users can connect intent to evidence, detect impact, and freeze reproducible baselines.
 
+**Status:** Complete on 8 November 2026. The full contract-led slice covers directed relationship controls, live trace queries, asynchronous suspect impact and reviewer disposition, attributable changesets, immutable signed baselines, comparison, deterministic evidence export, browser workflows, and PostgreSQL exit-gate validation. All protected hosted checks passed.
+
 Deliverables:
 
-- [ ] Typed relationships with cardinality and direction rules.
-- [ ] Trace matrix, graph, coverage queries, and gap reporting.
-- [ ] Suspect-link propagation and resolution workflow.
-- [ ] Changesets with attributable diffs and commit messages.
-- [ ] Immutable baselines and baseline comparison.
-- [ ] Evidence export with deterministic manifests and hashes.
+- [x] Typed relationships with cardinality and direction rules.
+- [x] Trace matrix, graph, coverage queries, and gap reporting.
+- [x] Suspect-link propagation and resolution workflow.
+- [x] Changesets with attributable diffs and commit messages.
+- [x] Immutable baselines and baseline comparison.
+- [x] Evidence export with deterministic manifests, hashes, and signatures.
 
 Exit gate:
 
 - A changed upstream requirement flags affected links, records their disposition, and produces a reproducible signed baseline export.
+
+Exit evidence:
+
+- Local PostgreSQL 17 validation passed the complete impact-to-disposition-to-signed-baseline path, including deterministic byte-for-byte evidence replay and append-only enforcement.
+- Five Chromium workflows pass for requirements, traceability, changesets, baselines, and automated WCAG 2 A/AA checks.
+- [OpenRM CI run 42499504834](https://github.com/TJ-Engineer/OpenRM/actions/runs/42499504834) passed `web`, `api`, and `database-path` for implementation evidence commit `4f50618`.
 
 ### Phase 4 — Reviews and verification (Weeks 11–14)
 
@@ -216,7 +226,7 @@ Exit gate:
 | WEB-001 | P1 | Migrate the client to TypeScript and API client | Typecheck + build | 3 days |
 | QLT-001 | P0 | Add CI quality and security gates | Protected CI run | 2 days |
 
-FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1 and Phase 2 are closed; Phase 3 traceability work is ready.
+FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1, Phase 2, and Phase 3 are closed; Phase 4 is next.
 
 ## 5.1 Phase 2 execution backlog
 
@@ -229,6 +239,17 @@ FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-
 | REQ-104 | P0 | Connect the authoring UI to the API | Complete | Chromium authoring workflow |
 | REQ-105 | P1 | Add folders, tags, typed attributes, and saved views | Complete | API runtime and UI acceptance evidence |
 | REQ-106 | P1 | Add import/export, comparison, accessibility, and E2E | Complete | Protected CI evidence suite |
+
+## 5.2 Phase 3 execution backlog
+
+| ID | Priority | Work item | Status | Primary evidence |
+| --- | --- | --- | --- | --- |
+| TRC-101 | P0 | Persist directed typed relationships with cardinality and exact revision evidence | Complete | Isolated PostgreSQL API and immutability matrix |
+| TRC-102 | P0 | Propagate and resolve suspect links with attributable dispositions | Complete | Upstream revision impact workflow |
+| TRC-103 | P1 | Add trace graph, matrix, coverage, and gap queries | Complete | API queries and Chromium acceptance path |
+| CHG-101 | P0 | Add changesets with attributable diffs and commit messages | Complete | Parent-relative controlled commit workflow |
+| BAS-101 | P0 | Add immutable baselines and baseline comparison | Complete | Reviewer-only reproducible manifest comparison |
+| EVD-101 | P0 | Export deterministic hashed and signed evidence | Complete | Repeated byte-for-byte manifest verification |
 
 ## 6. Quality gates
 
