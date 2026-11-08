@@ -2,6 +2,52 @@
 
 This guide describes the supported pilot deployment shape. The repository does not claim a live production environment until an operator records environment-specific evidence.
 
+## Portable all-in-one stack
+
+The repository-root `compose.yaml` is the portable evaluation and development distribution. A host needs only Docker Engine with Compose v2:
+
+```bash
+docker compose up --build -d
+curl --fail http://127.0.0.1:8080/ready
+```
+
+The single command builds and starts:
+
+- PostgreSQL 17 with a named persistent volume and loopback-only development port;
+- a one-shot, forward-only database migration container;
+- the non-root Rust API with a read-only root filesystem and health check;
+- a one-shot non-root bootstrap container that creates or verifies the 60-requirement `OPENRM` project;
+- the non-root Nginx web image with a read-only root filesystem, SPA fallback, security headers, and same-origin API proxy.
+
+The browser entry point is `http://127.0.0.1:8080`. The API is intentionally not published as a separate host port; `/api`, `/health`, and `/ready` pass through the web gateway. Change `OPENRM_PORT` to avoid a port conflict, or set `OPENRM_BIND_ADDRESS=0.0.0.0` for an intentionally network-accessible host. The latter requires appropriate host firewall and network controls.
+
+Portable-stack settings:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `OPENRM_BIND_ADDRESS` | `127.0.0.1` | Web gateway host bind address. |
+| `OPENRM_PORT` | `8080` | Web gateway host port. |
+| `OPENRM_POSTGRES_BIND_ADDRESS` | `127.0.0.1` | Native-development PostgreSQL bind address. |
+| `OPENRM_POSTGRES_PORT` | `5432` | Native-development PostgreSQL host port. |
+| `OPENRM_POSTGRES_DB` | `openrm` | Database name. |
+| `OPENRM_POSTGRES_USER` | `openrm` | Database role. |
+| `OPENRM_POSTGRES_PASSWORD` | `openrm` | Development database password; replace outside local evaluation. |
+| `OPENRM_EVIDENCE_SIGNING_KEY` | Development-only value | Evidence-signing material. |
+| `OPENRM_EVIDENCE_SIGNING_KEY_ID` | `portable-development` | Evidence-signing key identifier. |
+| `OPENRM_EVIDENCE_REF` | `main` | Repository ref attached to self-verification evidence. |
+| `OPENRM_SELF_EVIDENCE_RUN_URL` | Container marker | Evidence execution link or marker. |
+| `OPENRM_RUST_LOG` | API and HTTP info | Rust log filter. |
+
+Passwords containing URL-reserved characters must be percent-encoded for the API connection string. For non-development deployment, use the hardened production topology and an operator-managed secret mechanism.
+
+Verify a completely fresh, isolated container deployment with:
+
+```bash
+npm run check:containers
+```
+
+The smoke script uses a dedicated Compose project and volume, verifies web/API readiness, confirms the `OPENRM` project has all 60 requirements, checks non-root/read-only execution, and then removes only its isolated test resources.
+
 ## Required services
 
 - OpenRM API image built from `deploy/openrm-api.Dockerfile`.

@@ -34,7 +34,25 @@ See the [development dashboard](DEVELOPMENT_DASHBOARD.md) for current evidence, 
 
 The web client remains at the repository root to preserve the current Vite, AWS, and Sites deployments. Backend components are Cargo workspace members.
 
-## Bootstrap
+## Portable container stack
+
+Docker is the only runtime prerequisite for the complete portable stack:
+
+```bash
+docker compose up --build -d
+```
+
+Open [http://127.0.0.1:8080](http://127.0.0.1:8080). The composition starts PostgreSQL, applies all migrations, launches the Rust API, loads the controlled 60-requirement `OPENRM` self-verification project, and serves the React application through a same-origin Nginx gateway. Only the web gateway and loopback PostgreSQL development port are published; service-to-service traffic remains on the Compose network.
+
+```bash
+docker compose ps
+docker compose logs -f
+docker compose down
+```
+
+Persistent database state remains in the `openrm-postgres` volume. Use `docker compose down --volumes` only when intentionally deleting local OpenRM data. Port, bind-address, database, signing-key, logging, and evidence-link settings are configurable with the `OPENRM_*` variables documented in [the deployment guide](docs/operations/DEPLOYMENT.md).
+
+## Native development bootstrap
 
 Prerequisites: Node.js 24+, Rust 1.96+, Docker, and npm.
 
