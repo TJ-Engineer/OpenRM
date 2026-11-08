@@ -71,6 +71,8 @@ jobs:
       API_BIND_ADDRESS: 127.0.0.1:8080
       DATABASE_URL: postgres://openrm:openrm@127.0.0.1:5432/openrm
       RUN_MIGRATIONS: "false"
+      EVIDENCE_SIGNING_KEY: ci-phase-3-evidence-signing-key
+      EVIDENCE_SIGNING_KEY_ID: ci-phase-3
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
@@ -246,6 +248,123 @@ jobs:
           test "$(jq -r '.items[1].created_by' /tmp/relationship-revisions.json)" = \
             'system:relationship-impact'
 
+          trace_url="${base_url}/projects/${project_id}/trace"
+          request GET 'dev:ci-viewer:viewer' "${trace_url}/summary" > /tmp/trace-summary.json
+          test "$(jq -r '.total_artifacts' /tmp/trace-summary.json)" -eq 3
+          test "$(jq -r '.covered_artifacts' /tmp/trace-summary.json)" -eq 2
+          test "$(jq -r '.orphan_artifacts' /tmp/trace-summary.json)" -eq 1
+          test "$(jq -r '.relationships' /tmp/trace-summary.json)" -eq 1
+          test "$(jq -r '.suspect_relationships' /tmp/trace-summary.json)" -eq 0
+          test "$(jq -r '.coverage_percent' /tmp/trace-summary.json)" = '66.67'
+          request GET 'dev:ci-viewer:viewer' "${trace_url}/matrix" > /tmp/trace-matrix.json
+          test "$(jq -r '.items[] | select(.key == "CI-IMP-1") | .gap' /tmp/trace-matrix.json)" = 'true'
+          test "$(jq -r '.items[] | select(.key == "CI-REQ-1") | .downstream_count' /tmp/trace-matrix.json)" -eq 1
+          request GET 'dev:ci-viewer:viewer' "${trace_url}/graph" > /tmp/trace-graph.json
+          test "$(jq -r '.nodes | length' /tmp/trace-graph.json)" -eq 3
+          test "$(jq -r '.edges | length' /tmp/trace-graph.json)" -eq 1
+
+          changesets_url="${base_url}/projects/${project_id}/changesets"
+          request POST 'dev:ci-author:author' "${changesets_url}" \
+            '{"message":"Capture resolved trace state"}' \
+            'ci-changeset-create-001' > /tmp/changeset-1.json
+          changeset_1_id="$(jq -r '.id' /tmp/changeset-1.json)"
+          test "$(jq -r '.sequence' /tmp/changeset-1.json)" -eq 1
+          test "$(jq -r '.added' /tmp/changeset-1.json)" -eq 3
+          test "$(jq -r '.modified' /tmp/changeset-1.json)" -eq 0
+          request POST 'dev:ci-author:author' "${changesets_url}" \
+            '{"message":"Capture resolved trace state"}' \
+            'ci-changeset-create-001' > /tmp/changeset-1-replay.json
+          test "$(jq -r '.id' /tmp/changeset-1-replay.json)" = "${changeset_1_id}"
+
+          baselines_url="${base_url}/projects/${project_id}/baselines"
+          author_baseline_status="$(curl --silent --output /tmp/author-baseline.json --write-out '%{http_code}' \
+            -X POST -H 'Authorization: Bearer dev:ci-author:author' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            -H 'X-Idempotency-Key: ci-author-baseline-denied' -H 'Content-Type: application/json' \
+            --data '{"name":"Author denied","changeset_id":"'"${changeset_1_id}"'","supersedes_baseline_id":null}' \
+            "${baselines_url}")"
+          test "${author_baseline_status}" = '403'
+          request POST 'dev:ci-reviewer:reviewer' "${baselines_url}" \
+            '{"name":"Trace state 1","changeset_id":"'"${changeset_1_id}"'","supersedes_baseline_id":null}' \
+            'ci-baseline-create-001' > /tmp/baseline-1.json
+          baseline_1_id="$(jq -r '.id' /tmp/baseline-1.json)"
+          test "$(jq -r '.artifact_count' /tmp/baseline-1.json)" -eq 3
+          test "$(jq -r '.relationship_count' /tmp/baseline-1.json)" -eq 1
+          test "$(jq -r '.manifest_hash | length' /tmp/baseline-1.json)" -eq 64
+          test "$(jq -r '.signature | length' /tmp/baseline-1.json)" -eq 64
+
+          target_revision_body='{"expected_revision":1,"title":"Trace target revised","statement":"The target requirement shall retain updated exact trace evidence.","attributes":{"priority":"high","mass":2.1},"folder_id":"'"${folder_id}"'","tag_ids":["'"${tag_id}"'"]}'
+          request PUT 'dev:ci-author:author' "${api_url}/${target_requirement_id}" "${target_revision_body}" \
+            'ci-target-revise-001' > /tmp/target-revised.json
+          second_impact_body='{"expected_revision":3,"title":"CI requirement second impact","statement":"The CI path shall refresh exact endpoint revisions for the signed baseline.","attributes":{"priority":"critical","mass":12.9},"folder_id":"'"${folder_id}"'","tag_ids":["'"${tag_id}"'"]}'
+          request PUT 'dev:ci-author:author' "${api_url}/${requirement_id}" "${second_impact_body}" \
+            'ci-requirement-impact-002' > /tmp/requirement-impact-2.json
+          for attempt in {1..30}; do
+            request GET 'dev:ci-author:author' \
+              "${relationships_url}?artifact_id=${requirement_id}&direction=source" > /tmp/suspect-relationships-2.json
+            if [[ "$(jq -r '.items[0].suspect' /tmp/suspect-relationships-2.json)" = 'true' ]]; then
+              break
+            fi
+            if [[ "${attempt}" -eq 30 ]]; then
+              echo 'Relationship did not become suspect after the second impact' >&2
+              exit 1
+            fi
+            sleep 1
+          done
+          test "$(jq -r '.items[0].source_revision' /tmp/suspect-relationships-2.json)" -eq 4
+          test "$(jq -r '.items[0].target_revision' /tmp/suspect-relationships-2.json)" -eq 2
+          second_relationship_version="$(jq -r '.items[0].version' /tmp/suspect-relationships-2.json)"
+          request POST 'dev:ci-reviewer:reviewer' \
+            "${relationships_url}/${relationship_id}/resolve" \
+            '{"expected_version":'"${second_relationship_version}"',"disposition":"Both exact endpoint revisions reviewed for the superseding baseline."}' \
+            'ci-relationship-resolve-002' > /tmp/resolved-relationship-2.json
+          test "$(jq -r '.suspect' /tmp/resolved-relationship-2.json)" = 'false'
+
+          request POST 'dev:ci-author:author' "${changesets_url}" \
+            '{"message":"Refresh both traced endpoint revisions"}' \
+            'ci-changeset-create-002' > /tmp/changeset-2.json
+          changeset_2_id="$(jq -r '.id' /tmp/changeset-2.json)"
+          test "$(jq -r '.sequence' /tmp/changeset-2.json)" -eq 2
+          test "$(jq -r '.parent_changeset_id' /tmp/changeset-2.json)" = "${changeset_1_id}"
+          test "$(jq -r '.modified' /tmp/changeset-2.json)" -eq 2
+          test "$(jq -r '.unchanged' /tmp/changeset-2.json)" -eq 1
+          request GET 'dev:ci-viewer:viewer' "${changesets_url}/${changeset_2_id}" > /tmp/changeset-2-read.json
+          test "$(jq -r '.entries | map(select(.change_type == "modified")) | length' /tmp/changeset-2-read.json)" -eq 2
+
+          request POST 'dev:ci-reviewer:reviewer' "${baselines_url}" \
+            '{"name":"Trace state 2","changeset_id":"'"${changeset_2_id}"'","supersedes_baseline_id":"'"${baseline_1_id}"'"}' \
+            'ci-baseline-create-002' > /tmp/baseline-2.json
+          baseline_2_id="$(jq -r '.id' /tmp/baseline-2.json)"
+          test "$(jq -r '.sequence' /tmp/baseline-2.json)" -eq 2
+          test "$(jq -r '.supersedes_baseline_id' /tmp/baseline-2.json)" = "${baseline_1_id}"
+          request GET 'dev:ci-viewer:viewer' \
+            "${baselines_url}/compare?from_baseline_id=${baseline_1_id}&to_baseline_id=${baseline_2_id}" \
+            > /tmp/baseline-comparison.json
+          test "$(jq -r '.artifacts_modified | sort | join(",")' /tmp/baseline-comparison.json)" = 'CI-REQ-1,CI-REQ-2'
+          test "$(jq -r '.relationships_changed' /tmp/baseline-comparison.json)" -eq 1
+
+          evidence_url="${baselines_url}/${baseline_2_id}/evidence"
+          request GET 'dev:ci-viewer:viewer' "${evidence_url}" > /tmp/evidence-1.json
+          request GET 'dev:ci-viewer:viewer' "${evidence_url}" > /tmp/evidence-2.json
+          cmp /tmp/evidence-1.json /tmp/evidence-2.json
+          test "$(jq -r '.signature_valid' /tmp/evidence-1.json)" = 'true'
+          test "$(jq -r '.schema_version' /tmp/evidence-1.json)" = 'openrm-evidence-v1'
+          test "$(jq -r '.signing_algorithm' /tmp/evidence-1.json)" = 'HMAC-SHA256'
+          test "$(jq -r '.signing_key_id' /tmp/evidence-1.json)" = 'ci-phase-3'
+          test "$(jq -r '.manifest.artifacts | length' /tmp/evidence-1.json)" -eq 3
+          test "$(jq -r '.manifest.relationships | length' /tmp/evidence-1.json)" -eq 1
+
+          stale_revision_body='{"expected_revision":1,"title":"Imported requirement advanced","statement":"The workspace shall reject a baseline tied to a stale changeset.","attributes":{"priority":"medium","mass":1.1},"folder_id":"'"${folder_id}"'","tag_ids":["'"${tag_id}"'"]}'
+          request PUT 'dev:ci-author:author' "${api_url}/${imported_requirement_id}" "${stale_revision_body}" \
+            'ci-imported-revise-001' > /tmp/imported-revised.json
+          stale_baseline_status="$(curl --silent --output /tmp/stale-baseline.json --write-out '%{http_code}' \
+            -X POST -H 'Authorization: Bearer dev:ci-reviewer:reviewer' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            -H 'X-Idempotency-Key: ci-stale-baseline-denied' -H 'Content-Type: application/json' \
+            --data '{"name":"Stale changeset denied","changeset_id":"'"${changeset_2_id}"'","supersedes_baseline_id":"'"${baseline_2_id}"'"}' \
+            "${baselines_url}")"
+          test "${stale_baseline_status}" = '409'
+
           request GET 'dev:ci-viewer:viewer' "${api_url}" > /tmp/viewer-list.json
           viewer_status="$(curl --silent --output /tmp/viewer-write.json --write-out '%{http_code}' \
             -X POST -H 'Authorization: Bearer dev:ci-viewer:viewer' \
@@ -288,6 +407,16 @@ jobs:
           if psql "${DATABASE_URL}" -c \
             "UPDATE relationship_revisions SET suspect = true WHERE relationship_id = '${relationship_id}'"; then
             echo 'Relationship history accepted an update' >&2
+            exit 1
+          fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE changesets SET message = 'tampered' WHERE id = '${changeset_1_id}'"; then
+            echo 'Changeset history accepted an update' >&2
+            exit 1
+          fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE baselines SET name = 'tampered' WHERE id = '${baseline_1_id}'"; then
+            echo 'Baseline evidence accepted an update' >&2
             exit 1
           fi
           test "$(psql "${DATABASE_URL}" -tAc "SELECT count(*) FROM audit_events WHERE project_id = '${project_id}'")" -ge 10

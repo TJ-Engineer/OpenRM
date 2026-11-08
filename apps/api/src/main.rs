@@ -1,8 +1,8 @@
 use std::process::ExitCode;
 
 use openrm_api::{
-    AppState, BuildInfo, auth::AuthVerifier, config::Config, connect, migrate,
-    policy::PolicyEngine, router,
+    AppState, BuildInfo, auth::AuthVerifier, config::Config, connect, evidence::EvidenceSigner,
+    migrate, policy::PolicyEngine, router,
 };
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -26,12 +26,17 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
         migrate(&db).await?;
     }
     let auth = AuthVerifier::from_config(&config).await?;
+    let evidence_signer = EvidenceSigner::new(
+        config.evidence_signing_key.as_bytes(),
+        config.evidence_signing_key_id.clone(),
+    );
     let outbox_worker = tokio::spawn(openrm_api::outbox::run(db.clone()));
     let app = router(AppState {
         db,
         auth,
         policy: PolicyEngine,
         build: BuildInfo::current(),
+        evidence_signer,
     });
     let listener = tokio::net::TcpListener::bind(config.bind_address).await?;
     tracing::info!(address = %config.bind_address, environment = %config.app_env, "OpenRM API listening");

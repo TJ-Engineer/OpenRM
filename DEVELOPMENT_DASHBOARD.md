@@ -1,9 +1,9 @@
 # OpenRM development dashboard
 
-**Last verified:** 8 November 2026, 09:49 CST<br>
+**Last verified:** 8 November 2026, 10:12 CST<br>
 **Foundation evidence commit:** `fc6687f`<br>
 **Phase 2 evidence commit:** `f498031`<br>
-**Overall status:** 🟡 Phase 3 active; typed relationships and suspect-impact resolution pass local validation
+**Overall status:** 🟡 Phase 3 implementation complete locally; protected hosted evidence pending
 
 This file is the repository-level status dashboard. It summarizes delivery evidence and immediate priorities; [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) remains the source for scope, architecture, phase definitions, and exit gates.
 
@@ -19,7 +19,7 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | `main` branch protection | 🟢 Enforced | Requires `web`, `api`, and `database-path`; applies to administrators; disallows force-pushes and deletion. |
 | Phase 2 — Requirements vertical slice | 🟢 Complete | The API-backed authoring workflow, organization controls, isolated roles, controlled history, import/export, browser E2E, and WCAG A/AA evidence passed the exit gate. |
 | Requirements runtime path | 🟢 Protected CI passed | The complete two-project authoring and isolation path passed against PostgreSQL 17 in [OpenRM CI run 42492278928](https://github.com/TJ-Engineer/OpenRM/actions/runs/42492278928). |
-| Phase 3 — Traceability and controlled change | 🟡 Active | The typed-relationship and suspect-impact increments pass locally; hosted CI and the remaining trace-query, change, baseline, and export workflows are pending. |
+| Phase 3 — Traceability and controlled change | 🟡 Hosted evidence pending | The complete trace, impact, changeset, baseline, comparison, and signed-export slice passes locally. |
 | Production API and database | ⚪ Not deployed | Deployment environments, production OIDC, observability, and recovery controls remain future work. |
 
 ## Phase progress
@@ -29,7 +29,7 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | 🟢 | 0. Prototype and preview | Complete | Product surfaces, guided preview, and static hosting path are available. |
 | 🟢 | 1. Foundation | Complete | Web, Rust API, PostgreSQL migrations, OpenAPI generation, OIDC/policy harness, ADRs, bootstrap, hosted CI, and branch protection are verified. |
 | 🟢 | 2. Requirements vertical slice | Complete | Live authoring, project roles, organization, validation, immutable history, comparison, import/export, audit, E2E, and accessibility evidence are verified. |
-| 🟡 | 3. Traceability and controlled change | Active | Directed relationships and asynchronous suspect propagation with reviewer disposition pass locally; hosted evidence, live trace queries, changesets, baselines, and export remain open. |
+| 🟡 | 3. Traceability and controlled change | Local gate passed | Directed relationships, trace queries, asynchronous impact, attributable changesets, immutable baselines, comparison, and signed export pass locally; protected CI remains. |
 | ⚪ | 4. Reviews and verification | Planned | Review packages, approvals, verification runs, coverage, and gate readiness. |
 | ⚪ | 5. Integration and beta hardening | Planned | Jira connector, observability, recovery, security hardening, performance, and pilot operations. |
 
@@ -42,7 +42,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 0. Prototype and preview | Historical usage unavailable | `N/R` | Before tracking baseline | `N/R` | `N/R` |
 | 1. Foundation | Complete; partial usage history | `N/R` | 8 Nov 2026 | `N/R` historical + 0.1 h tracked | `N/R` |
 | 2. Requirements vertical slice | Complete; partial usage telemetry | 8 Nov 2026 | 8 Nov 2026 | 1.1 h tracked | `N/R` |
-| 3. Traceability and controlled change | Active; local evidence | 8 Nov 2026 | — | 0.2 h | `N/R` |
+| 3. Traceability and controlled change | Local gate passed; hosted evidence pending | 8 Nov 2026 | — | 0.6 h | `N/R` |
 | 4. Reviews and verification | Not started | — | — | 0 h | 0 |
 | 5. Integration and beta hardening | Not started | — | — | 0 h | 0 |
 
@@ -56,6 +56,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 8 November 2026, 08:59 CST | 2 | 0.8 h | `N/R` | Completed API-backed UI, project controls, comparison/import/export, browser and accessibility tests, full PostgreSQL exit matrix, and protected CI. |
 | 8 November 2026, 09:43 CST | 3 | 0.1 h | `N/R` | Added directed typed relationship schema, exact revision evidence, API contract and generated client, policy/idempotency/audit controls, CI assertions, and isolated PostgreSQL runtime validation. |
 | 8 November 2026, 09:47 CST | 3 | 0.1 h | `N/R` | Added transactional-outbox suspect propagation, reviewer-only attributable resolution, optimistic concurrency, replay, immutable version history, and isolated PostgreSQL runtime validation. |
+| 8 November 2026, 10:12 CST | 3 | 0.4 h | `N/R` | Completed live trace queries and UI, attributable changesets, immutable signed baselines, comparison, deterministic export, Chromium/WCAG coverage, and the isolated PostgreSQL exit matrix. |
 
 ### Usage accounting rules
 
@@ -94,11 +95,11 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 
 ## Current priorities
 
-1. Connect the traceability workspace to live relationship, matrix, coverage, and gap queries.
-2. Add changesets with attributable diffs and commit messages.
-3. Deliver immutable baselines and deterministic evidence export.
+1. Run the expanded `web`, `api`, and `database-path` jobs on the protected hosted path.
+2. Record the hosted evidence commit and CI run, then close Phase 3.
+3. Begin Phase 4 review-package and verification decomposition only after the Phase 3 closure gate.
 
-## Phase 3 active evidence
+## Phase 3 local completion evidence
 
 | Capability | State | Evidence |
 | --- | --- | --- |
@@ -109,11 +110,17 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 | Immutable relationship history | 🟢 Locally verified | PostgreSQL rejected an attempted update, while the history API returned attributable author, system-impact, and reviewer versions in order. |
 | Suspect propagation | 🟢 Locally verified | A committed source revision produced one processed outbox message and advanced the downstream relationship to a suspect version bound to source revision 2. |
 | Attributable resolution | 🟢 Locally verified | Authors were denied; a reviewer disposition advanced the relationship to version 3, replayed safely, rejected stale concurrency, and emitted resolution audit evidence. |
-| Protected hosted evidence | ⚪ Pending | The expanded `database-path` job is implemented but has not yet run on hosted CI. |
+| Trace graph and matrix | 🟢 Locally verified | Live summary, matrix, and graph queries returned exact directed edges, 66.67% coverage, and explicit orphan/gap state. |
+| Attributable changesets | 🟢 Locally verified | Parent-linked immutable snapshots classified added, modified, and unchanged artifact revisions and replayed safely. |
+| Immutable baselines | 🟢 Locally verified | Reviewer-only baselines froze exact artifact and relationship revisions, rejected stale changesets, and compared superseding states. |
+| Deterministic signed export | 🟢 Locally verified | Repeated evidence downloads were byte-for-byte identical, HMAC-SHA256 verification passed, and manifest rows retained exact revision identifiers. |
+| Live browser workflows | 🟢 Locally verified | Five Chromium tests cover requirements, trace impact resolution, changesets, baselines, and WCAG 2 A/AA automation. |
+| Append-only controlled history | 🟢 Locally verified | PostgreSQL rejected updates to audit events, artifact revisions, relationship revisions, changesets, and baselines. |
+| Protected hosted evidence | ⚪ Pending | The expanded `web`, `api`, and `database-path` jobs are implemented but have not yet run on hosted CI for this evidence commit. |
 
 ## Known delivery gaps
 
-- Trace coverage, changeset, baseline, review, and verification endpoints are not implemented.
+- Review, approval, and verification endpoints are not implemented.
 - The API, PostgreSQL database, and production OIDC provider are not deployed.
 - Release automation, full observability, backup/restore validation, and live connectors remain planned.
 

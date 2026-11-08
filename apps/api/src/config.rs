@@ -8,7 +8,7 @@ pub enum AuthMode {
     Oidc,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Config {
     pub app_env: String,
     pub bind_address: SocketAddr,
@@ -17,6 +17,8 @@ pub struct Config {
     pub auth_mode: AuthMode,
     pub oidc_issuer: Option<String>,
     pub oidc_audience: Option<String>,
+    pub evidence_signing_key: String,
+    pub evidence_signing_key_id: String,
 }
 
 #[derive(Debug, Error)]
@@ -67,6 +69,17 @@ impl Config {
                 Some(required("OIDC_AUDIENCE")?),
             ),
         };
+        let evidence_signing_key = match env::var("EVIDENCE_SIGNING_KEY") {
+            Ok(value) if !value.trim().is_empty() => value,
+            _ if app_env.eq_ignore_ascii_case("production") => {
+                return Err(ConfigError::Missing("EVIDENCE_SIGNING_KEY"));
+            }
+            _ => "openrm-development-evidence-key".to_owned(),
+        };
+        let evidence_signing_key_id = env::var("EVIDENCE_SIGNING_KEY_ID")
+            .ok()
+            .filter(|value| !value.trim().is_empty())
+            .unwrap_or_else(|| "development".to_owned());
 
         Ok(Self {
             app_env,
@@ -76,6 +89,8 @@ impl Config {
             auth_mode,
             oidc_issuer,
             oidc_audience,
+            evidence_signing_key,
+            evidence_signing_key_id,
         })
     }
 }

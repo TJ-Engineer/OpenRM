@@ -14,6 +14,8 @@ tags:
   - name: Projects
   - name: Requirements
   - name: Traceability
+  - name: Controlled Change
+  - name: Baselines
 paths:
   /health:
     get:
@@ -679,6 +681,301 @@ paths:
           $ref: "#/components/responses/NotFound"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/trace/summary:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: getTraceSummary
+      tags: [Traceability]
+      summary: Calculate trace coverage, gaps, relationships, and suspect impact
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current project trace coverage summary.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TraceSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/trace/matrix:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: getTraceMatrix
+      tags: [Traceability]
+      summary: List artifact trace counts and gap state
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current project trace matrix.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TraceMatrixResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/trace/graph:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: getTraceGraph
+      tags: [Traceability]
+      summary: Read graph nodes, exact directed edges, and coverage
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current project trace graph.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TraceGraph"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/changesets:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: listChangesets
+      tags: [Controlled Change]
+      summary: List immutable attributable project snapshots
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Changesets newest first.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangesetListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    post:
+      operationId: createChangeset
+      tags: [Controlled Change]
+      summary: Snapshot current artifact revisions with parent-relative diffs
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateChangesetRequest"
+      responses:
+        "200":
+          description: Idempotent replay of a successful changeset command.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Changeset"
+        "201":
+          description: Changeset created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Changeset"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/changesets/{changeset_id}:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/ChangesetId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: getChangeset
+      tags: [Controlled Change]
+      summary: Read an immutable changeset and its artifact diff entries
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Attributable changeset snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Changeset"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/baselines:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: listBaselines
+      tags: [Baselines]
+      summary: List immutable signed project baselines
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Baselines newest first.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BaselineListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    post:
+      operationId: createBaseline
+      tags: [Baselines]
+      summary: Freeze and sign an exact project evidence manifest
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBaselineRequest"
+      responses:
+        "200":
+          description: Idempotent replay of a successful baseline command.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Baseline"
+        "201":
+          description: Signed baseline created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Baseline"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/baselines/compare:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: compareBaselines
+      tags: [Baselines]
+      summary: Compare exact artifact and relationship revisions between baselines
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: from_baseline_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: to_baseline_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Deterministic baseline comparison.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BaselineComparison"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/baselines/{baseline_id}/evidence:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/BaselineId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: exportBaselineEvidence
+      tags: [Baselines]
+      summary: Export a deterministic signed evidence envelope
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Signed baseline evidence with server-side verification state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceExport"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
 components:
   securitySchemes:
     bearerAuth:
@@ -711,6 +1008,20 @@ components:
         format: uuid
     RelationshipId:
       name: relationship_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ChangesetId:
+      name: changeset_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    BaselineId:
+      name: baseline_id
       in: path
       required: true
       schema:
@@ -956,8 +1267,6 @@ components:
         - created_by
         - created_at
         - updated_at
-        - version_created_by
-        - version_created_at
       properties:
         id:
           type: string
@@ -1240,6 +1549,8 @@ components:
         - created_by
         - created_at
         - updated_at
+        - version_created_by
+        - version_created_at
       properties:
         id:
           type: string
@@ -1351,6 +1662,302 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RelationshipRevision"
+    TraceMatrixRow:
+      type: object
+      additionalProperties: false
+      required: [artifact_id, key, title, revision, upstream_count, downstream_count, suspect_count, gap]
+      properties:
+        artifact_id:
+          type: string
+          format: uuid
+        key:
+          type: string
+        title:
+          type: string
+        revision:
+          type: integer
+          minimum: 1
+        upstream_count:
+          type: integer
+          minimum: 0
+        downstream_count:
+          type: integer
+          minimum: 0
+        suspect_count:
+          type: integer
+          minimum: 0
+        gap:
+          type: boolean
+    TraceMatrixResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TraceMatrixRow"
+    TraceEdge:
+      type: object
+      additionalProperties: false
+      required: [relationship_id, relationship_type_key, source_artifact_id, target_artifact_id, version, suspect]
+      properties:
+        relationship_id:
+          type: string
+          format: uuid
+        relationship_type_key:
+          type: string
+        source_artifact_id:
+          type: string
+          format: uuid
+        target_artifact_id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          minimum: 1
+        suspect:
+          type: boolean
+    TraceSummary:
+      type: object
+      additionalProperties: false
+      required: [total_artifacts, covered_artifacts, orphan_artifacts, relationships, suspect_relationships, coverage_percent]
+      properties:
+        total_artifacts:
+          type: integer
+          minimum: 0
+        covered_artifacts:
+          type: integer
+          minimum: 0
+        orphan_artifacts:
+          type: integer
+          minimum: 0
+        relationships:
+          type: integer
+          minimum: 0
+        suspect_relationships:
+          type: integer
+          minimum: 0
+        coverage_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+    TraceGraph:
+      type: object
+      additionalProperties: false
+      required: [nodes, edges, summary]
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/TraceMatrixRow"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/TraceEdge"
+        summary:
+          $ref: "#/components/schemas/TraceSummary"
+    CreateChangesetRequest:
+      type: object
+      additionalProperties: false
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+    ChangesetEntry:
+      type: object
+      additionalProperties: false
+      required: [artifact_id, artifact_revision_id, artifact_key, revision_number, change_type]
+      properties:
+        artifact_id:
+          type: string
+          format: uuid
+        artifact_revision_id:
+          type: string
+          format: uuid
+        artifact_key:
+          type: string
+        revision_number:
+          type: integer
+          minimum: 1
+        change_type:
+          type: string
+          enum: [added, modified, unchanged]
+    Changeset:
+      type: object
+      additionalProperties: false
+      required: [id, project_id, sequence, message, parent_changeset_id, manifest_hash, added, modified, unchanged, created_by, created_at, entries]
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        sequence:
+          type: integer
+          minimum: 1
+        message:
+          type: string
+        parent_changeset_id:
+          type: [string, "null"]
+          format: uuid
+        manifest_hash:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        added:
+          type: integer
+          minimum: 0
+        modified:
+          type: integer
+          minimum: 0
+        unchanged:
+          type: integer
+          minimum: 0
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChangesetEntry"
+    ChangesetListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Changeset"
+    CreateBaselineRequest:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        changeset_id:
+          type: [string, "null"]
+          format: uuid
+        supersedes_baseline_id:
+          type: [string, "null"]
+          format: uuid
+    Baseline:
+      type: object
+      additionalProperties: false
+      required: [id, project_id, sequence, name, changeset_id, supersedes_baseline_id, artifact_count, relationship_count, manifest_hash, signature, signing_algorithm, signing_key_id, created_by, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        sequence:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+        changeset_id:
+          type: [string, "null"]
+          format: uuid
+        supersedes_baseline_id:
+          type: [string, "null"]
+          format: uuid
+        artifact_count:
+          type: integer
+          minimum: 0
+        relationship_count:
+          type: integer
+          minimum: 0
+        manifest_hash:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        signature:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        signing_algorithm:
+          type: string
+          const: HMAC-SHA256
+        signing_key_id:
+          type: string
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    BaselineListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Baseline"
+    BaselineComparison:
+      type: object
+      additionalProperties: false
+      required: [from_baseline_id, to_baseline_id, artifacts_added, artifacts_modified, artifacts_removed, relationships_changed]
+      properties:
+        from_baseline_id:
+          type: string
+          format: uuid
+        to_baseline_id:
+          type: string
+          format: uuid
+        artifacts_added:
+          type: array
+          items:
+            type: string
+        artifacts_modified:
+          type: array
+          items:
+            type: string
+        artifacts_removed:
+          type: array
+          items:
+            type: string
+        relationships_changed:
+          type: integer
+          minimum: 0
+    EvidenceExport:
+      type: object
+      additionalProperties: false
+      required: [baseline_id, project_id, schema_version, manifest, manifest_hash, signature, signing_algorithm, signing_key_id, signature_valid]
+      properties:
+        baseline_id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        schema_version:
+          type: string
+          const: openrm-evidence-v1
+        manifest:
+          type: object
+          additionalProperties: true
+        manifest_hash:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        signature:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        signing_algorithm:
+          type: string
+          const: HMAC-SHA256
+        signing_key_id:
+          type: string
+        signature_valid:
+          type: boolean
     ErrorEnvelope:
       type: object
       additionalProperties: false

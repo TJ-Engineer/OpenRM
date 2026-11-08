@@ -352,6 +352,186 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/trace/summary": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** Calculate trace coverage, gaps, relationships, and suspect impact */
+        get: operations["getTraceSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/trace/matrix": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** List artifact trace counts and gap state */
+        get: operations["getTraceMatrix"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/trace/graph": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** Read graph nodes, exact directed edges, and coverage */
+        get: operations["getTraceGraph"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/changesets": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** List immutable attributable project snapshots */
+        get: operations["listChangesets"];
+        put?: never;
+        /** Snapshot current artifact revisions with parent-relative diffs */
+        post: operations["createChangeset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/changesets/{changeset_id}": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                changeset_id: components["parameters"]["ChangesetId"];
+            };
+            cookie?: never;
+        };
+        /** Read an immutable changeset and its artifact diff entries */
+        get: operations["getChangeset"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/baselines": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** List immutable signed project baselines */
+        get: operations["listBaselines"];
+        put?: never;
+        /** Freeze and sign an exact project evidence manifest */
+        post: operations["createBaseline"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/baselines/compare": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** Compare exact artifact and relationship revisions between baselines */
+        get: operations["compareBaselines"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/baselines/{baseline_id}/evidence": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                baseline_id: components["parameters"]["BaselineId"];
+            };
+            cookie?: never;
+        };
+        /** Export a deterministic signed evidence envelope */
+        get: operations["exportBaselineEvidence"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -581,9 +761,9 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             updated_at: string;
-            version_created_by?: string;
+            version_created_by: string;
             /** Format: date-time */
-            version_created_at?: string;
+            version_created_at: string;
         };
         RelationshipListResponse: {
             items: components["schemas"]["Relationship"][];
@@ -603,6 +783,137 @@ export interface components {
         };
         RelationshipRevisionListResponse: {
             items: components["schemas"]["RelationshipRevision"][];
+        };
+        TraceMatrixRow: {
+            /** Format: uuid */
+            artifact_id: string;
+            key: string;
+            title: string;
+            revision: number;
+            upstream_count: number;
+            downstream_count: number;
+            suspect_count: number;
+            gap: boolean;
+        };
+        TraceMatrixResponse: {
+            items: components["schemas"]["TraceMatrixRow"][];
+        };
+        TraceEdge: {
+            /** Format: uuid */
+            relationship_id: string;
+            relationship_type_key: string;
+            /** Format: uuid */
+            source_artifact_id: string;
+            /** Format: uuid */
+            target_artifact_id: string;
+            version: number;
+            suspect: boolean;
+        };
+        TraceSummary: {
+            total_artifacts: number;
+            covered_artifacts: number;
+            orphan_artifacts: number;
+            relationships: number;
+            suspect_relationships: number;
+            coverage_percent: number;
+        };
+        TraceGraph: {
+            nodes: components["schemas"]["TraceMatrixRow"][];
+            edges: components["schemas"]["TraceEdge"][];
+            summary: components["schemas"]["TraceSummary"];
+        };
+        CreateChangesetRequest: {
+            message: string;
+        };
+        ChangesetEntry: {
+            /** Format: uuid */
+            artifact_id: string;
+            /** Format: uuid */
+            artifact_revision_id: string;
+            artifact_key: string;
+            revision_number: number;
+            /** @enum {string} */
+            change_type: "added" | "modified" | "unchanged";
+        };
+        Changeset: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            project_id: string;
+            sequence: number;
+            message: string;
+            /** Format: uuid */
+            parent_changeset_id: string | null;
+            manifest_hash: string;
+            added: number;
+            modified: number;
+            unchanged: number;
+            created_by: string;
+            /** Format: date-time */
+            created_at: string;
+            entries: components["schemas"]["ChangesetEntry"][];
+        };
+        ChangesetListResponse: {
+            items: components["schemas"]["Changeset"][];
+        };
+        CreateBaselineRequest: {
+            name: string;
+            /** Format: uuid */
+            changeset_id?: string | null;
+            /** Format: uuid */
+            supersedes_baseline_id?: string | null;
+        };
+        Baseline: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            project_id: string;
+            sequence: number;
+            name: string;
+            /** Format: uuid */
+            changeset_id: string | null;
+            /** Format: uuid */
+            supersedes_baseline_id: string | null;
+            artifact_count: number;
+            relationship_count: number;
+            manifest_hash: string;
+            signature: string;
+            /** @constant */
+            signing_algorithm: "HMAC-SHA256";
+            signing_key_id: string;
+            created_by: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        BaselineListResponse: {
+            items: components["schemas"]["Baseline"][];
+        };
+        BaselineComparison: {
+            /** Format: uuid */
+            from_baseline_id: string;
+            /** Format: uuid */
+            to_baseline_id: string;
+            artifacts_added: string[];
+            artifacts_modified: string[];
+            artifacts_removed: string[];
+            relationships_changed: number;
+        };
+        EvidenceExport: {
+            /** Format: uuid */
+            baseline_id: string;
+            /** Format: uuid */
+            project_id: string;
+            /** @constant */
+            schema_version: "openrm-evidence-v1";
+            manifest: {
+                [key: string]: unknown;
+            };
+            manifest_hash: string;
+            signature: string;
+            /** @constant */
+            signing_algorithm: "HMAC-SHA256";
+            signing_key_id: string;
+            signature_valid: boolean;
         };
         ErrorEnvelope: {
             error: components["schemas"]["ErrorBody"];
@@ -677,6 +988,8 @@ export interface components {
         ProjectId: string;
         RequirementId: string;
         RelationshipId: string;
+        ChangesetId: string;
+        BaselineId: string;
         WorkspaceResource: "folders" | "tags" | "attribute-definitions" | "saved-views";
         /** @description Stable client command identifier scoped to tenant, actor, and operation. */
         IdempotencyHeader: string;
@@ -1401,6 +1714,336 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RelationshipRevisionListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getTraceSummary: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current project trace coverage summary. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceSummary"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getTraceMatrix: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current project trace matrix. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceMatrixResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getTraceGraph: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current project trace graph. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceGraph"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listChangesets: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Changesets newest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangesetListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    createChangeset: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateChangesetRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of a successful changeset command. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Changeset"];
+                };
+            };
+            /** @description Changeset created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Changeset"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getChangeset: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                changeset_id: components["parameters"]["ChangesetId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Attributable changeset snapshot. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Changeset"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listBaselines: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Baselines newest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BaselineListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    createBaseline: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBaselineRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of a successful baseline command. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Baseline"];
+                };
+            };
+            /** @description Signed baseline created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Baseline"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    compareBaselines: {
+        parameters: {
+            query: {
+                from_baseline_id: string;
+                to_baseline_id: string;
+            };
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deterministic baseline comparison. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BaselineComparison"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    exportBaselineEvidence: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                baseline_id: components["parameters"]["BaselineId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Signed baseline evidence with server-side verification state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvidenceExport"];
                 };
             };
             401: components["responses"]["Unauthorized"];
