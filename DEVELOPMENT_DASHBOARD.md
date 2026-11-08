@@ -1,8 +1,9 @@
 # OpenRM development dashboard
 
-**Last verified:** 8 November 2026, 08:13 CST<br>
+**Last verified:** 8 November 2026, 08:59 CST<br>
 **Foundation evidence commit:** `fc6687f`<br>
-**Overall status:** 🟡 Phase 2 active; first requirements API/data increment verified in protected CI
+**Phase 2 evidence commit:** `f498031`<br>
+**Overall status:** 🟢 Phase 2 complete; Phase 3 traceability and controlled change is ready to start
 
 This file is the repository-level status dashboard. It summarizes delivery evidence and immediate priorities; [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) remains the source for scope, architecture, phase definitions, and exit gates.
 
@@ -14,10 +15,10 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | --- | --- | --- |
 | Phase 0 — Prototype and delivery preview | 🟢 Complete | Interactive React preview and restricted static AWS delivery path are implemented. |
 | Phase 1 — Foundation | 🟢 Complete | All foundation deliverables, local checks, hosted CI jobs, and protected-branch controls are complete. |
-| Hosted CI | 🟢 Passed | `web`, `api`, and `database-path` passed in [Foundation CI run 42486750287](https://github.com/TJ-Engineer/OpenRM/actions/runs/42486750287). |
+| Hosted CI | 🟢 Passed | `web`, `api`, and `database-path` passed the complete Phase 2 matrix in [OpenRM CI run 42492278928](https://github.com/TJ-Engineer/OpenRM/actions/runs/42492278928). |
 | `main` branch protection | 🟢 Enforced | Requires `web`, `api`, and `database-path`; applies to administrators; disallows force-pushes and deletion. |
-| Phase 2 — Requirements vertical slice | 🟡 Active | First API/data increment is protected-CI verified; authoring UI and remaining product capabilities are next. |
-| Requirements runtime path | 🟢 Protected CI passed | Create/replay/revise/search/history/audit behavior passed against PostgreSQL 17 in [Foundation CI run 42488729744](https://github.com/TJ-Engineer/OpenRM/actions/runs/42488729744). |
+| Phase 2 — Requirements vertical slice | 🟢 Complete | The API-backed authoring workflow, organization controls, isolated roles, controlled history, import/export, browser E2E, and WCAG A/AA evidence passed the exit gate. |
+| Requirements runtime path | 🟢 Protected CI passed | The complete two-project authoring and isolation path passed against PostgreSQL 17 in [OpenRM CI run 42492278928](https://github.com/TJ-Engineer/OpenRM/actions/runs/42492278928). |
 | Production API and database | ⚪ Not deployed | Deployment environments, production OIDC, observability, and recovery controls remain future work. |
 
 ## Phase progress
@@ -26,8 +27,8 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | --- | --- | --- | --- |
 | 🟢 | 0. Prototype and preview | Complete | Product surfaces, guided preview, and static hosting path are available. |
 | 🟢 | 1. Foundation | Complete | Web, Rust API, PostgreSQL migrations, OpenAPI generation, OIDC/policy harness, ADRs, bootstrap, hosted CI, and branch protection are verified. |
-| 🟡 | 2. Requirements vertical slice | Active | Project discovery, durable requirements, revision history, concurrency, idempotent creation, search, and audit are implemented; UI and remaining capabilities are pending. |
-| ⚪ | 3. Traceability and controlled change | Planned | Typed relationships, impact analysis, changesets, baselines, and deterministic evidence export. |
+| 🟢 | 2. Requirements vertical slice | Complete | Live authoring, project roles, organization, validation, immutable history, comparison, import/export, audit, E2E, and accessibility evidence are verified. |
+| ⚪ | 3. Traceability and controlled change | Ready | Typed relationships, impact analysis, changesets, baselines, and deterministic evidence export are the next gate. |
 | ⚪ | 4. Reviews and verification | Planned | Review packages, approvals, verification runs, coverage, and gate readiness. |
 | ⚪ | 5. Integration and beta hardening | Planned | Jira connector, observability, recovery, security hardening, performance, and pilot operations. |
 
@@ -39,7 +40,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | --- | --- | --- | --- | ---: | ---: |
 | 0. Prototype and preview | Historical usage unavailable | `N/R` | Before tracking baseline | `N/R` | `N/R` |
 | 1. Foundation | Complete; partial usage history | `N/R` | 8 Nov 2026 | `N/R` historical + 0.1 h tracked | `N/R` |
-| 2. Requirements vertical slice | Active; partial usage telemetry | 8 Nov 2026 | — | 0.3 h tracked | `N/R` |
+| 2. Requirements vertical slice | Complete; partial usage telemetry | 8 Nov 2026 | 8 Nov 2026 | 1.1 h tracked | `N/R` |
 | 3. Traceability and controlled change | Not started | — | — | 0 h | 0 |
 | 4. Reviews and verification | Not started | — | — | 0 h | 0 |
 | 5. Integration and beta hardening | Not started | — | — | 0 h | 0 |
@@ -51,6 +52,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 8 November 2026, 07:56 CST | 0–1 | `N/R` | `N/R` | Tracking baseline created; earlier session telemetry is unavailable. |
 | 8 November 2026, 08:00 CST | 1 | 0.1 h | `N/R` | Branch protection, closure status updates, and local validation. Token telemetry is unavailable. |
 | 8 November 2026, 08:13 CST | 2 | 0.3 h | `N/R` | First requirements API/data increment, contract, migration, local PostgreSQL runtime validation, and protected CI. |
+| 8 November 2026, 08:59 CST | 2 | 0.8 h | `N/R` | Completed API-backed UI, project controls, comparison/import/export, browser and accessibility tests, full PostgreSQL exit matrix, and protected CI. |
 
 ### Usage accounting rules
 
@@ -73,29 +75,30 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 
 Local foundation evidence passed on 7 November 2026: clean install, generated types, lint, typecheck, three web tests, production build, eight Rust tests, clippy, two database migrations, authenticated runtime requests, and dependency audits with no known vulnerabilities.
 
-## Phase 2 increment evidence
+## Phase 2 completion evidence
 
 | Capability | State | Evidence |
 | --- | --- | --- |
-| Project discovery | 🟢 Implemented | Tenant-scoped project list endpoint and typed contract. |
-| Requirement persistence | 🟢 Implemented | Materialized artifacts with immutable revision rows and composite tenant foreign keys. |
-| Authoring commands | 🟢 CI verified | Create and revise paths validated against PostgreSQL 17. |
-| Concurrency and replay | 🟢 CI verified | Stale revision rejected with `409`; repeated create key returned the original response. |
-| Search and pagination | 🟢 CI verified | PostgreSQL full-text query plus bounded limit/offset response. |
-| Audit evidence | 🟢 CI verified | Create and revise committed two tenant/project-scoped audit events transactionally. |
-| Web authoring workflow | ⚪ Ready | Generated TypeScript contract and command headers exist; screen integration remains. |
+| Project creation and isolation | 🟢 CI verified | Two projects were created; scoped authors saw only their membership project and cross-project access returned `403`. |
+| Project roles | 🟢 CI verified | Administrator, author, reviewer, and viewer policies are distinct; viewer writes are denied. |
+| Requirement persistence | 🟢 CI verified | Materialized current artifacts and append-only revision rows retain folder, tag, typed attribute, actor, and timestamp evidence. |
+| Authoring workflow | 🟢 Browser verified | The live UI creates, searches, selects, revises, and compares controlled requirements through the API. |
+| Organization controls | 🟢 CI verified | Folders, tags, typed custom attributes, saved views, filters, and pagination are available and project scoped. |
+| Concurrency and replay | 🟢 CI verified | Stale revisions return `409`; create and revise commands replay their original responses. |
+| Comparison and interchange | 🟢 CI verified | Revision comparison plus bounded JSON import and full current-state export passed against PostgreSQL 17. |
+| Audit and revision immutability | 🟢 CI verified | Controlled mutations produce scoped audit events; database triggers reject updates or deletes to audit and revision history. |
+| Accessibility and E2E | 🟢 CI verified | Primary authoring workflow and automated WCAG 2 A/AA checks pass in Chromium. |
 
 ## Current priorities
 
-1. Connect the requirements authoring screen to the generated API client.
-2. Expand policy coverage for project roles and cross-project isolation.
-3. Add folders, tags, typed attributes, saved views, comparison, and import/export in thin increments.
+1. Define typed relationship rules and persistence for the first traceability increment.
+2. Add impact and suspect-link propagation with attributable resolution.
+3. Deliver changesets, immutable baselines, and deterministic evidence export.
 
 ## Known delivery gaps
 
-- Production artifact, relationship, baseline, review, and verification endpoints are not implemented.
+- Production relationship, baseline, review, and verification endpoints are not implemented.
 - The API, PostgreSQL database, and production OIDC provider are not deployed.
-- Browser end-to-end and accessibility coverage for controlled workflows are not in place.
 - Release automation, full observability, backup/restore validation, and live connectors remain planned.
 
 ## Update policy

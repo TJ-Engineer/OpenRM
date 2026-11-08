@@ -1,7 +1,7 @@
 # OpenRM implementation plan
 
 **Planning baseline:** 7 November 2026  
-**Current stage:** Phase 2 requirements vertical slice in progress
+**Current stage:** Phase 2 requirements vertical slice complete; Phase 3 ready
 **Primary outcome:** Deliver a self-hostable configuration and requirements management platform with controlled change, end-to-end traceability, review evidence, and verification records.
 
 ## 1. Current state
@@ -21,17 +21,18 @@ What exists now:
 - PostgreSQL migrations, deterministic development seed, Docker Compose, and a one-command bootstrap.
 - GitHub Actions workflow for web, Rust, dependency audits, migrations, and an authenticated database-backed request.
 - Protected `main` branch requiring the `web`, `api`, and `database-path` GitHub Actions checks.
-- First requirements increment with tenant-scoped project discovery, materialized artifacts, immutable revisions, idempotent creation, optimistic concurrency, search, and audit events.
+- Completed requirements workspace with isolated projects, scoped roles, folders, tags, typed attributes, saved views, controlled authoring, immutable revisions, comparison, import/export, and audit evidence.
+- Browser end-to-end coverage for the primary authoring workflow plus automated WCAG 2 A/AA checks.
 
 What does not exist yet:
 
 - Deployed API/database environments and a connected production OIDC provider.
 - Production artifact, relationship, baseline, review, and verification endpoints.
-- Accessibility and browser end-to-end coverage for controlled product workflows.
+- Browser coverage for later traceability, baseline, review, and verification workflows.
 - Release automation, full observability, or recovery validation.
 - Live Jira or other connector implementations.
 
-The first engineering gate must therefore prove the platform foundation rather than add more prototype surface area.
+The next engineering gate must prove traceability and controlled change from upstream impact through reproducible baseline evidence.
 
 ## 2. Delivery principles
 
@@ -113,9 +114,9 @@ Local evidence:
 
 **Outcome:** A team can create, revise, organize, search, and inspect requirements with durable history.
 
-**Status:** In progress from 8 November 2026. The first API/data increment is implemented and verified in protected CI; the authoring UI and remaining Phase 2 capabilities are next.
+**Status:** Complete on 8 November 2026. The live authoring workflow, project controls, persistence, policy boundaries, controlled history, interchange, accessibility, and exit matrix passed protected CI.
 
-Implemented increment:
+Implemented capabilities:
 
 - [x] Tenant-scoped project discovery and requirement list/read operations.
 - [x] Materialized current artifacts with immutable revision history.
@@ -124,26 +125,32 @@ Implemented increment:
 - [x] Transactional create/revise audit evidence.
 - [x] OpenAPI contract and generated TypeScript types for the new endpoints.
 - [x] Database-path CI coverage for create, replay, revise, history, search, and audit evidence.
-
-Next increment:
-
-- [ ] Connect the requirements authoring UI to the typed API.
-- [ ] Add project-scoped roles, folders, tags, typed custom attributes, and saved views.
-- [ ] Add comparison, import/export, accessibility, and browser end-to-end evidence.
+- [x] API-backed requirements workspace with create, revise, folder, tag, filter, saved-view, and pagination interactions.
+- [x] Project-scoped administrator, author, reviewer, and viewer roles with cross-project isolation.
+- [x] Typed custom-attribute validation and project-scoped folders, tags, and saved views.
+- [x] Revision comparison plus bounded JSON import and current-state export.
+- [x] Chromium end-to-end coverage and automated WCAG 2 A/AA validation.
+- [x] Database-enforced append-only audit and revision evidence.
 
 Deliverables:
 
-- [ ] Projects, artifact types, artifacts, folders, tags, and custom attributes.
-- [ ] Requirement creation, editing, validation, revision history, and comparison.
-- [ ] Optimistic concurrency and idempotent command handling.
-- [ ] Project roles with read, author, reviewer, and administrator policies.
-- [ ] Search, filters, saved views, pagination, import, and export.
-- [ ] Immutable audit events for every controlled mutation.
-- [ ] Accessibility and end-to-end coverage for the primary authoring path.
+- [x] Projects, artifact types, artifacts, folders, tags, and custom attributes.
+- [x] Requirement creation, editing, validation, revision history, and comparison.
+- [x] Optimistic concurrency and idempotent command handling.
+- [x] Project roles with read, author, reviewer, and administrator policies.
+- [x] Search, filters, saved views, pagination, import, and export.
+- [x] Immutable audit events for every controlled mutation.
+- [x] Accessibility and end-to-end coverage for the primary authoring path.
 
 Exit gate:
 
 - Two isolated projects can complete the authoring workflow without cross-project data exposure, and all mutations can be reconstructed from audit evidence.
+
+Exit evidence:
+
+- [OpenRM CI run 42492278928](https://github.com/TJ-Engineer/OpenRM/actions/runs/42492278928) passed `web`, `api`, and `database-path` for evidence commit `f498031`.
+- PostgreSQL 17 validated two-project isolation, distinct project roles, organization resources, create/replay/revise/conflict, filtered search, history, comparison, import/export, and append-only audit/revision enforcement.
+- Chromium validated the primary create/search/revise/compare flow and found no automated WCAG 2 A/AA violations.
 
 ### Phase 3 — Traceability and controlled change (Weeks 7–10)
 
@@ -209,7 +216,7 @@ Exit gate:
 | WEB-001 | P1 | Migrate the client to TypeScript and API client | Typecheck + build | 3 days |
 | QLT-001 | P0 | Add CI quality and security gates | Protected CI run | 2 days |
 
-FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1 is closed; REQ-000, REQ-101, and REQ-102 now establish the first Phase 2 increment.
+FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1 and Phase 2 are closed; Phase 3 traceability work is ready.
 
 ## 5.1 Phase 2 execution backlog
 
@@ -218,10 +225,10 @@ FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-
 | REQ-000 | P1 | Decompose the requirements vertical slice | Complete | Contract-led increment defined |
 | REQ-101 | P0 | Persist requirements and immutable revisions | Complete | Migration and database-path test |
 | REQ-102 | P0 | Create, list, read, revise, search, and inspect history | Complete | API contract and runtime checks |
-| REQ-103 | P0 | Enforce concurrency, idempotency, tenancy, and audit | In progress | Create/revise evidence complete; broader policy suite pending |
-| REQ-104 | P0 | Connect the authoring UI to the API | Ready | Browser workflow |
-| REQ-105 | P1 | Add folders, tags, typed attributes, and saved views | Planned | API and UI acceptance tests |
-| REQ-106 | P1 | Add import/export, comparison, accessibility, and E2E | Planned | Evidence suite |
+| REQ-103 | P0 | Enforce concurrency, idempotency, tenancy, and audit | Complete | PostgreSQL isolation and immutability matrix |
+| REQ-104 | P0 | Connect the authoring UI to the API | Complete | Chromium authoring workflow |
+| REQ-105 | P1 | Add folders, tags, typed attributes, and saved views | Complete | API runtime and UI acceptance evidence |
+| REQ-106 | P1 | Add import/export, comparison, accessibility, and E2E | Complete | Protected CI evidence suite |
 
 ## 6. Quality gates
 
