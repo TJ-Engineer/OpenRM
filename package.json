@@ -18,6 +18,7 @@
     "test:e2e": "playwright test",
     "test:load": "node scripts/load-test.mjs --requests 500 --concurrency 20 --p95 250 --error-rate 0.01",
     "test:soak": "node scripts/load-test.mjs --requests 1000000 --duration 30 --concurrency 10 --p95 250 --error-rate 0.01",
+    "check:containers": "bash scripts/check-container-stack.sh",
     "check:self-project": "node scripts/bootstrap-openrm-self-project.mjs --validate-only",
     "bootstrap:self-project": "node scripts/bootstrap-openrm-self-project.mjs",
     "generate:api": "openapi-typescript contracts/openapi.yaml -o src/api/generated.ts",

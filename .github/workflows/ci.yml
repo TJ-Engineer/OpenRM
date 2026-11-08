@@ -818,6 +818,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
       - name: Validate production topology
         env:
           OPENRM_DATABASE_URL: postgres://openrm:password@postgres:5432/openrm
@@ -830,6 +833,6 @@ jobs:
         run: |
           printf '%s' 'ci-postgres-placeholder' > /tmp/openrm-postgres-password
           docker compose -f deploy/compose.production.yaml config --quiet
-      - name: Build production API image
-        run: docker build --file deploy/openrm-api.Dockerfile --tag openrm-api:ci .
+      - name: Build and smoke portable container stack
+        run: npm run check:containers
 

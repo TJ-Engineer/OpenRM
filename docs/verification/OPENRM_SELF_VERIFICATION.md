@@ -17,6 +17,7 @@ The source catalog is [`data/openrm-self-verification/requirements.json`](../../
 | Orphan requirements | 0 |
 | Suspect relationships at baseline | 0 |
 | Independent verification cases | 4 |
+| Linked evidence attachments | 70 |
 | Exact-revision verification coverage | 100% |
 | Gate readiness | Ready with no blockers |
 
@@ -27,7 +28,7 @@ Every system requirement decomposes to exactly four derived requirements. Every 
 The four immutable verification cases provide complete baseline coverage:
 
 1. **Automated test** — Rust and web unit tests, authenticated PostgreSQL workflows, tenant isolation, immutable evidence controls, browser workflows, and WCAG 2 A/AA automation.
-2. **Operational test** — load/soak, backup/restore, upgrade, production-topology, and hardened-container evidence.
+2. **Operational test** — load/soak, backup/restore, upgrade, production-topology, clean-volume portable-stack, and hardened-container evidence.
 3. **Analysis** — implementation allocation, architecture decisions, threat model, security review, and operating-boundary analysis.
 4. **Observation/inspection** — built product surfaces, three-browser evidence, status presentation, and operator procedures. OpenRM stores this as the supported `inspection` verification method while the catalog retains the stakeholder term `observation`.
 
@@ -66,6 +67,8 @@ The loader is idempotent for the immutable `v1` requirement catalog and each evi
 ## Hosted evidence
 
 [OpenRM CI run 42512977538](https://github.com/TJ-Engineer/OpenRM/actions/runs/42512977538) reconstructed this project from a clean PostgreSQL 17 database and passed the complete protected `database-path` gate. The same run passed the API, web, recovery-rehearsal, and hardened production-artifact jobs.
+
+[OpenRM CI run 42518730569](https://github.com/TJ-Engineer/OpenRM/actions/runs/42518730569) additionally built the complete portable container distribution and reconstructed the project through its migration and bootstrap containers on a clean volume. The hosted smoke gate verified same-origin web/API readiness, all 60 requirements, non-root users, read-only root filesystems, and dropped Linux capabilities.
 
 ## Independence and integrity
 

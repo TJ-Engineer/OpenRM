@@ -31,6 +31,7 @@ What exists now:
 - Prometheus SLIs, administrator operations status, structured logs, optional OTLP/HTTP traces, provisioned dashboards/alerts, and a hardened production container topology.
 - PostgreSQL backup/restore and forward-only upgrade rehearsals, multi-browser and accessibility coverage, load validation, security smoke tests, and pilot operations documentation.
 - A reproducible `OPENRM` dogfood project with 12 system requirements, 48 derived requirements, complete decomposition trace, independent review, and repository-linked signed test, analysis, and observation evidence.
+- A one-command portable container distribution for PostgreSQL, forward-only migrations, the hardened API, the complete self-verification project, and the same-origin web application.
 
 What does not exist yet:
 
@@ -239,6 +240,7 @@ Completion evidence:
 - Protected `main` now requires all five Phase 5 checks with strict up-to-date validation and administrator enforcement.
 - Live pilot commissioning remains an environment-specific operational gate, not an unresolved repository implementation gate.
 - The `OPENRM` self-verification project reaches 100% trace coverage and 100% passed exact-revision verification coverage with no orphans, suspect links, or readiness blockers; [OpenRM CI run 42512977538](https://github.com/TJ-Engineer/OpenRM/actions/runs/42512977538) reconstructed the complete gate from a clean database in the protected `database-path` workflow.
+- [OpenRM CI run 42518730569](https://github.com/TJ-Engineer/OpenRM/actions/runs/42518730569) built the complete portable container distribution and reconstructed its PostgreSQL, migrations, API, 60-requirement bootstrap, and same-origin web gateway from a clean volume with non-root, read-only, capability-dropped application containers.
 
 ## 5. Phase 1 execution backlog
 
