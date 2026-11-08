@@ -98,9 +98,9 @@ const DEVELOPMENT_PHASES = [
     id: "phase-1",
     number: "01",
     name: "Foundation",
-    window: "Weeks 1–2",
-    status: "active",
-    outcome: "Local gate green; hosted CI pending",
+    window: "Complete",
+    status: "complete",
+    outcome: "Hosted CI green; protected main enforced",
   },
   {
     id: "phase-2",
@@ -148,10 +148,10 @@ const DEVELOPMENT_WORKSTREAMS = [
   {
     name: "Platform & API",
     icon: ServerCog,
-    progress: 32,
-    status: "API skeleton verified",
+    progress: 40,
+    status: "Hosted foundation verified",
     tone: "blue",
-    now: "Promote the health, readiness, and session contract through hosted CI",
+    now: "Extend the contract through the Phase 2 requirements slice",
   },
   {
     name: "Data & versioning",
@@ -172,16 +172,16 @@ const DEVELOPMENT_WORKSTREAMS = [
   {
     name: "Quality & delivery",
     icon: TestTube2,
-    progress: 82,
-    status: "Local gate green",
+    progress: 100,
+    status: "Foundation gate green",
     tone: "mint",
-    now: "Run the hosted workflow and protect the main branch",
+    now: "Keep all required checks green on protected main",
   },
   {
     name: "Operations",
     icon: Cloud,
-    progress: 35,
-    status: "CI workflow ready",
+    progress: 40,
+    status: "Protected CI active",
     tone: "blue",
     now: "Define the first API environment and secret delivery path",
   },
@@ -193,11 +193,11 @@ const DEVELOPMENT_BACKLOG = [
   { id: "API-001", horizon: "now", priority: "P0", title: "Publish OpenAPI skeleton and error model", stream: "API", effort: "2d", status: "Complete" },
   { id: "API-002", horizon: "now", priority: "P0", title: "Create Rust health and readiness service", stream: "API", effort: "3d", status: "Complete" },
   { id: "DAT-001", horizon: "now", priority: "P0", title: "Add PostgreSQL migration workflow", stream: "Data", effort: "2d", status: "Complete" },
-  { id: "QLT-001", horizon: "now", priority: "P0", title: "Add CI quality and security gates", stream: "Quality", effort: "2d", status: "Hosted CI pending" },
+  { id: "QLT-001", horizon: "now", priority: "P0", title: "Add CI quality and security gates", stream: "Quality", effort: "2d", status: "Complete" },
   { id: "SEC-001", horizon: "now", priority: "P0", title: "Prove OIDC identity and policy harness", stream: "Security", effort: "3d", status: "Complete" },
   { id: "WEB-001", horizon: "now", priority: "P1", title: "Migrate client to TypeScript API client", stream: "Web", effort: "3d", status: "Complete" },
-  { id: "QLT-002", horizon: "next", priority: "P0", title: "Run hosted CI and protect the main branch", stream: "Quality", effort: "1d", status: "Ready" },
-  { id: "REQ-000", horizon: "next", priority: "P1", title: "Decompose the requirements vertical slice", stream: "Product", effort: "2d", status: "Planned" },
+  { id: "QLT-002", horizon: "now", priority: "P0", title: "Run hosted CI and protect the main branch", stream: "Quality", effort: "1d", status: "Complete" },
+  { id: "REQ-000", horizon: "now", priority: "P1", title: "Decompose the requirements vertical slice", stream: "Product", effort: "2d", status: "Ready" },
   { id: "REQ-001", horizon: "later", priority: "P0", title: "Deliver requirements vertical slice", stream: "Product", effort: "4w", status: "Phase 2" },
   { id: "TRC-001", horizon: "later", priority: "P0", title: "Deliver traceability and baselines", stream: "Product", effort: "4w", status: "Phase 3" },
 ];
@@ -560,7 +560,7 @@ function DevelopmentDashboard({ notify }) {
       .join("\n");
 
     try {
-      await navigator.clipboard.writeText(`OpenRM Phase 1 — current sprint\n${brief}`);
+      await navigator.clipboard.writeText(`OpenRM Phase 2 — current sprint\n${brief}`);
       notify("Current sprint brief copied");
     } catch {
       notify("Sprint brief is listed in IMPLEMENTATION_PLAN.md");
@@ -574,7 +574,7 @@ function DevelopmentDashboard({ notify }) {
   return (
     <>
       <PageHeader
-        eyebrow="Delivery control • Repository baseline • 7 Nov 2026"
+        eyebrow="Delivery control • Repository baseline • 8 Nov 2026"
         title={<>From convincing prototype to <em>working platform.</em></>}
         description="A delivery view grounded in the current repository. Prototype coverage and production capability stay separate so every gate is backed by executable evidence."
         actions={
@@ -592,26 +592,26 @@ function DevelopmentDashboard({ notify }) {
       <section className="development-command panel">
         <div className="development-command-copy">
           <div className="phase-status-row">
-            <span className="phase-chip active"><span /> Phase 1 active</span>
+            <span className="phase-chip complete"><span /> Phase 1 complete</span>
             <span className="baseline-date">17-week beta path</span>
           </div>
           <p className="panel-kicker">Current delivery objective</p>
-          <h2>Promote the verified foundation through hosted CI.</h2>
+          <h2>Build the requirements vertical slice on a protected foundation.</h2>
           <p>
-            A clean temporary workspace now builds the TypeScript client and Rust service, migrations seed a real
-            PostgreSQL instance, and an authenticated tenant-scoped request reaches the database. The remaining
-            Phase 1 evidence is the first hosted workflow run and branch protection.
+            The TypeScript client, Rust service, PostgreSQL migrations, generated contract, authentication policy,
+            and dependency audits pass in hosted CI. Main is protected by the web, API, and database checks, closing
+            Phase 1 and making the durable requirements workflow the next delivery gate.
           </p>
           <div className="command-meta">
-            <span><GitBranch size={14} /> Stage: Prototype → Foundation</span>
-            <span><BadgeCheck size={14} /> Next gate: hosted CI evidence</span>
+            <span><GitBranch size={14} /> Stage: Foundation complete</span>
+            <span><BadgeCheck size={14} /> Next gate: requirements vertical slice</span>
           </div>
         </div>
         <div className="gate-card">
           <div className="gate-card-head">
             <div>
-              <span>Local foundation gate</span>
-              <strong>5 / 5 evidence checks</strong>
+              <span>Phase 1 foundation gate</span>
+              <strong>7 / 7 evidence checks</strong>
             </div>
             <div className="gate-score complete">100%</div>
           </div>
@@ -621,14 +621,16 @@ function DevelopmentDashboard({ notify }) {
             <span className="complete"><CheckCircle2 size={13} /> Authenticated API reaches data</span>
             <span className="complete"><CheckCircle2 size={13} /> Contract generates web client</span>
             <span className="complete"><CheckCircle2 size={13} /> Local quality and audits pass</span>
+            <span className="complete"><CheckCircle2 size={13} /> Hosted CI passes all jobs</span>
+            <span className="complete"><CheckCircle2 size={13} /> Main requires green checks</span>
           </div>
         </div>
       </section>
 
       <div className="development-metrics">
         <DeliveryMetric icon={Columns3} value="10 / 10" label="Prototype surfaces" detail="Interaction model represented" tone="mint" />
-        <DeliveryMetric icon={ServerCog} value="1 / 6" label="Production services" detail="API foundation verified locally" tone="blue" />
-        <DeliveryMetric icon={TestTube2} value="8 / 8" label="Local quality gates" detail="Web, Rust, database, and audits" tone="mint" />
+        <DeliveryMetric icon={ServerCog} value="1 / 6" label="Production services" detail="API foundation verified in hosted CI" tone="blue" />
+        <DeliveryMetric icon={TestTube2} value="3 / 3" label="Required CI jobs" detail="Web, API, and database-path" tone="mint" />
         <DeliveryMetric icon={AlertTriangle} value="4" label="Program risks" detail="Decisions accepted; controls remain" tone="red" />
       </div>
 
@@ -738,7 +740,7 @@ function DevelopmentDashboard({ notify }) {
 
       <div className="dashboard-source-note">
         <FileCheck2 size={16} />
-        <p><strong>Source of truth:</strong> this baseline reflects locally verified Phase 1 evidence from 7 November 2026. Hosted CI and branch protection remain pending; replace static constants with delivery APIs after that gate closes.</p>
+        <p><strong>Source of truth:</strong> Phase 1 closed on 8 November 2026 with green hosted CI and protected-main enforcement. Phase 2 is ready for decomposition; replace static constants with delivery APIs as implementation proceeds.</p>
       </div>
     </>
   );

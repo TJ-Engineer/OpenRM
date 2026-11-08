@@ -2,6 +2,20 @@
 
 OpenRM is an open, self-hostable configuration and requirements management platform. The repository currently contains the interactive product preview and the Phase 1 platform foundation.
 
+[![Foundation CI](https://github.com/TJ-Engineer/OpenRM/actions/workflows/ci.yml/badge.svg)](https://github.com/TJ-Engineer/OpenRM/actions/workflows/ci.yml)
+
+## Development status
+
+**Current stage:** 🟢 Phase 1 foundation complete; Phase 2 ready (updated 8 November 2026).
+
+- 🟢 Phase 0, the interactive prototype and static delivery preview, is complete.
+- 🟢 Phase 1 is complete: all foundation deliverables and local evidence checks are implemented.
+- 🟢 The first hosted Foundation CI run passed all web, API, security-audit, migration, and authenticated database-path checks.
+- 🟢 The protected `main` branch requires the `web`, `api`, and `database-path` GitHub Actions checks and disallows force-pushes and deletion.
+- ⚪ Phase 2, the durable requirements-management vertical slice, is ready for decomposition and has not started.
+
+See the [development dashboard](DEVELOPMENT_DASHBOARD.md) for current evidence, priorities, gaps, and per-phase time/token accounting, and the [implementation plan](IMPLEMENTATION_PLAN.md) for the full roadmap and exit criteria.
+
 ## Repository map
 
 | Path | Purpose |
