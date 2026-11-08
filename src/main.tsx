@@ -161,7 +161,7 @@ const DEVELOPMENT_WORKSTREAMS = [
     name: "Quality & delivery",
     icon: TestTube2,
     progress: 100,
-    status: "Phase 5 candidate gate green",
+    status: "Phase 5 protected gate green",
     tone: "mint",
     now: "Retain multi-browser, security, recovery, and artifact gates",
   },
@@ -435,7 +435,7 @@ function DevelopmentDashboard({ notify }) {
       .join("\n");
 
     try {
-      await navigator.clipboard.writeText(`OpenRM Phase 5 kickoff — Phase 4 protected gate passed\n${brief}`);
+      await navigator.clipboard.writeText(`OpenRM Phase 5 complete — bounded pilot commissioning next\n${brief}`);
       notify("Current sprint brief copied");
     } catch {
       notify("Sprint brief is listed in IMPLEMENTATION_PLAN.md");
@@ -467,37 +467,37 @@ function DevelopmentDashboard({ notify }) {
       <section className="development-command panel">
         <div className="development-command-copy">
           <div className="phase-status-row">
-            <span className="phase-chip"><span /> Phase 4 complete</span>
+            <span className="phase-chip"><span /> Phase 5 complete</span>
             <span className="baseline-date">17-week beta path</span>
           </div>
           <p className="panel-kicker">Current delivery objective</p>
-          <h2>Begin integration and beta hardening from a protected baseline.</h2>
+          <h2>Commission the bounded pilot from a protected beta baseline.</h2>
           <p>
-            Phase 4 now provides controlled review packages, independent approvals, immutable verification
-            procedures, signed results and attachments, exact-revision coverage, explainable readiness, due events,
-            and deterministic complete gate export. Local and protected hosted gates pass.
+            Phase 5 adds governed Jira delivery and replay, operational telemetry, hardened deployment assets,
+            recovery and upgrade rehearsals, security and load gates, and three-browser accessibility evidence.
+            All five protected hosted jobs pass.
           </p>
           <div className="command-meta">
-            <span><GitBranch size={14} /> Stage: Phase 4 complete</span>
-            <span><BadgeCheck size={14} /> Next: Phase 5 integration and operations</span>
+            <span><GitBranch size={14} /> Stage: Phase 5 complete</span>
+            <span><BadgeCheck size={14} /> Next: bounded pilot commissioning</span>
           </div>
         </div>
         <div className="gate-card">
           <div className="gate-card-head">
             <div>
-              <span>Phase 4 exit evidence</span>
+              <span>Phase 5 exit evidence</span>
               <strong>8 / 8 evidence checks</strong>
             </div>
             <div className="gate-score complete">100%</div>
           </div>
           <div className="gate-checks">
-            <span className="complete"><CheckCircle2 size={13} /> Baseline-bound review packages</span>
-            <span className="complete"><CheckCircle2 size={13} /> Independent signed approvals</span>
-            <span className="complete"><CheckCircle2 size={13} /> Immutable verification execution</span>
-            <span className="complete"><CheckCircle2 size={13} /> Signed results and attachment manifests</span>
-            <span className="complete"><CheckCircle2 size={13} /> Exact coverage and readiness</span>
-            <span className="complete"><CheckCircle2 size={13} /> Due events and deterministic export</span>
-            <span className="complete"><CheckCircle2 size={13} /> Browser workflows and WCAG A/AA</span>
+            <span className="complete"><CheckCircle2 size={13} /> Governed Jira delivery and replay</span>
+            <span className="complete"><CheckCircle2 size={13} /> Metrics, traces, dashboards, and alerts</span>
+            <span className="complete"><CheckCircle2 size={13} /> Recovery and upgrade rehearsals</span>
+            <span className="complete"><CheckCircle2 size={13} /> Hardened production artifact</span>
+            <span className="complete"><CheckCircle2 size={13} /> Security, load, and soak gates</span>
+            <span className="complete"><CheckCircle2 size={13} /> Three-browser workflows and WCAG A/AA</span>
+            <span className="complete"><CheckCircle2 size={13} /> Pilot operations procedures</span>
             <span className="complete"><CheckCircle2 size={13} /> Protected hosted checks passed</span>
           </div>
         </div>
@@ -506,7 +506,7 @@ function DevelopmentDashboard({ notify }) {
       <div className="development-metrics">
         <DeliveryMetric icon={Columns3} value="10 / 10" label="Prototype surfaces" detail="Interaction model represented" tone="mint" />
         <DeliveryMetric icon={ServerCog} value="24" label="Controlled capabilities" detail="Authoring through signed gate evidence" tone="blue" />
-        <DeliveryMetric icon={TestTube2} value="30 + 9" label="Automated tests" detail="Rust and web unit + browser/WCAG" tone="mint" />
+        <DeliveryMetric icon={TestTube2} value="36 + 33" label="Automated tests" detail="Rust and web unit + browser/WCAG" tone="mint" />
         <DeliveryMetric icon={AlertTriangle} value="4" label="Program risks" detail="Decisions accepted; controls remain" tone="red" />
       </div>
 

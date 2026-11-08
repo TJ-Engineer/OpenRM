@@ -1,7 +1,7 @@
 # OpenRM implementation plan
 
 **Planning baseline:** 7 November 2026  
-**Current stage:** Phase 5 implementation candidate complete; protected hosted exit evidence pending
+**Current stage:** Phase 5 complete; bounded pilot commissioning is next
 
 **Primary outcome:** Deliver a self-hostable configuration and requirements management platform with controlled change, end-to-end traceability, review evidence, and verification records.
 
@@ -20,8 +20,8 @@ What exists now:
 - TypeScript web client with lint, typecheck, unit test, build, and generated OpenAPI types.
 - Rust API with liveness, readiness, build metadata, structured errors, OIDC validation, and tenant policy checks.
 - PostgreSQL migrations, deterministic development seed, Docker Compose, and a one-command bootstrap.
-- GitHub Actions workflow for web, Rust, dependency audits, migrations, and an authenticated database-backed request.
-- Protected `main` branch requiring the `web`, `api`, and `database-path` GitHub Actions checks.
+- GitHub Actions workflow for web, Rust, dependency audits, migrations, authenticated database paths, recovery/upgrade rehearsals, and production-artifact validation.
+- Protected `main` branch requiring `web`, `api`, `database-path`, `recovery-rehearsal`, and `production-artifact`.
 - Completed requirements workspace with isolated projects, scoped roles, folders, tags, typed attributes, saved views, controlled authoring, immutable revisions, comparison, import/export, and audit evidence.
 - Directed typed relationships with exact revision evidence, asynchronous suspect propagation, reviewer dispositions, and trace graph, matrix, coverage, and gap queries.
 - Attributable changesets, immutable signed baselines, exact baseline comparison, deterministic evidence export, and stale-snapshot protection.
@@ -38,7 +38,7 @@ What does not exist yet:
 - Automated image-registry promotion and a live Jira service identity for the pilot tenant.
 - Independent external penetration-test assurance for broader regulated production use.
 
-The next engineering gate is protected hosted validation of the Phase 5 candidate, followed by environment-specific pilot commissioning.
+The repository Phase 5 gate is complete. The next operational gate is environment-specific pilot commissioning and acceptance.
 
 ## 2. Delivery principles
 
@@ -217,7 +217,7 @@ Completion evidence:
 
 **Outcome:** A pilot team can operate OpenRM reliably, recoverably, and with measured service health.
 
-**Status:** Implementation candidate complete on 8 November 2026. Local code, browser, PostgreSQL 17 runtime, load, recovery, upgrade, security, and deployment-artifact gates pass; protected hosted exit evidence is pending.
+**Status:** Complete on 8 November 2026. Local code, browser, PostgreSQL 17 runtime, load, recovery, upgrade, security, and deployment-artifact gates pass, and all five protected hosted jobs passed in [OpenRM CI run 42508760769](https://github.com/TJ-Engineer/OpenRM/actions/runs/42508760769).
 
 Deliverables:
 
@@ -232,6 +232,12 @@ Exit gate:
 
 - The pilot meets the agreed reliability, security, recovery, and usability thresholds with no unresolved launch-blocking risks.
 
+Completion evidence:
+
+- `web`, `api`, `database-path`, `recovery-rehearsal`, and `production-artifact` passed in [OpenRM CI run 42508760769](https://github.com/TJ-Engineer/OpenRM/actions/runs/42508760769).
+- Protected `main` now requires all five Phase 5 checks with strict up-to-date validation and administrator enforcement.
+- Live pilot commissioning remains an environment-specific operational gate, not an unresolved repository implementation gate.
+
 ## 5. Phase 1 execution backlog
 
 | ID | Priority | Work item | Primary evidence | Estimate |
@@ -245,7 +251,7 @@ Exit gate:
 | WEB-001 | P1 | Migrate the client to TypeScript and API client | Typecheck + build | 3 days |
 | QLT-001 | P0 | Add CI quality and security gates | Protected CI run | 2 days |
 
-FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1, Phase 2, Phase 3, and Phase 4 are closed.
+FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1 through Phase 5 are closed.
 
 ## 5.1 Phase 2 execution backlog
 

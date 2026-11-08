@@ -1,8 +1,8 @@
 # Phase 5 exit evidence
 
-## Candidate decision
+## Closure decision
 
-The 8 November 2026 Phase 5 candidate satisfies the repository-local pilot thresholds. Protected hosted CI remains the final merge and phase-closure condition; live-environment commissioning remains an operator responsibility.
+Phase 5 closed on 8 November 2026. The repository-local pilot thresholds passed, and all five protected hosted jobs passed in [OpenRM CI run 42508760769](https://github.com/TJ-Engineer/OpenRM/actions/runs/42508760769). Live-environment commissioning remains an operator responsibility.
 
 ## Local evidence
 
@@ -19,7 +19,17 @@ The 8 November 2026 Phase 5 candidate satisfies the repository-local pilot thres
 | Soak | A 30-second run issued 118,130 requests at concurrency 10 with zero errors and 3.77 ms observed p95. |
 | Recovery | A verified PostgreSQL 17 custom archive restored 55 controlled rows across nine migrations; six critical evidence tables were present. |
 | Upgrade | The current migration set reapplied twice to the restored database without drift. |
-| Deployment | Compose topology parses; the 40.1 MB API image passed health/readiness as UID 10001 with a read-only root filesystem and all capabilities dropped. Image construction remains a hosted candidate gate. |
+| Deployment | Compose topology parses; the 40.1 MB API image passed health/readiness as UID 10001 with a read-only root filesystem and all capabilities dropped; hosted image construction passed. |
+
+## Hosted evidence
+
+| Job | Result |
+| --- | --- |
+| `web` | Generated contract, lint, typecheck, unit, build, three-browser/WCAG, and npm audit gates passed. |
+| `api` | Formatting, clippy, tests, RustSec audit, and API smoke gates passed. |
+| `database-path` | Complete controlled workflow, Jira recovery, security, load, isolation, and append-only checks passed against PostgreSQL 17. |
+| `recovery-rehearsal` | Backup/restore and forward-only upgrade rehearsals passed against PostgreSQL 17. |
+| `production-artifact` | Production topology validation and source-built API image passed. |
 
 ## Residual environment conditions
 
