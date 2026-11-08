@@ -1,7 +1,7 @@
 # OpenRM implementation plan
 
 **Planning baseline:** 7 November 2026  
-**Current stage:** Foundation implemented locally → Hosted CI validation
+**Current stage:** Phase 1 foundation complete → Phase 2 requirements vertical slice ready
 **Primary outcome:** Deliver a self-hostable configuration and requirements management platform with controlled change, end-to-end traceability, review evidence, and verification records.
 
 ## 1. Current state
@@ -20,10 +20,10 @@ What exists now:
 - Rust API with liveness, readiness, build metadata, structured errors, OIDC validation, and tenant policy checks.
 - PostgreSQL migrations, deterministic development seed, Docker Compose, and a one-command bootstrap.
 - GitHub Actions workflow for web, Rust, dependency audits, migrations, and an authenticated database-backed request.
+- Protected `main` branch requiring the `web`, `api`, and `database-path` GitHub Actions checks.
 
 What does not exist yet:
 
-- Hosted CI evidence and protected-branch enforcement for the new workflow.
 - Deployed API/database environments and a connected production OIDC provider.
 - Production artifact, relationship, baseline, review, and verification endpoints.
 - Accessibility and browser end-to-end coverage for controlled product workflows.
@@ -81,7 +81,7 @@ Exit evidence:
 
 **Outcome:** A deployable service skeleton proves the architecture, contract, quality gates, and developer workflow.
 
-**Status:** Implementation and all local evidence checks passed on 7 November 2026. The first hosted CI run and branch protection remain before the phase is formally closed.
+**Status:** Complete on 8 November 2026. Implementation, local evidence, hosted CI, and protected-branch enforcement all passed the phase exit gate.
 
 Deliverables:
 
@@ -105,7 +105,8 @@ Local evidence:
 - Database path: two migrations applied to PostgreSQL 17; deterministic organization and project seed verified.
 - Runtime path: `/health`, `/ready`, and authenticated `/api/v1/session` returned successfully with database availability.
 - Security: npm audit and RustSec audit completed with zero known vulnerabilities after selecting the AWS-LC JWT backend.
-- Remaining closure evidence: successful hosted workflow run and protected `main` branch.
+- Hosted evidence: the first `Foundation CI` run passed its web, API, security-audit, migration, and authenticated database-path checks on 8 November 2026.
+- Delivery control: protected `main` requires the `web`, `api`, and `database-path` checks, enforces the rule for administrators, and disallows force-pushes and deletion.
 
 ### Phase 2 — Requirements vertical slice (Weeks 3–6)
 
@@ -189,7 +190,7 @@ Exit gate:
 | WEB-001 | P1 | Migrate the client to TypeScript and API client | Typecheck + build | 3 days |
 | QLT-001 | P0 | Add CI quality and security gates | Protected CI run | 2 days |
 
-FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, and the local portion of QLT-001 are implemented and verified. QLT-002—run hosted CI and protect `main`—is the remaining Phase 1 closure item.
+FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1 is closed; REQ-000 decomposition is the next work item.
 
 ## 6. Quality gates
 
