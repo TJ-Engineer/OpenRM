@@ -1,12 +1,12 @@
 # OpenRM
 
-OpenRM is an open, self-hostable configuration and requirements management platform. The repository contains the interactive product preview, platform foundation, and completed requirements vertical slice.
+OpenRM is an open, self-hostable configuration and requirements management platform. The repository contains the interactive product preview, completed requirements vertical slice, and the active traceability implementation.
 
 [![OpenRM CI](https://github.com/TJ-Engineer/OpenRM/actions/workflows/ci.yml/badge.svg)](https://github.com/TJ-Engineer/OpenRM/actions/workflows/ci.yml)
 
 ## Development status
 
-**Current stage:** 🟢 Phase 2 requirements vertical slice complete; Phase 3 is ready (updated 8 November 2026).
+**Current stage:** 🟡 Phase 3 traceability and controlled change is active (updated 8 November 2026).
 
 - 🟢 Phase 0, the interactive prototype and static delivery preview, is complete.
 - 🟢 Phase 1 is complete: all foundation deliverables and local evidence checks are implemented.
@@ -14,7 +14,7 @@ OpenRM is an open, self-hostable configuration and requirements management platf
 - 🟢 The protected `main` branch requires the `web`, `api`, and `database-path` GitHub Actions checks and disallows force-pushes and deletion.
 - 🟢 Phase 2 is complete. Teams can create isolated projects, assign scoped roles, create and revise requirements, organize with folders and tags, validate typed attributes, save filtered views, compare history, and import/export JSON.
 - 🟢 Controlled revisions and audit events are append-only, create/revise commands are idempotent, stale edits are rejected, and the primary browser workflow passes automated WCAG A/AA checks.
-- ⚪ Phase 3 is ready: typed relationships, suspect-link impact, changesets, immutable baselines, and deterministic evidence export are next.
+- 🟡 Phase 3 is active: directed relationship types, cardinality enforcement, exact revision evidence, asynchronous suspect propagation, reviewer dispositions, idempotency, project authorization, audit evidence, and append-only history pass locally. Live trace queries, changesets, immutable baselines, and deterministic evidence export remain open.
 
 See the [development dashboard](DEVELOPMENT_DASHBOARD.md) for current evidence, priorities, gaps, and per-phase time/token accounting, and the [implementation plan](IMPLEMENTATION_PLAN.md) for the full roadmap and exit criteria.
 

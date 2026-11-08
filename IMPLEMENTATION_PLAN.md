@@ -1,7 +1,7 @@
 # OpenRM implementation plan
 
 **Planning baseline:** 7 November 2026  
-**Current stage:** Phase 2 requirements vertical slice complete; Phase 3 ready
+**Current stage:** Phase 3 traceability and controlled change active
 **Primary outcome:** Deliver a self-hostable configuration and requirements management platform with controlled change, end-to-end traceability, review evidence, and verification records.
 
 ## 1. Current state
@@ -156,11 +156,13 @@ Exit evidence:
 
 **Outcome:** Users can connect intent to evidence, detect impact, and freeze reproducible baselines.
 
+**Status:** Active from 8 November 2026. The first two contract-led increments implement directed relationship types, cardinality and endpoint rules, exact source/target revision evidence, idempotent creation, asynchronous suspect propagation through the transactional outbox, reviewer-only attributable resolution, optimistic concurrency, audit evidence, append-only relationship history, and local PostgreSQL runtime validation. Hosted evidence and the remaining Phase 3 workflows are open.
+
 Deliverables:
 
-- [ ] Typed relationships with cardinality and direction rules.
+- [x] Typed relationships with cardinality and direction rules.
 - [ ] Trace matrix, graph, coverage queries, and gap reporting.
-- [ ] Suspect-link propagation and resolution workflow.
+- [x] Suspect-link propagation and resolution workflow.
 - [ ] Changesets with attributable diffs and commit messages.
 - [ ] Immutable baselines and baseline comparison.
 - [ ] Evidence export with deterministic manifests and hashes.
@@ -216,7 +218,7 @@ Exit gate:
 | WEB-001 | P1 | Migrate the client to TypeScript and API client | Typecheck + build | 3 days |
 | QLT-001 | P0 | Add CI quality and security gates | Protected CI run | 2 days |
 
-FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1 and Phase 2 are closed; Phase 3 traceability work is ready.
+FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1 and Phase 2 are closed; Phase 3 traceability work is active.
 
 ## 5.1 Phase 2 execution backlog
 
@@ -229,6 +231,17 @@ FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-
 | REQ-104 | P0 | Connect the authoring UI to the API | Complete | Chromium authoring workflow |
 | REQ-105 | P1 | Add folders, tags, typed attributes, and saved views | Complete | API runtime and UI acceptance evidence |
 | REQ-106 | P1 | Add import/export, comparison, accessibility, and E2E | Complete | Protected CI evidence suite |
+
+## 5.2 Phase 3 execution backlog
+
+| ID | Priority | Work item | Status | Primary evidence |
+| --- | --- | --- | --- | --- |
+| TRC-101 | P0 | Persist directed typed relationships with cardinality and exact revision evidence | Local evidence complete; hosted CI pending | Isolated PostgreSQL API and immutability matrix |
+| TRC-102 | P0 | Propagate and resolve suspect links with attributable dispositions | Local evidence complete; hosted CI pending | Upstream revision impact workflow |
+| TRC-103 | P1 | Add trace graph, matrix, coverage, and gap queries | Planned | API queries and browser acceptance path |
+| CHG-101 | P0 | Add changesets with attributable diffs and commit messages | Planned | Controlled commit workflow |
+| BAS-101 | P0 | Add immutable baselines and baseline comparison | Planned | Reproducible manifest comparison |
+| EVD-101 | P0 | Export deterministic hashed and signed evidence | Planned | Independent manifest verification |
 
 ## 6. Quality gates
 
