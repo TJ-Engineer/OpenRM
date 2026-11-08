@@ -787,20 +787,25 @@ jobs:
       DATABASE_URL: postgres://openrm:openrm@127.0.0.1:5432/openrm
       RECOVERY_DATABASE_URL: postgres://openrm:openrm@127.0.0.1:5432/openrm_recovery
       UPGRADE_DATABASE_URL: postgres://openrm:openrm@127.0.0.1:5432/openrm_recovery
-      POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
       POSTGRES_HOST_PORT: "5432"
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Prepare source and isolated recovery databases
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
         run: |
           cargo run -p openrm-api --bin migrate
           docker exec "${POSTGRES_CONTAINER}" psql -U openrm -d postgres \
             -v ON_ERROR_STOP=1 -c 'CREATE DATABASE openrm_recovery'
       - name: Rehearse backup and restore
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
         run: bash scripts/rehearse-recovery.sh
       - name: Rehearse forward-only upgrade
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
         run: bash scripts/rehearse-upgrade.sh
 
   production-artifact:
