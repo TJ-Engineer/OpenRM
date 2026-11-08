@@ -55,6 +55,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List projects in the selected organization */
+        get: operations["listProjects"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/requirements": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** Search and page through current requirements */
+        get: operations["listRequirements"];
+        put?: never;
+        /** Create a controlled requirement and its first revision */
+        post: operations["createRequirement"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/requirements/{requirement_id}": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                requirement_id: components["parameters"]["RequirementId"];
+            };
+            cookie?: never;
+        };
+        /** Read the current materialized requirement */
+        get: operations["getRequirement"];
+        /** Append a revision using optimistic concurrency */
+        put: operations["reviseRequirement"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/requirements/{requirement_id}/revisions": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                requirement_id: components["parameters"]["RequirementId"];
+            };
+            cookie?: never;
+        };
+        /** List immutable requirement revisions newest first */
+        get: operations["listRequirementRevisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -89,6 +176,75 @@ export interface components {
             /** @constant */
             database: "available";
         };
+        Project: {
+            /** Format: uuid */
+            id: string;
+            key: string;
+            name: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        ProjectListResponse: {
+            items: components["schemas"]["Project"][];
+        };
+        Requirement: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            project_id: string;
+            key: string;
+            title: string;
+            statement: string;
+            attributes: {
+                [key: string]: unknown;
+            };
+            revision: number;
+            created_by: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        RequirementListResponse: {
+            items: components["schemas"]["Requirement"][];
+            total: number;
+            limit: number;
+            offset: number;
+        };
+        CreateRequirementRequest: {
+            key: string;
+            title: string;
+            statement: string;
+            /** @default {} */
+            attributes: {
+                [key: string]: unknown;
+            };
+        };
+        ReviseRequirementRequest: {
+            expected_revision: number;
+            title: string;
+            statement: string;
+            /** @default {} */
+            attributes: {
+                [key: string]: unknown;
+            };
+        };
+        RequirementRevision: {
+            /** Format: uuid */
+            id: string;
+            revision: number;
+            title: string;
+            statement: string;
+            attributes: {
+                [key: string]: unknown;
+            };
+            created_by: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        RequirementRevisionListResponse: {
+            items: components["schemas"]["RequirementRevision"][];
+        };
         ErrorEnvelope: {
             error: components["schemas"]["ErrorBody"];
         };
@@ -119,6 +275,33 @@ export interface components {
                 "application/json": components["schemas"]["ErrorEnvelope"];
             };
         };
+        /** @description The request failed validation. */
+        BadRequest: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description The selected project or requirement does not exist. */
+        NotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
+        /** @description The command conflicts with current state or prior idempotency evidence. */
+        Conflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorEnvelope"];
+            };
+        };
         /** @description A required dependency is unavailable. */
         ServiceUnavailable: {
             headers: {
@@ -132,6 +315,10 @@ export interface components {
     parameters: {
         /** @description Organization UUID selected for the request. */
         OrganizationHeader: string;
+        ProjectId: string;
+        RequirementId: string;
+        /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+        IdempotencyHeader: string;
     };
     requestBodies: never;
     headers: never;
@@ -203,6 +390,207 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listProjects: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tenant-scoped projects. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listRequirements: {
+        parameters: {
+            query?: {
+                search?: string;
+                limit?: number;
+                offset?: number;
+            };
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current requirement results. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    createRequirement: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRequirementRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of an existing successful command. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Requirement"];
+                };
+            };
+            /** @description Requirement created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Requirement"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getRequirement: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                requirement_id: components["parameters"]["RequirementId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current requirement. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Requirement"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    reviseRequirement: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                requirement_id: components["parameters"]["RequirementId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviseRequirementRequest"];
+            };
+        };
+        responses: {
+            /** @description Revised requirement. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Requirement"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listRequirementRevisions: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                requirement_id: components["parameters"]["RequirementId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Requirement revision history. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementRevisionListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             503: components["responses"]["ServiceUnavailable"];
         };
     };
