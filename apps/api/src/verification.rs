@@ -1008,9 +1008,11 @@ pub async fn export_gate_evidence(
     .await
     .map_err(database_error)?;
     for decision in &mut decisions {
-        decision.signature_valid = state
-            .evidence_signer
-            .verify(&decision.evidence_hash, &decision.signature);
+        decision.signature_valid = state.evidence_signer.verify_with_key_id(
+            &decision.signing_key_id,
+            &decision.evidence_hash,
+            &decision.signature,
+        );
     }
     let review_participants = sqlx::query_scalar::<_, Value>(
         r#"
@@ -1278,6 +1280,11 @@ async fn load_result(
     .fetch_all(&state.db)
     .await
     .map_err(database_error)?;
+    let signature_valid = state.evidence_signer.verify_with_key_id(
+        &record.signing_key_id,
+        &record.evidence_hash,
+        &record.signature,
+    );
     Ok(Some(VerificationResultResponse {
         id: record.id,
         run_id: record.run_id,
@@ -1290,9 +1297,7 @@ async fn load_result(
         signing_key_id: record.signing_key_id,
         recorded_by: record.recorded_by,
         recorded_at: record.recorded_at,
-        signature_valid: state
-            .evidence_signer
-            .verify(&record.evidence_hash, &record.signature),
+        signature_valid,
         attachments,
     }))
 }
@@ -1392,9 +1397,9 @@ async fn calculate_readiness(
     .fetch_one(&state.db)
     .await
     .map_err(database_error)?;
-    let invalid_review_signatures = sqlx::query_as::<_, (String, String)>(
+    let invalid_review_signatures = sqlx::query_as::<_, (String, String, String)>(
         r#"
-        SELECT evidence_hash, signature FROM review_decisions
+        SELECT signing_key_id, evidence_hash, signature FROM review_decisions
         WHERE organization_id = $1 AND project_id = $2 AND review_id = $3
         ORDER BY id
         "#,
@@ -1406,7 +1411,11 @@ async fn calculate_readiness(
     .await
     .map_err(database_error)?
     .into_iter()
-    .filter(|(hash, signature)| !state.evidence_signer.verify(hash, signature))
+    .filter(|(key_id, hash, signature)| {
+        !state
+            .evidence_signer
+            .verify_with_key_id(key_id, hash, signature)
+    })
     .count() as i64;
     let invalid_result_signatures = cases
         .iter()

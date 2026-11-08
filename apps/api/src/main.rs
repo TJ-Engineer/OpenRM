@@ -42,10 +42,13 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
         migrate(&db).await?;
     }
     let auth = AuthVerifier::from_config(&config).await?;
-    let evidence_signer = EvidenceSigner::new(
+    let mut evidence_signer = EvidenceSigner::new(
         config.evidence_signing_key.as_bytes(),
         config.evidence_signing_key_id.clone(),
     );
+    for (key_id, key) in &config.evidence_verification_keys {
+        evidence_signer = evidence_signer.with_verification_key(key.as_bytes(), key_id.clone());
+    }
     let jira_dispatcher =
         openrm_api::connectors::JiraDispatcher::new(config.jira_api_token.clone())?;
     let outbox_worker = tokio::spawn(openrm_api::outbox::run(db.clone()));

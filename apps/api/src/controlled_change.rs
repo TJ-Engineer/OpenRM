@@ -799,9 +799,11 @@ pub async fn export_evidence(
             "Baseline manifest hash does not match stored evidence",
         ));
     }
-    let signature_valid = state
-        .evidence_signer
-        .verify(&baseline.manifest_hash, &baseline.signature);
+    let signature_valid = state.evidence_signer.verify_with_key_id(
+        &baseline.signing_key_id,
+        &baseline.manifest_hash,
+        &baseline.signature,
+    );
     Ok(Json(EvidenceExportResponse {
         baseline_id,
         project_id,

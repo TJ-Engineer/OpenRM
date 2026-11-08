@@ -17,7 +17,7 @@ The source catalog is [`data/openrm-self-verification/requirements.json`](../../
 | Orphan requirements | 0 |
 | Suspect relationships at baseline | 0 |
 | Independent verification cases | 4 |
-| Linked evidence attachments | 70 |
+| Linked evidence attachments | 71 |
 | Exact-revision verification coverage | 100% |
 | Gate readiness | Ready with no blockers |
 

@@ -95,7 +95,7 @@
       "procedure": "Run the protected OpenRM CI web, API, and database-path jobs. Confirm Rust and web unit tests, authenticated PostgreSQL workflows, tenant isolation, append-only controls, deterministic evidence, connector recovery, Chromium/Firefox/WebKit workflows, and WCAG 2 A/AA scans pass. Inspect the linked source and test evidence by its recorded SHA-256.",
       "acceptance_criteria": "All linked automated suites pass with zero failed tests; all targeted requirements are exercised through their controlled API or browser path; dependency audits report no unresolved high or critical vulnerability.",
       "notes": "Protected CI and repository-local automated evidence passed for the exact linked files.",
-      "measured_values": {"rust_unit_tests":32,"web_unit_tests":4,"browser_tests":33,"browser_engines":3,"wcag_levels":["A","AA"],"failed_tests":0},
+      "measured_values": {"rust_unit_tests":34,"web_unit_tests":4,"browser_tests":33,"browser_engines":3,"wcag_levels":["A","AA"],"failed_tests":0},
       "evidence_files": [
         ".github/workflows/ci.yml",
         "apps/api/src/auth.rs",
@@ -135,6 +135,7 @@
         "scripts/rehearse-recovery.sh",
         "scripts/rehearse-upgrade.sh",
         "scripts/check-container-stack.sh",
+        "apps/api/src/evidence.rs",
         "compose.yaml",
         "deploy/openrm-api.Dockerfile",
         "deploy/openrm-web.Dockerfile",

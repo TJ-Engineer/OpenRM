@@ -1193,9 +1193,11 @@ async fn load_review_response(
     .await
     .map_err(database_error)?;
     for decision in &mut decisions {
-        decision.signature_valid = state
-            .evidence_signer
-            .verify(&decision.evidence_hash, &decision.signature);
+        decision.signature_valid = state.evidence_signer.verify_with_key_id(
+            &decision.signing_key_id,
+            &decision.evidence_hash,
+            &decision.signature,
+        );
         decision.package_status = record.status.clone();
     }
     let participant_count = participants.len() as i64;

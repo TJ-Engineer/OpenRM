@@ -34,11 +34,14 @@ Portable-stack settings:
 | `OPENRM_POSTGRES_PASSWORD` | `openrm` | Development database password; replace outside local evaluation. |
 | `OPENRM_EVIDENCE_SIGNING_KEY` | Development-only value | Evidence-signing material. |
 | `OPENRM_EVIDENCE_SIGNING_KEY_ID` | `portable-development` | Evidence-signing key identifier. |
+| `OPENRM_EVIDENCE_VERIFICATION_KEYS` | Empty | JSON object mapping historical key identifiers to keys during rotation. |
 | `OPENRM_EVIDENCE_REF` | `main` | Repository ref attached to self-verification evidence. |
 | `OPENRM_SELF_EVIDENCE_RUN_URL` | Container marker | Evidence execution link or marker. |
 | `OPENRM_RUST_LOG` | API and HTTP info | Rust log filter. |
 
 Passwords containing URL-reserved characters must be percent-encoded for the API connection string. For non-development deployment, use the hardened production topology and an operator-managed secret mechanism.
+
+Preserve the evidence-signing key with the database. During an intentional rotation, set a new active key and identifier and supply earlier keys through `OPENRM_EVIDENCE_VERIFICATION_KEYS`, for example `{"previous-key-id":"previous-key-material"}`. OpenRM selects verification material by the immutable `signing_key_id` stored with each evidence record; unknown identifiers fail closed.
 
 Verify a completely fresh, isolated container deployment with:
 
@@ -64,6 +67,7 @@ Inject these through the deployment platform's secret manager; never commit them
 - `OPENRM_DATABASE_URL`
 - `OPENRM_EVIDENCE_SIGNING_KEY` (at least 32 bytes in production)
 - `OPENRM_EVIDENCE_SIGNING_KEY_ID`
+- `OPENRM_EVIDENCE_VERIFICATION_KEYS` when historical evidence keys must remain valid after rotation
 - `OPENRM_JIRA_API_TOKEN` when active Jira delivery is enabled
 - the file referenced by `OPENRM_POSTGRES_PASSWORD_FILE`
 
