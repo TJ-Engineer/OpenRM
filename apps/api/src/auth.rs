@@ -15,7 +15,7 @@ use crate::{
     policy::Principal,
 };
 
-const ORGANIZATION_HEADER: &str = "x-opencm-organization";
+const ORGANIZATION_HEADER: &str = "x-openrm-organization";
 
 #[derive(Clone)]
 pub enum AuthVerifier {
@@ -195,9 +195,9 @@ impl FromRequestParts<AppState> for AuthenticatedPrincipal {
             .headers
             .get(ORGANIZATION_HEADER)
             .and_then(|value| value.to_str().ok())
-            .ok_or_else(|| ApiError::forbidden("X-OpenCM-Organization is required"))?
+            .ok_or_else(|| ApiError::forbidden("X-OpenRM-Organization is required"))?
             .parse::<Uuid>()
-            .map_err(|_| ApiError::forbidden("X-OpenCM-Organization must be a UUID"))?;
+            .map_err(|_| ApiError::forbidden("X-OpenRM-Organization must be a UUID"))?;
 
         Ok(Self(state.auth.verify(token, organization_id)?))
     }

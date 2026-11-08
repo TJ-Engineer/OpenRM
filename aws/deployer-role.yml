@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >-
-  Content-only deployment role for the OpenCM demo. Infrastructure is
+  Content-only deployment role for the OpenRM demo. Infrastructure is
   provisioned separately with a temporary administrative session. This role
   can upload the built site, read one stack, and invalidate one tagged
   CloudFront distribution; it cannot modify infrastructure or IAM.
@@ -8,18 +8,18 @@ Description: >-
 Parameters:
   RoleName:
     Type: String
-    Default: OpenCMDeploymentRole
+    Default: OpenRMDeploymentRole
     AllowedPattern: "^[A-Za-z0-9+=,.@_-]{1,64}$"
 
   SiteStackName:
     Type: String
-    Default: opencm-demo
-    AllowedPattern: "^opencm-[a-z0-9-]{1,20}$"
+    Default: openrm-demo
+    AllowedPattern: "^openrm-[a-z0-9-]{1,20}$"
 
   ProjectName:
     Type: String
-    Default: opencm
-    AllowedPattern: "^opencm[a-z0-9-]{0,14}$"
+    Default: openrm
+    AllowedPattern: "^openrm[a-z0-9-]{0,14}$"
 
   EnvironmentName:
     Type: String
@@ -31,7 +31,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Ref RoleName
-      Description: Content-only deployment role for the OpenCM preview
+      Description: Content-only deployment role for the OpenRM preview
       MaxSessionDuration: 3600
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
@@ -46,17 +46,17 @@ Resources:
                 aws:PrincipalArn: !Sub >-
                   arn:${AWS::Partition}:iam::${AWS::AccountId}:root
       Policies:
-        - PolicyName: OpenCMContentDeploymentPolicy
+        - PolicyName: OpenRMContentDeploymentPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Sid: ReadOpenCMSiteStack
+              - Sid: ReadOpenRMSiteStack
                 Effect: Allow
                 Action:
                   - cloudformation:DescribeStacks
                 Resource: !Sub >-
                   arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${SiteStackName}/*
-              - Sid: ListExactOpenCMBucket
+              - Sid: ListExactOpenRMBucket
                 Effect: Allow
                 Action:
                   - s3:GetBucketLocation
@@ -64,7 +64,7 @@ Resources:
                   - s3:ListBucketMultipartUploads
                 Resource: !Sub >-
                   arn:${AWS::Partition}:s3:::${ProjectName}-${EnvironmentName}-${AWS::AccountId}-${AWS::Region}
-              - Sid: DeployOpenCMSiteObjects
+              - Sid: DeployOpenRMSiteObjects
                 Effect: Allow
                 Action:
                   - s3:AbortMultipartUpload
@@ -74,7 +74,7 @@ Resources:
                   - s3:PutObject
                 Resource: !Sub >-
                   arn:${AWS::Partition}:s3:::${ProjectName}-${EnvironmentName}-${AWS::AccountId}-${AWS::Region}/*
-              - Sid: InvalidateTaggedOpenCMDistribution
+              - Sid: InvalidateTaggedOpenRMDistribution
                 Effect: Allow
                 Action:
                   - cloudfront:CreateInvalidation
@@ -99,5 +99,5 @@ Resources:
 
 Outputs:
   RoleArn:
-    Description: ARN of the content-only OpenCM deployment role.
+    Description: ARN of the content-only OpenRM deployment role.
     Value: !GetAtt DeploymentRole.Arn

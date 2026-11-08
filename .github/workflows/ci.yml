@@ -53,13 +53,13 @@ jobs:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_DB: opencm
-          POSTGRES_USER: opencm
-          POSTGRES_PASSWORD: opencm
+          POSTGRES_DB: openrm
+          POSTGRES_USER: openrm
+          POSTGRES_PASSWORD: openrm
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U opencm -d opencm"
+          --health-cmd "pg_isready -U openrm -d openrm"
           --health-interval 2s
           --health-timeout 3s
           --health-retries 20
@@ -67,16 +67,16 @@ jobs:
       APP_ENV: test
       AUTH_MODE: dev
       API_BIND_ADDRESS: 127.0.0.1:8080
-      DATABASE_URL: postgres://opencm:opencm@127.0.0.1:5432/opencm
+      DATABASE_URL: postgres://openrm:openrm@127.0.0.1:5432/openrm
       RUN_MIGRATIONS: "false"
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo run -p opencm-api --bin migrate
+      - run: cargo run -p openrm-api --bin migrate
       - name: Exercise authenticated health-to-database path
         run: |
-          cargo run -p opencm-api > /tmp/opencm-api.log 2>&1 &
+          cargo run -p openrm-api > /tmp/openrm-api.log 2>&1 &
           api_pid=$!
           trap 'kill ${api_pid}' EXIT
           for attempt in {1..30}; do
@@ -84,14 +84,14 @@ jobs:
               break
             fi
             if [[ "${attempt}" -eq 30 ]]; then
-              cat /tmp/opencm-api.log
+              cat /tmp/openrm-api.log
               exit 1
             fi
             sleep 1
           done
           curl --fail --silent \
             -H 'Authorization: Bearer dev:ci-user' \
-            -H 'X-OpenCM-Organization: 00000000-0000-4000-8000-000000000001' \
+            -H 'X-OpenRM-Organization: 00000000-0000-4000-8000-000000000001' \
             http://127.0.0.1:8080/api/v1/session | tee /tmp/session.json
           grep -q '"database":"available"' /tmp/session.json
 

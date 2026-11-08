@@ -1,4 +1,4 @@
-# OpenCM implementation plan
+# OpenRM implementation plan
 
 **Planning baseline:** 7 November 2026  
 **Current stage:** Foundation implemented locally → Hosted CI validation
@@ -161,7 +161,7 @@ Exit gate:
 
 ### Phase 5 — Integration and beta hardening (Weeks 15–17)
 
-**Outcome:** A pilot team can operate OpenCM reliably, recoverably, and with measured service health.
+**Outcome:** A pilot team can operate OpenRM reliably, recoverably, and with measured service health.
 
 Deliverables:
 
@@ -230,7 +230,7 @@ Once Phase 1 is complete, replace static dashboard constants with a small delive
 
 ## 9. Definition of beta-ready
 
-OpenCM is beta-ready when a pilot team can:
+OpenRM is beta-ready when a pilot team can:
 
 1. Authenticate and operate within an isolated project.
 2. Create and revise controlled requirements with full history.

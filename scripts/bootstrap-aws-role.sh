@@ -5,12 +5,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 AWS_REGION="${AWS_REGION:-us-east-1}"
-SOURCE_PROFILE="${SOURCE_PROFILE:-opencm-demo}"
-DEPLOY_PROFILE="${DEPLOY_PROFILE:-opencm-deployer}"
-STACK_NAME="${DEPLOY_ROLE_STACK_NAME:-opencm-deployer-role}"
-ROLE_NAME="${DEPLOY_ROLE_NAME:-OpenCMDeploymentRole}"
-SITE_STACK_NAME="${SITE_STACK_NAME:-opencm-demo}"
-PROJECT_NAME="${PROJECT_NAME:-opencm}"
+SOURCE_PROFILE="${SOURCE_PROFILE:-openrm-demo}"
+DEPLOY_PROFILE="${DEPLOY_PROFILE:-openrm-deployer}"
+STACK_NAME="${DEPLOY_ROLE_STACK_NAME:-openrm-deployer-role}"
+ROLE_NAME="${DEPLOY_ROLE_NAME:-OpenRMDeploymentRole}"
+SITE_STACK_NAME="${SITE_STACK_NAME:-openrm-demo}"
+PROJECT_NAME="${PROJECT_NAME:-openrm}"
 ENVIRONMENT_NAME="${ENVIRONMENT_NAME:-demo}"
 
 CALLER_ARN="$(aws sts get-caller-identity \
@@ -52,7 +52,7 @@ ROLE_ARN="$(aws cloudformation describe-stacks \
 aws configure set role_arn "${ROLE_ARN}" --profile "${DEPLOY_PROFILE}"
 aws configure set source_profile "${SOURCE_PROFILE}" --profile "${DEPLOY_PROFILE}"
 aws configure set region "${AWS_REGION}" --profile "${DEPLOY_PROFILE}"
-aws configure set role_session_name opencm-deploy --profile "${DEPLOY_PROFILE}"
+aws configure set role_session_name openrm-deploy --profile "${DEPLOY_PROFILE}"
 
 DEPLOYER_ARN="$(aws sts get-caller-identity \
   --profile "${DEPLOY_PROFILE}" \

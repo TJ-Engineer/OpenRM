@@ -429,7 +429,7 @@ function App() {
             <Menu size={19} />
           </button>
           <div className="breadcrumb">
-            <span>{page === "development" ? "OpenCM program" : "Aurora Flight Computer"}</span>
+            <span>{page === "development" ? "OpenRM program" : "Aurora Flight Computer"}</span>
             <ChevronRight size={14} />
             <strong>{currentLabel}</strong>
           </div>
@@ -507,7 +507,7 @@ function Sidebar({ page, open, onClose, onNavigate }) {
         <div className="project-card">
           <div className="project-icon">{page === "development" ? "CM" : "A2"}</div>
           <div>
-            <strong>{page === "development" ? "OpenCM delivery program" : "Aurora Flight Computer"}</strong>
+            <strong>{page === "development" ? "OpenRM delivery program" : "Aurora Flight Computer"}</strong>
             <span>{page === "development" ? "Foundation planning baseline" : "Design gate • SRR"}</span>
           </div>
           <MoreHorizontal size={18} />
@@ -560,7 +560,7 @@ function DevelopmentDashboard({ notify }) {
       .join("\n");
 
     try {
-      await navigator.clipboard.writeText(`OpenCM Phase 1 — current sprint\n${brief}`);
+      await navigator.clipboard.writeText(`OpenRM Phase 1 — current sprint\n${brief}`);
       notify("Current sprint brief copied");
     } catch {
       notify("Sprint brief is listed in IMPLEMENTATION_PLAN.md");
@@ -1240,7 +1240,7 @@ function Storage({ notify }) {
         <section className="panel config-panel">
           <div className="panel-heading compact"><div><span className="panel-kicker">Connection profile</span><h2>Portable configuration</h2></div><LockKeyhole size={17} /></div>
           <ConfigRow label="Endpoint" value="https://objects.pilot.internal" />
-          <ConfigRow label="Bucket" value="opencm-controlled-objects" />
+          <ConfigRow label="Bucket" value="openrm-controlled-objects" />
           <ConfigRow label="Addressing" value="Path style" />
           <ConfigRow label="Encryption" value="SSE-S3" />
           <ConfigRow label="Object lock" value="Optional • disabled" />
@@ -1288,9 +1288,9 @@ function RestApi({ notify }) {
         <section className="panel api-contract-card">
           <div className="api-contract-heading">
             <span className="api-version">v1</span>
-            <div><span className="status-pill connected"><CircleDot size={11} /> CONTRACT READY</span><h2>OpenCM REST API</h2><p>Stable resources, explicit revisions, and consistent HTTP semantics.</p></div>
+            <div><span className="status-pill connected"><CircleDot size={11} /> CONTRACT READY</span><h2>OpenRM REST API</h2><p>Stable resources, explicit revisions, and consistent HTTP semantics.</p></div>
           </div>
-          <div className="api-base-url"><span>Base URL</span><code>https://api.opencm.example/v1</code><button className="icon-button" onClick={() => notify("API base URL copied in demo")}><ClipboardCheck size={15} /></button></div>
+          <div className="api-base-url"><span>Base URL</span><code>https://api.openrm.example/v1</code><button className="icon-button" onClick={() => notify("API base URL copied in demo")}><ClipboardCheck size={15} /></button></div>
           <div className="api-badges"><span>JSON</span><span>OpenAPI 3.1</span><span>OAuth 2.0 / OIDC</span><span>Cursor pagination</span><span>Idempotency keys</span></div>
         </section>
 
@@ -1370,11 +1370,11 @@ function Integrations({ notify }) {
             <div><span className="status-pill planned">PLANNED • PHASE 2</span><h2>Jira Software Cloud + Data Center</h2><p>Bidirectional issue links and governed status synchronization.</p></div>
           </div>
           <div className="connector-capabilities">
-            <ConnectorCapability icon={Link2} title="Stable links" body="Relate Jira epics, stories, and defects to controlled OpenCM artifacts." />
+            <ConnectorCapability icon={Link2} title="Stable links" body="Relate Jira epics, stories, and defects to controlled OpenRM artifacts." />
             <ConnectorCapability icon={Activity} title="Status signals" body="Bring delivery state into readiness views through approved mapping rules." />
             <ConnectorCapability icon={MessageSquareText} title="Change context" body="Post revision and baseline references back to Jira without copying controlled content." />
           </div>
-          <div className="connector-note"><ShieldCheck size={16} /><span><strong>Governance boundary</strong>OpenCM remains authoritative for requirements, revisions, baselines, approvals, and audit evidence.</span></div>
+          <div className="connector-note"><ShieldCheck size={16} /><span><strong>Governance boundary</strong>OpenRM remains authoritative for requirements, revisions, baselines, approvals, and audit evidence.</span></div>
         </section>
 
         <section className="panel connector-policy-card">
@@ -1390,7 +1390,7 @@ function Integrations({ notify }) {
       <div className="integration-detail-grid">
         <section className="panel mapping-panel">
           <div className="panel-heading compact"><div><span className="panel-kicker">Proposed data contract</span><h2>Jira mapping preview</h2></div><span className="roadmap-chip">Configurable per project</span></div>
-          <div className="mapping-head"><span>OpenCM</span><span>Direction</span><span>Jira</span><span>Rule</span></div>
+          <div className="mapping-head"><span>OpenRM</span><span>Direction</span><span>Jira</span><span>Rule</span></div>
           <MappingRow source="Artifact link" direction="↔" target="Remote issue link" rule="Stable IDs only" />
           <MappingRow source="Owner" direction="←" target="Assignee" rule="Identity mapping" />
           <MappingRow source="Delivery state" direction="←" target="Status" rule="Mapped vocabulary" />
@@ -1501,7 +1501,7 @@ function TourModal({ step, onClose, onNext, onBack, onExplore }) {
           <div className="tour-orbit orbit-one" />
           <div className="tour-orbit orbit-two" />
           <div className="tour-icon"><Icon size={38} /></div>
-          <span>openCM</span>
+          <span>openRM</span>
         </div>
         <div className="tour-content">
           <div className="eyebrow">{item.eyebrow}</div>

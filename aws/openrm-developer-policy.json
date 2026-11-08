@@ -2,25 +2,25 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "ReadOpenCMSiteStack",
+      "Sid": "ReadOpenRMSiteStack",
       "Effect": "Allow",
       "Action": [
         "cloudformation:DescribeStacks"
       ],
-      "Resource": "arn:aws:cloudformation:us-east-1:537124952649:stack/opencm-demo/*"
+      "Resource": "arn:aws:cloudformation:us-east-1:537124952649:stack/openrm-demo/*"
     },
     {
-      "Sid": "ListExactOpenCMBucket",
+      "Sid": "ListExactOpenRMBucket",
       "Effect": "Allow",
       "Action": [
         "s3:GetBucketLocation",
         "s3:ListBucket",
         "s3:ListBucketMultipartUploads"
       ],
-      "Resource": "arn:aws:s3:::opencm-demo-537124952649-us-east-1"
+      "Resource": "arn:aws:s3:::openrm-demo-537124952649-us-east-1"
     },
     {
-      "Sid": "DeployOpenCMSiteObjects",
+      "Sid": "DeployOpenRMSiteObjects",
       "Effect": "Allow",
       "Action": [
         "s3:AbortMultipartUpload",
@@ -29,10 +29,10 @@
         "s3:ListMultipartUploadParts",
         "s3:PutObject"
       ],
-      "Resource": "arn:aws:s3:::opencm-demo-537124952649-us-east-1/*"
+      "Resource": "arn:aws:s3:::openrm-demo-537124952649-us-east-1/*"
     },
     {
-      "Sid": "InvalidateTaggedOpenCMDistribution",
+      "Sid": "InvalidateTaggedOpenRMDistribution",
       "Effect": "Allow",
       "Action": [
         "cloudfront:CreateInvalidation",
@@ -41,7 +41,7 @@
       "Resource": "arn:aws:cloudfront::537124952649:distribution/*",
       "Condition": {
         "StringEquals": {
-          "aws:ResourceTag/Project": "opencm",
+          "aws:ResourceTag/Project": "openrm",
           "aws:ResourceTag/Environment": "demo"
         }
       }

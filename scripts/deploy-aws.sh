@@ -5,9 +5,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 AWS_REGION="${AWS_REGION:-us-east-1}"
-AWS_PROFILE="${AWS_PROFILE:-opencm-deployer}"
-STACK_NAME="${STACK_NAME:-opencm-demo}"
-PROJECT_NAME="${PROJECT_NAME:-opencm}"
+AWS_PROFILE="${AWS_PROFILE:-openrm-deployer}"
+STACK_NAME="${STACK_NAME:-openrm-demo}"
+PROJECT_NAME="${PROJECT_NAME:-openrm}"
 ENVIRONMENT_NAME="${ENVIRONMENT_NAME:-demo}"
 WAIT_FOR_INVALIDATION="${WAIT_FOR_INVALIDATION:-true}"
 
@@ -27,7 +27,7 @@ fi
 ACCOUNT_ID="$(aws "${AWS_ARGS[@]}" sts get-caller-identity --query Account --output text)"
 CALLER_ARN="$(aws "${AWS_ARGS[@]}" sts get-caller-identity --query Arn --output text)"
 
-echo "Deploying OpenCM preview"
+echo "Deploying OpenRM preview"
 echo "  Account:     ${ACCOUNT_ID}"
 echo "  Caller:      ${CALLER_ARN}"
 echo "  Region:      ${AWS_REGION}"

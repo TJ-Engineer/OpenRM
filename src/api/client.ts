@@ -12,7 +12,7 @@ export function resolveApiBaseUrl(configuredUrl?: string): string {
 export function sessionHeaders(token: string, organizationId: string): Record<string, string> {
   return {
     Authorization: `Bearer ${token}`,
-    "X-OpenCM-Organization": organizationId,
+    "X-OpenRM-Organization": organizationId,
   };
 }
 

@@ -1,6 +1,6 @@
 use std::process::ExitCode;
 
-use opencm_api::{
+use openrm_api::{
     AppState, BuildInfo, auth::AuthVerifier, config::Config, connect, migrate,
     policy::PolicyEngine, router,
 };
@@ -12,7 +12,7 @@ async fn main() -> ExitCode {
     init_tracing();
 
     if let Err(error) = run().await {
-        tracing::error!(%error, "OpenCM API stopped");
+        tracing::error!(%error, "OpenRM API stopped");
         return ExitCode::FAILURE;
     }
 
@@ -33,7 +33,7 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
         build: BuildInfo::current(),
     });
     let listener = tokio::net::TcpListener::bind(config.bind_address).await?;
-    tracing::info!(address = %config.bind_address, environment = %config.app_env, "OpenCM API listening");
+    tracing::info!(address = %config.bind_address, environment = %config.app_env, "OpenRM API listening");
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await?;
@@ -44,7 +44,7 @@ fn init_tracing() {
     tracing_subscriber::registry()
         .with(
             EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "opencm_api=info,tower_http=info".into()),
+                .unwrap_or_else(|_| "openrm_api=info,tower_http=info".into()),
         )
         .with(tracing_subscriber::fmt::layer().json())
         .init();

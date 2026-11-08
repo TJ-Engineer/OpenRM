@@ -5,9 +5,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 AWS_REGION="${AWS_REGION:-us-east-1}"
-SOURCE_PROFILE="${SOURCE_PROFILE:-opencm-demo}"
-STACK_NAME="${STACK_NAME:-opencm-demo}"
-PROJECT_NAME="${PROJECT_NAME:-opencm}"
+SOURCE_PROFILE="${SOURCE_PROFILE:-openrm-demo}"
+STACK_NAME="${STACK_NAME:-openrm-demo}"
+PROJECT_NAME="${PROJECT_NAME:-openrm}"
 ENVIRONMENT_NAME="${ENVIRONMENT_NAME:-demo}"
 PRICE_CLASS="${PRICE_CLASS:-PriceClass_100}"
 
@@ -31,7 +31,7 @@ logout_source_profile() {
 
 trap logout_source_profile EXIT
 
-echo "Provisioning the OpenCM demo infrastructure once"
+echo "Provisioning the OpenRM demo infrastructure once"
 echo "  Caller:  ${CALLER_ARN}"
 echo "  Region:  ${AWS_REGION}"
 echo "  Stack:   ${STACK_NAME}"
@@ -63,7 +63,7 @@ PROJECT_NAME="${PROJECT_NAME}" \
 ENVIRONMENT_NAME="${ENVIRONMENT_NAME}" \
 "${SCRIPT_DIR}/bootstrap-aws-role.sh"
 
-AWS_PROFILE=opencm-deployer \
+AWS_PROFILE=openrm-deployer \
 AWS_REGION="${AWS_REGION}" \
 STACK_NAME="${STACK_NAME}" \
 PROJECT_NAME="${PROJECT_NAME}" \

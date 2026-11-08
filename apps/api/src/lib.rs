@@ -68,10 +68,10 @@ struct SessionResponse {
 impl BuildInfo {
     pub fn current() -> Self {
         Self {
-            service: "opencm-api",
+            service: "openrm-api",
             version: env!("CARGO_PKG_VERSION"),
-            git_sha: option_env!("OPENCM_GIT_SHA").unwrap_or("development"),
-            profile: option_env!("OPENCM_BUILD_PROFILE").unwrap_or("development"),
+            git_sha: option_env!("OPENRM_GIT_SHA").unwrap_or("development"),
+            profile: option_env!("OPENRM_BUILD_PROFILE").unwrap_or("development"),
         }
     }
 }
@@ -99,7 +99,7 @@ pub fn router(state: AppState) -> Router {
         .allow_headers([
             http::header::AUTHORIZATION,
             http::header::CONTENT_TYPE,
-            HeaderName::from_static("x-opencm-organization"),
+            HeaderName::from_static("x-openrm-organization"),
         ])
         .allow_methods([Method::GET]);
 
@@ -187,7 +187,7 @@ mod tests {
     fn test_state() -> AppState {
         AppState {
             db: PgPoolOptions::new()
-                .connect_lazy("postgres://opencm:opencm@127.0.0.1:1/opencm")
+                .connect_lazy("postgres://openrm:openrm@127.0.0.1:1/openrm")
                 .expect("lazy pool should be valid"),
             auth: AuthVerifier::dev(),
             policy: PolicyEngine,
@@ -210,7 +210,7 @@ mod tests {
         let bytes = response.into_body().collect().await.unwrap().to_bytes();
         let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(body["status"], "ok");
-        assert_eq!(body["build"]["service"], "opencm-api");
+        assert_eq!(body["build"]["service"], "openrm-api");
     }
 
     #[tokio::test]

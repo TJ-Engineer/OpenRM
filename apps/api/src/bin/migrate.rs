@@ -1,13 +1,13 @@
 use std::process::ExitCode;
 
-use opencm_api::{config::Config, connect, migrate};
+use openrm_api::{config::Config, connect, migrate};
 
 #[tokio::main]
 async fn main() -> ExitCode {
     dotenvy::dotenv().ok();
     match run().await {
         Ok(()) => {
-            println!("OpenCM database migrations are current");
+            println!("OpenRM database migrations are current");
             ExitCode::SUCCESS
         }
         Err(error) => {

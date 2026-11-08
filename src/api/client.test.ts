@@ -8,13 +8,13 @@ describe("API client configuration", () => {
   });
 
   it("normalizes a configured API URL", () => {
-    expect(resolveApiBaseUrl(" https://api.opencm.example/ ")).toBe("https://api.opencm.example");
+    expect(resolveApiBaseUrl(" https://api.openrm.example/ ")).toBe("https://api.openrm.example");
   });
 
   it("builds explicit tenant-scoped session headers", () => {
     expect(sessionHeaders("dev:ci-user", "00000000-0000-4000-8000-000000000001")).toEqual({
       Authorization: "Bearer dev:ci-user",
-      "X-OpenCM-Organization": "00000000-0000-4000-8000-000000000001",
+      "X-OpenRM-Organization": "00000000-0000-4000-8000-000000000001",
     });
   });
 });

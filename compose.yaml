@@ -1,22 +1,22 @@
-name: opencm
+name: openrm
 
 services:
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: opencm
-      POSTGRES_USER: opencm
-      POSTGRES_PASSWORD: opencm
+      POSTGRES_DB: openrm
+      POSTGRES_USER: openrm
+      POSTGRES_PASSWORD: openrm
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U opencm -d opencm"]
+      test: ["CMD-SHELL", "pg_isready -U openrm -d openrm"]
       interval: 2s
       timeout: 3s
       retries: 20
     volumes:
-      - opencm-postgres:/var/lib/postgresql/data
+      - openrm-postgres:/var/lib/postgresql/data
 
 volumes:
-  opencm-postgres:
+  openrm-postgres:
 

@@ -61,7 +61,7 @@ export interface components {
     schemas: {
         BuildInfo: {
             /** @constant */
-            service: "opencm-api";
+            service: "openrm-api";
             version: string;
             git_sha: string;
             profile: string;
@@ -185,7 +185,7 @@ export interface operations {
             query?: never;
             header: {
                 /** @description Organization UUID selected for the request. */
-                "X-OpenCM-Organization": components["parameters"]["OrganizationHeader"];
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
             };
             path?: never;
             cookie?: never;

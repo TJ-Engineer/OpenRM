@@ -1,4 +1,4 @@
-# Deploy the OpenCM wireframe to AWS
+# Deploy the OpenRM wireframe to AWS
 
 This deployment keeps the S3 bucket private and serves the React application
 through CloudFront over HTTPS. CloudFront uses Origin Access Control (OAC) to
@@ -34,7 +34,7 @@ For a non-SSO development account, use your organization's approved credential
 method. AWS CLI v2.32 and later can use browser-based temporary credentials:
 
 ```bash
-aws login --profile opencm-demo --region us-east-1
+aws login --profile openrm-demo --region us-east-1
 ```
 
 Avoid long-lived root-account access keys.
@@ -42,7 +42,7 @@ Avoid long-lived root-account access keys.
 Verify the account number and ARN before provisioning:
 
 ```bash
-AWS_PROFILE=opencm-demo aws sts get-caller-identity
+AWS_PROFILE=openrm-demo aws sts get-caller-identity
 ```
 
 For a personal account initially authenticated as root, provision the demo and
@@ -53,11 +53,11 @@ npm run provision:aws
 ```
 
 The temporary root session creates the S3/CloudFront stack and
-`OpenCMDeploymentRole`. The persistent role can only read the exact stack,
+`OpenRMDeploymentRole`. The persistent role can only read the exact stack,
 upload files to the exact demo bucket, and invalidate the CloudFront
-distribution carrying the matching OpenCM tags. It cannot create or modify
+distribution carrying the matching OpenRM tags. It cannot create or modify
 infrastructure, IAM, databases, or unrelated AWS resources. Subsequent content
-deployments use the `opencm-deployer` profile.
+deployments use the `openrm-deployer` profile.
 
 The provisioning script logs out the temporary root browser session when it
 finishes, including when an error stops the script.
@@ -67,24 +67,24 @@ finishes, including when an error stops the script.
 From this project directory:
 
 ```bash
-aws login --profile opencm-demo --region us-east-1
+aws login --profile openrm-demo --region us-east-1
 npm run deploy:aws
-aws logout --profile opencm-demo
+aws logout --profile openrm-demo
 ```
 
 Optional settings:
 
 ```bash
-AWS_PROFILE=opencm-deployer \
+AWS_PROFILE=openrm-deployer \
 AWS_REGION=us-east-1 \
-STACK_NAME=opencm-demo \
-PROJECT_NAME=opencm \
+STACK_NAME=openrm-demo \
+PROJECT_NAME=openrm \
 ENVIRONMENT_NAME=demo \
 npm run deploy:aws
 ```
 
 The source login supplies temporary credentials for assuming the restricted
-role; deployment commands run through `opencm-deployer`. The script waits for
+role; deployment commands run through `openrm-deployer`. The script waits for
 the cache invalidation to finish, then prints the HTTPS URL.
 
 ## Subsequent updates
@@ -103,7 +103,7 @@ After deployment:
 
 ```bash
 curl -I "$(AWS_PROFILE=YOUR_PROFILE aws cloudformation describe-stacks \
-  --stack-name opencm-demo \
+  --stack-name openrm-demo \
   --query "Stacks[0].Outputs[?OutputKey=='SiteUrl'].OutputValue | [0]" \
   --output text)"
 ```

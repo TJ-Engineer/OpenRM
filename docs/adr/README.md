@@ -1,6 +1,6 @@
 # Architecture decision records
 
-ADRs record decisions that constrain OpenCM implementation. An accepted ADR can be superseded only by a later ADR; do not silently rewrite the decision after implementation depends on it.
+ADRs record decisions that constrain OpenRM implementation. An accepted ADR can be superseded only by a later ADR; do not silently rewrite the decision after implementation depends on it.
 
 | ADR | Decision |
 | --- | --- |

@@ -1,6 +1,6 @@
-# OpenCM
+# OpenRM
 
-OpenCM is an open, self-hostable configuration and requirements management platform. The repository currently contains the interactive product preview and the Phase 1 platform foundation.
+OpenRM is an open, self-hostable configuration and requirements management platform. The repository currently contains the interactive product preview and the Phase 1 platform foundation.
 
 ## Repository map
 
@@ -30,7 +30,7 @@ Run the services in separate terminals:
 
 ```bash
 npm run dev
-cargo run -p opencm-api
+cargo run -p openrm-api
 ```
 
 The web client runs at `http://127.0.0.1:5173`; the API runs at `http://127.0.0.1:8080`.
@@ -45,8 +45,8 @@ For the database-backed path:
 
 ```bash
 docker compose up -d postgres
-cargo run -p opencm-api --bin migrate
-cargo run -p opencm-api
+cargo run -p openrm-api --bin migrate
+cargo run -p openrm-api
 ```
 
 Then verify:
@@ -56,7 +56,7 @@ curl http://127.0.0.1:8080/health
 curl http://127.0.0.1:8080/ready
 curl \
   -H 'Authorization: Bearer dev:local-user' \
-  -H 'X-OpenCM-Organization: 00000000-0000-4000-8000-000000000001' \
+  -H 'X-OpenRM-Organization: 00000000-0000-4000-8000-000000000001' \
   http://127.0.0.1:8080/api/v1/session
 ```
 

@@ -1,13 +1,13 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >-
-  Private S3 origin and CloudFront distribution for the OpenCM React funding
+  Private S3 origin and CloudFront distribution for the OpenRM React funding
   preview. The bucket is never public; CloudFront reads it through OAC.
 
 Parameters:
   ProjectName:
     Type: String
-    Default: opencm
-    AllowedPattern: "^opencm[a-z0-9-]{0,14}$"
+    Default: openrm
+    AllowedPattern: "^openrm[a-z0-9-]{0,14}$"
     Description: Lowercase project identifier used for tags and descriptions.
 
   EnvironmentName:
@@ -79,7 +79,7 @@ Resources:
     Properties:
       ResponseHeadersPolicyConfig:
         Name: !Sub "${AWS::StackName}-security-headers"
-        Comment: Security headers for the OpenCM static React application
+        Comment: Security headers for the OpenRM static React application
         SecurityHeadersConfig:
           ContentSecurityPolicy:
             ContentSecurityPolicy: >-
