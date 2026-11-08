@@ -4,19 +4,35 @@ use openrm_api::{
     AppState, BuildInfo, auth::AuthVerifier, config::Config, connect, evidence::EvidenceSigner,
     migrate, policy::PolicyEngine, router,
 };
+use opentelemetry::{global, trace::TracerProvider as _};
+use opentelemetry_otlp::{Protocol, WithExportConfig};
+use opentelemetry_sdk::{Resource, propagation::TraceContextPropagator, trace::SdkTracerProvider};
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() -> ExitCode {
     dotenvy::dotenv().ok();
-    init_tracing();
+    let telemetry = match init_tracing() {
+        Ok(telemetry) => telemetry,
+        Err(error) => {
+            eprintln!("OpenRM telemetry initialization failed: {error}");
+            return ExitCode::FAILURE;
+        }
+    };
 
-    if let Err(error) = run().await {
+    let result = if let Err(error) = run().await {
         tracing::error!(%error, "OpenRM API stopped");
-        return ExitCode::FAILURE;
+        ExitCode::FAILURE
+    } else {
+        ExitCode::SUCCESS
+    };
+    if let Some(provider) = telemetry
+        && let Err(error) = provider.shutdown()
+    {
+        tracing::warn!(%error, "OpenTelemetry provider shutdown was incomplete");
     }
 
-    ExitCode::SUCCESS
+    result
 }
 
 async fn run() -> Result<(), Box<dyn std::error::Error>> {
@@ -30,13 +46,17 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
         config.evidence_signing_key.as_bytes(),
         config.evidence_signing_key_id.clone(),
     );
+    let jira_dispatcher =
+        openrm_api::connectors::JiraDispatcher::new(config.jira_api_token.clone())?;
     let outbox_worker = tokio::spawn(openrm_api::outbox::run(db.clone()));
+    let connector_worker = tokio::spawn(openrm_api::connectors::run(db.clone(), jira_dispatcher));
     let app = router(AppState {
         db,
         auth,
         policy: PolicyEngine,
         build: BuildInfo::current(),
         evidence_signer,
+        metrics: openrm_api::observability::OperationsMetrics::default(),
     });
     let listener = tokio::net::TcpListener::bind(config.bind_address).await?;
     tracing::info!(address = %config.bind_address, environment = %config.app_env, "OpenRM API listening");
@@ -44,18 +64,41 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
         .with_graceful_shutdown(shutdown_signal())
         .await;
     outbox_worker.abort();
+    connector_worker.abort();
     serve_result?;
     Ok(())
 }
 
-fn init_tracing() {
+fn init_tracing() -> Result<Option<SdkTracerProvider>, Box<dyn std::error::Error>> {
+    global::set_text_map_propagator(TraceContextPropagator::new());
+    let telemetry = if std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").is_ok() {
+        let exporter = opentelemetry_otlp::SpanExporter::builder()
+            .with_http()
+            .with_protocol(Protocol::HttpBinary)
+            .build()?;
+        let provider = SdkTracerProvider::builder()
+            .with_batch_exporter(exporter)
+            .with_resource(Resource::builder().with_service_name("openrm-api").build())
+            .build();
+        global::set_tracer_provider(provider.clone());
+        let tracer = provider.tracer("openrm-api");
+        Some((provider, tracing_opentelemetry::layer().with_tracer(tracer)))
+    } else {
+        None
+    };
+    let (provider, telemetry_layer) = match telemetry {
+        Some((provider, layer)) => (Some(provider), Some(layer)),
+        None => (None, None),
+    };
     tracing_subscriber::registry()
         .with(
             EnvFilter::try_from_default_env()
                 .unwrap_or_else(|_| "openrm_api=info,tower_http=info".into()),
         )
         .with(tracing_subscriber::fmt::layer().json())
+        .with(telemetry_layer)
         .init();
+    Ok(provider)
 }
 
 async fn shutdown_signal() {

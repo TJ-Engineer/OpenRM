@@ -19,6 +19,7 @@ pub struct Config {
     pub oidc_audience: Option<String>,
     pub evidence_signing_key: String,
     pub evidence_signing_key_id: String,
+    pub jira_api_token: Option<String>,
 }
 
 #[derive(Debug, Error)]
@@ -69,17 +70,39 @@ impl Config {
                 Some(required("OIDC_AUDIENCE")?),
             ),
         };
+        if app_env.eq_ignore_ascii_case("production")
+            && !oidc_issuer.as_deref().is_some_and(valid_https_issuer)
+        {
+            return Err(ConfigError::Invalid {
+                name: "OIDC_ISSUER",
+                message:
+                    "production issuer must be an HTTPS URL without credentials, query, or fragment"
+                        .to_owned(),
+            });
+        }
         let evidence_signing_key = match env::var("EVIDENCE_SIGNING_KEY") {
+            Ok(value) if app_env.eq_ignore_ascii_case("production") && value.len() < 32 => {
+                return Err(ConfigError::Invalid {
+                    name: "EVIDENCE_SIGNING_KEY",
+                    message: "production key must contain at least 32 bytes".to_owned(),
+                });
+            }
             Ok(value) if !value.trim().is_empty() => value,
             _ if app_env.eq_ignore_ascii_case("production") => {
                 return Err(ConfigError::Missing("EVIDENCE_SIGNING_KEY"));
             }
             _ => "openrm-development-evidence-key".to_owned(),
         };
-        let evidence_signing_key_id = env::var("EVIDENCE_SIGNING_KEY_ID")
+        let evidence_signing_key_id = match env::var("EVIDENCE_SIGNING_KEY_ID") {
+            Ok(value) if !value.trim().is_empty() => value,
+            _ if app_env.eq_ignore_ascii_case("production") => {
+                return Err(ConfigError::Missing("EVIDENCE_SIGNING_KEY_ID"));
+            }
+            _ => "development".to_owned(),
+        };
+        let jira_api_token = env::var("JIRA_API_TOKEN")
             .ok()
-            .filter(|value| !value.trim().is_empty())
-            .unwrap_or_else(|| "development".to_owned());
+            .filter(|value| !value.trim().is_empty());
 
         Ok(Self {
             app_env,
@@ -91,6 +114,7 @@ impl Config {
             oidc_audience,
             evidence_signing_key,
             evidence_signing_key_id,
+            jira_api_token,
         })
     }
 }
@@ -113,12 +137,36 @@ where
     })
 }
 
+fn valid_https_issuer(value: &str) -> bool {
+    reqwest::Url::parse(value).is_ok_and(|url| {
+        url.scheme() == "https"
+            && url.host_str().is_some()
+            && url.username().is_empty()
+            && url.password().is_none()
+            && url.query().is_none()
+            && url.fragment().is_none()
+    })
+}
+
 #[cfg(test)]
 mod tests {
-    use super::AuthMode;
+    use super::{AuthMode, valid_https_issuer};
 
     #[test]
     fn auth_mode_values_are_distinct() {
         assert_ne!(AuthMode::Dev, AuthMode::Oidc);
+    }
+
+    #[test]
+    fn production_oidc_issuers_use_a_clean_https_origin() {
+        assert!(valid_https_issuer("https://identity.example.com"));
+        assert!(valid_https_issuer("https://identity.example.com/tenant"));
+        assert!(!valid_https_issuer("http://identity.example.com"));
+        assert!(!valid_https_issuer(
+            "https://user:secret@identity.example.com"
+        ));
+        assert!(!valid_https_issuer(
+            "https://identity.example.com?tenant=other"
+        ));
     }
 }

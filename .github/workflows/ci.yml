@@ -29,7 +29,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run test
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium firefox webkit
       - run: npm run test:e2e
       - run: npm audit --audit-level=high
 
@@ -71,14 +71,15 @@ jobs:
       API_BIND_ADDRESS: 127.0.0.1:8080
       DATABASE_URL: postgres://openrm:openrm@127.0.0.1:5432/openrm
       RUN_MIGRATIONS: "false"
-      EVIDENCE_SIGNING_KEY: ci-phase-4-evidence-signing-key
-      EVIDENCE_SIGNING_KEY_ID: ci-phase-4
+      EVIDENCE_SIGNING_KEY: ci-phase-5-evidence-signing-key
+      EVIDENCE_SIGNING_KEY_ID: ci-phase-5
+      JIRA_API_TOKEN: ci-jira-placeholder-token
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo run -p openrm-api --bin migrate
-      - name: Exercise controlled requirements through verification evidence
+      - name: Exercise controlled requirements through pilot operations
         run: |
           set -euo pipefail
           cargo run -p openrm-api > /tmp/openrm-api.log 2>&1 &
@@ -352,7 +353,7 @@ jobs:
           test "$(jq -r '.signature_valid' /tmp/evidence-1.json)" = 'true'
           test "$(jq -r '.schema_version' /tmp/evidence-1.json)" = 'openrm-evidence-v1'
           test "$(jq -r '.signing_algorithm' /tmp/evidence-1.json)" = 'HMAC-SHA256'
-          test "$(jq -r '.signing_key_id' /tmp/evidence-1.json)" = 'ci-phase-4'
+          test "$(jq -r '.signing_key_id' /tmp/evidence-1.json)" = 'ci-phase-5'
           test "$(jq -r '.manifest.artifacts | length' /tmp/evidence-1.json)" -eq 3
           test "$(jq -r '.manifest.relationships | length' /tmp/evidence-1.json)" -eq 1
 
@@ -524,6 +525,103 @@ jobs:
             "${base_url}/projects/${isolated_project_id}/verification/cases?review_id=${review_id}")"
           test "${verification_isolation_status}" = '403'
 
+          connector_url="${base_url}/projects/${project_id}/connectors/jira"
+          request PUT 'dev:ci-admin' "${connector_url}" \
+            '{"expected_version":0,"mode":"active","base_url":"https://127.0.0.1:9","remote_project_key":"CISLICE","secret_ref":"env:JIRA_API_TOKEN","field_mapping":{"requirement_key":"customfield_10001"},"max_attempts":1}' \
+            > /tmp/jira-config-active.json
+          connector_id="$(jq -r '.id' /tmp/jira-config-active.json)"
+          test "$(jq -r '.version' /tmp/jira-config-active.json)" -eq 1
+          test "$(jq -r '.mode' /tmp/jira-config-active.json)" = 'active'
+
+          delivery_body='{"event_key":"ci-requirement-revision-3","operation":"comment_revision","external_issue_key":"CISLICE-42","payload":{"body":"CI-REQ-1 revision 3 is ready for governed review."}}'
+          request POST 'dev:ci-author:author' "${connector_url}/deliveries" \
+            "${delivery_body}" > /tmp/jira-delivery.json
+          connector_delivery_id="$(jq -r '.id' /tmp/jira-delivery.json)"
+          test "$(jq -r '.payload_hash | length' /tmp/jira-delivery.json)" -eq 64
+          request POST 'dev:ci-author:author' "${connector_url}/deliveries" \
+            "${delivery_body}" > /tmp/jira-delivery-replay.json
+          test "$(jq -r '.id' /tmp/jira-delivery-replay.json)" = "${connector_delivery_id}"
+          for attempt in {1..30}; do
+            request GET 'dev:ci-viewer:viewer' \
+              "${connector_url}/deliveries?status=dead_letter" > /tmp/jira-dead-letter.json
+            if [[ "$(jq -r --arg id "${connector_delivery_id}" '.items[] | select(.id == $id) | .status' /tmp/jira-dead-letter.json)" = 'dead_letter' ]]; then
+              break
+            fi
+            if [[ "${attempt}" -eq 30 ]]; then
+              echo 'Jira delivery did not enter the dead-letter queue' >&2
+              cat /tmp/openrm-api.log
+              exit 1
+            fi
+            sleep 1
+          done
+          test "$(jq -r '.items[0].attempts' /tmp/jira-dead-letter.json)" -eq 1
+          test "$(jq -r '.items[0].attempt_history[0].outcome' /tmp/jira-dead-letter.json)" = 'dead_letter'
+
+          request PUT 'dev:ci-admin' "${connector_url}" \
+            '{"expected_version":1,"mode":"dry_run","base_url":"https://jira.example.invalid","remote_project_key":"CISLICE","secret_ref":"env:JIRA_API_TOKEN","field_mapping":{"requirement_key":"customfield_10001"},"max_attempts":5}' \
+            > /tmp/jira-config-dry-run.json
+          test "$(jq -r '.version' /tmp/jira-config-dry-run.json)" -eq 2
+          test "$(jq -r '.mode' /tmp/jira-config-dry-run.json)" = 'dry_run'
+          request POST 'dev:ci-admin' \
+            "${connector_url}/deliveries/${connector_delivery_id}/replay" > /tmp/jira-replay.json
+          for attempt in {1..30}; do
+            request GET 'dev:ci-viewer:viewer' \
+              "${connector_url}/deliveries" > /tmp/jira-deliveries.json
+            if [[ "$(jq -r --arg id "${connector_delivery_id}" '.items[] | select(.id == $id) | .status' /tmp/jira-deliveries.json)" = 'delivered' ]]; then
+              break
+            fi
+            if [[ "${attempt}" -eq 30 ]]; then
+              echo 'Replayed Jira delivery did not complete' >&2
+              cat /tmp/openrm-api.log
+              exit 1
+            fi
+            sleep 1
+          done
+          jq -e --arg id "${connector_delivery_id}" \
+            '.items[] | select(.id == $id) | .attempts == 2 and (.attempt_history | map(.outcome) == ["dead_letter", "delivered"])' \
+            /tmp/jira-deliveries.json > /dev/null
+          request GET 'dev:ci-viewer:viewer' "${connector_url}" > /tmp/jira-status.json
+          jq -e '.configuration.version == 2 and .delivered == 1 and .dead_letters == 0 and (.configuration_history | length) == 2' \
+            /tmp/jira-status.json > /dev/null
+
+          connector_isolation_status="$(curl --silent --output /tmp/connector-isolation.json --write-out '%{http_code}' \
+            -H 'Authorization: Bearer dev:ci-author:author' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            "${base_url}/projects/${isolated_project_id}/connectors/jira")"
+          test "${connector_isolation_status}" = '403'
+          request GET 'dev:ci-admin' "${base_url}/operations/status" > /tmp/operations-status.json
+          jq -e '.status == "healthy" and .database == "available" and .telemetry.structured_logs and .telemetry.prometheus_metrics and .queues.connector_dead_letters == 0' \
+            /tmp/operations-status.json > /dev/null
+          curl --fail --silent http://127.0.0.1:8080/metrics > /tmp/openrm-metrics.txt
+          grep -q '^openrm_http_requests_total ' /tmp/openrm-metrics.txt
+          grep -q '^openrm_http_request_duration_seconds_bucket' /tmp/openrm-metrics.txt
+          grep -q '^openrm_connector_deliveries{status="delivered"} 1$' /tmp/openrm-metrics.txt
+
+          curl --fail --silent --dump-header /tmp/security-headers.txt \
+            --output /dev/null http://127.0.0.1:8080/health
+          grep -qi '^x-content-type-options: nosniff' /tmp/security-headers.txt
+          grep -qi "^content-security-policy: default-src 'none'; frame-ancestors 'none'" /tmp/security-headers.txt
+          malformed_auth_status="$(curl --silent --output /tmp/malformed-auth.json --write-out '%{http_code}' \
+            -H 'Authorization: Bearer malformed' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            "${base_url}/session")"
+          test "${malformed_auth_status}" = '401'
+          head -c 1100000 /dev/zero | tr '\0' 'a' > /tmp/oversized-request.json
+          oversized_status="$(curl --silent --output /tmp/oversized-response.json --write-out '%{http_code}' \
+            -X POST -H 'Authorization: Bearer dev:ci-admin' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            -H 'Content-Type: application/json' --data-binary @/tmp/oversized-request.json \
+            "${base_url}/projects")"
+          test "${oversized_status}" = '413'
+          curl --silent --dump-header /tmp/cors-headers.txt --output /dev/null \
+            -X OPTIONS -H 'Origin: https://untrusted.example' \
+            -H 'Access-Control-Request-Method: GET' "${base_url}/session"
+          ! grep -qi '^access-control-allow-origin:' /tmp/cors-headers.txt
+          node scripts/load-test.mjs --base-url http://127.0.0.1:8080 \
+            --requests 300 --concurrency 20 --p95 500 --error-rate 0
+          node scripts/load-test.mjs --base-url http://127.0.0.1:8080 \
+            --requests 1000000 --duration 10 --concurrency 10 --p95 500 --error-rate 0
+
           finalized_comment_status="$(curl --silent --output /tmp/review-finalized-comment.json --write-out '%{http_code}' \
             -X POST -H 'Authorization: Bearer dev:ci-approver:reviewer' \
             -H "X-OpenRM-Organization: ${organization_id}" \
@@ -657,5 +755,70 @@ jobs:
             echo 'Verification due-event evidence accepted an update' >&2
             exit 1
           fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE connector_configuration_events SET mode = 'disabled' WHERE connector_id = '${connector_id}'"; then
+            echo 'Connector configuration history accepted an update' >&2
+            exit 1
+          fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE connector_delivery_attempts SET outcome = 'retry' WHERE delivery_id = '${connector_delivery_id}'"; then
+            echo 'Connector attempt history accepted an update' >&2
+            exit 1
+          fi
           test "$(psql "${DATABASE_URL}" -tAc "SELECT count(*) FROM audit_events WHERE project_id = '${project_id}'")" -ge 10
+
+  recovery-rehearsal:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: openrm
+          POSTGRES_USER: openrm
+          POSTGRES_PASSWORD: openrm
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U openrm -d openrm"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgres://openrm:openrm@127.0.0.1:5432/openrm
+      RECOVERY_DATABASE_URL: postgres://openrm:openrm@127.0.0.1:5432/openrm_recovery
+      UPGRADE_DATABASE_URL: postgres://openrm:openrm@127.0.0.1:5432/openrm_recovery
+      POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+      POSTGRES_HOST_PORT: "5432"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Prepare source and isolated recovery databases
+        run: |
+          cargo run -p openrm-api --bin migrate
+          docker exec "${POSTGRES_CONTAINER}" psql -U openrm -d postgres \
+            -v ON_ERROR_STOP=1 -c 'CREATE DATABASE openrm_recovery'
+      - name: Rehearse backup and restore
+        run: bash scripts/rehearse-recovery.sh
+      - name: Rehearse forward-only upgrade
+        run: bash scripts/rehearse-upgrade.sh
+
+  production-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate production topology
+        env:
+          OPENRM_DATABASE_URL: postgres://openrm:password@postgres:5432/openrm
+          OPENRM_OIDC_ISSUER: https://identity.example.invalid
+          OPENRM_OIDC_AUDIENCE: openrm
+          OPENRM_EVIDENCE_SIGNING_KEY: ci-artifact-validation-key-32-bytes-minimum
+          OPENRM_EVIDENCE_SIGNING_KEY_ID: ci-artifact
+          OPENRM_GRAFANA_ADMIN_PASSWORD: ci-grafana-placeholder
+          OPENRM_POSTGRES_PASSWORD_FILE: /tmp/openrm-postgres-password
+        run: |
+          printf '%s' 'ci-postgres-placeholder' > /tmp/openrm-postgres-password
+          docker compose -f deploy/compose.production.yaml config --quiet
+      - name: Build production API image
+        run: docker build --file deploy/openrm-api.Dockerfile --tag openrm-api:ci .
 

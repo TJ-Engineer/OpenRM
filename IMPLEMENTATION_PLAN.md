@@ -1,7 +1,7 @@
 # OpenRM implementation plan
 
 **Planning baseline:** 7 November 2026  
-**Current stage:** Phase 4 complete; Phase 5 integration and beta hardening is next
+**Current stage:** Phase 5 implementation candidate complete; protected hosted exit evidence pending
 
 **Primary outcome:** Deliver a self-hostable configuration and requirements management platform with controlled change, end-to-end traceability, review evidence, and verification records.
 
@@ -27,15 +27,18 @@ What exists now:
 - Attributable changesets, immutable signed baselines, exact baseline comparison, deterministic evidence export, and stale-snapshot protection.
 - Baseline-bound review packages with participants, exact-revision comments, append-only resolutions, segregation-of-duty policy, and signed decisions.
 - Browser end-to-end coverage for requirements, traceability, baselines, live review, and verification workflows plus automated WCAG 2 A/AA checks.
+- Governed Jira delivery with external secret references, idempotent queueing, bounded retry/rate-limit handling, append-only attempts, dead letters, and attributable replay.
+- Prometheus SLIs, administrator operations status, structured logs, optional OTLP/HTTP traces, provisioned dashboards/alerts, and a hardened production container topology.
+- PostgreSQL backup/restore and forward-only upgrade rehearsals, multi-browser and accessibility coverage, load validation, security smoke tests, and pilot operations documentation.
 
 What does not exist yet:
 
-- Deployed API/database environments and a connected production OIDC provider.
-- Production deployment of the artifact, relationship, baseline, review, and verification endpoints.
-- Release automation, full observability, or recovery validation.
-- Live Jira or other connector implementations.
+- A commissioned pilot API/database environment and connected production OIDC provider.
+- Environment-specific alert routing, encrypted backup retention, and point-in-time recovery evidence.
+- Automated image-registry promotion and a live Jira service identity for the pilot tenant.
+- Independent external penetration-test assurance for broader regulated production use.
 
-The next engineering gate is the first Phase 5 integration-and-operations slice: deployed identity, observable service health, and a rehearsed recovery path.
+The next engineering gate is protected hosted validation of the Phase 5 candidate, followed by environment-specific pilot commissioning.
 
 ## 2. Delivery principles
 
@@ -214,14 +217,16 @@ Completion evidence:
 
 **Outcome:** A pilot team can operate OpenRM reliably, recoverably, and with measured service health.
 
+**Status:** Implementation candidate complete on 8 November 2026. Local code, browser, PostgreSQL 17 runtime, load, recovery, upgrade, security, and deployment-artifact gates pass; protected hosted exit evidence is pending.
+
 Deliverables:
 
-- [ ] Jira connector with mapping, replay, rate-limit handling, and dead-letter workflow.
-- [ ] OpenTelemetry traces, service-level indicators, dashboards, and alerts.
-- [ ] Backup, restore, disaster-recovery, and upgrade rehearsals.
-- [ ] Threat model, security review, dependency policy, and penetration-test remediation.
-- [ ] Load, soak, browser-compatibility, and accessibility validation.
-- [ ] Administration guide, operator runbook, and pilot onboarding.
+- [x] Jira connector with mapping, replay, rate-limit handling, and dead-letter workflow.
+- [x] OpenTelemetry traces, service-level indicators, dashboards, and alerts.
+- [x] Backup, restore, disaster-recovery, and upgrade rehearsals.
+- [x] Threat model, security review, dependency policy, and automated penetration-test smoke remediation for the bounded pilot.
+- [x] Load, soak harness, browser-compatibility, and accessibility validation.
+- [x] Administration guide, operator runbook, and pilot onboarding.
 
 Exit gate:
 
@@ -276,6 +281,17 @@ FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-
 | VER-101 | P0 | Persist verification cases, procedures, runs, results, and attachments | Complete | Migration, API, clean PostgreSQL workflow, and immutable evidence matrix |
 | VER-102 | P0 | Roll verification evidence into requirement coverage and gate readiness | Complete | Exact-revision coverage, explainable readiness, and browser evidence |
 | NTF-101 | P1 | Emit review and verification due-date notifications | Complete | Idempotent due-soon, overdue, and completion events |
+
+## 5.4 Phase 5 execution backlog
+
+| ID | Priority | Work item | Status | Primary evidence |
+| --- | --- | --- | --- | --- |
+| INT-101 | P0 | Deliver governed Jira mapping, queueing, retry, dead-letter, and replay | Complete | API/UI workflow, append-only attempts, and database-path matrix |
+| OPS-101 | P0 | Add metrics, OTLP traces, SLO status, dashboards, and alerts | Complete | Prometheus endpoint, operations API, and provisioned observability topology |
+| OPS-102 | P0 | Rehearse backup, restore, disaster recovery, and upgrades | Complete | PostgreSQL 17 archive round trip and idempotent migration rehearsal |
+| SEC-201 | P0 | Complete threat review and pilot security remediation | Complete | Threat model, dependency gates, security smoke matrix, and hardened container |
+| QLT-201 | P0 | Validate load, soak harness, browsers, and accessibility | Complete | Load threshold plus Chromium, Firefox, WebKit, and WCAG A/AA matrix |
+| PIL-101 | P1 | Publish administration, operations, and onboarding procedures | Complete | Deployment guide, administration guide, runbook, and pilot checklist |
 
 ## 6. Quality gates
 

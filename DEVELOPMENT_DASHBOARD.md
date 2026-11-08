@@ -1,11 +1,11 @@
 # OpenRM development dashboard
 
-**Last verified:** 8 November 2026, 11:22 CST<br>
+**Last verified:** 8 November 2026, 12:08 CST<br>
 **Foundation evidence commit:** `fc6687f`<br>
 **Phase 2 evidence commit:** `f498031`<br>
 **Phase 3 implementation evidence commit:** `4f50618`<br>
 **Phase 4 protected evidence:** [OpenRM CI run 42504423145](https://github.com/TJ-Engineer/OpenRM/actions/runs/42504423145)<br>
-**Overall status:** 🟢 Phase 4 complete; Phase 5 integration and beta hardening is next
+**Overall status:** 🟡 Phase 5 candidate locally complete; protected hosted exit evidence pending
 
 This file is the repository-level status dashboard. It summarizes delivery evidence and immediate priorities; [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) remains the source for scope, architecture, phase definitions, and exit gates.
 
@@ -23,7 +23,8 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | Requirements runtime path | 🟢 Protected CI passed | The complete two-project authoring and isolation path passed against PostgreSQL 17 in [OpenRM CI run 42492278928](https://github.com/TJ-Engineer/OpenRM/actions/runs/42492278928). |
 | Phase 3 — Traceability and controlled change | 🟢 Complete | The complete trace, impact, changeset, baseline, comparison, and signed-export slice passed locally and in protected CI. |
 | Phase 4 — Reviews and verification | 🟢 Complete | The complete review-to-verification signed-evidence exit path passes locally and in protected hosted CI. |
-| Production API and database | ⚪ Not deployed | Deployment environments, production OIDC, observability, and recovery controls remain future work. |
+| Phase 5 — Integration and beta hardening | 🟡 Candidate complete | Jira operations, telemetry, recovery, security, load, three-browser accessibility, deployment artifacts, and operator procedures pass locally; hosted evidence is pending. |
+| Production API and database | ⚪ Not commissioned | Hardened deployment assets are verified, but the pilot environment, OIDC tenant, PITR, secret manager, and alert receivers remain operator-specific work. |
 
 ## Phase progress
 
@@ -34,7 +35,7 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | 🟢 | 2. Requirements vertical slice | Complete | Live authoring, project roles, organization, validation, immutable history, comparison, import/export, audit, E2E, and accessibility evidence are verified. |
 | 🟢 | 3. Traceability and controlled change | Complete | Directed relationships, trace queries, asynchronous impact, attributable changesets, immutable baselines, comparison, and signed export are protected-CI verified. |
 | 🟢 | 4. Reviews and verification | Complete | Reviews, independent verification, exact coverage, readiness, due events, and complete signed export are protected-CI verified. |
-| ⚪ | 5. Integration and beta hardening | Planned | Jira connector, observability, recovery, security hardening, performance, and pilot operations. |
+| 🟡 | 5. Integration and beta hardening | Candidate complete | Jira delivery/replay, telemetry, recovery, security, load, browser/accessibility, and pilot operations evidence pass locally; protected hosted validation remains. |
 
 ## Phase time and token usage
 
@@ -47,7 +48,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 2. Requirements vertical slice | Complete; partial usage telemetry | 8 Nov 2026 | 8 Nov 2026 | 1.1 h tracked | `N/R` |
 | 3. Traceability and controlled change | Complete | 8 Nov 2026 | 8 Nov 2026 | 0.7 h | `N/R` |
 | 4. Reviews and verification | Complete | 8 Nov 2026 | 8 Nov 2026 | 0.9 h | `N/R` |
-| 5. Integration and beta hardening | Not started | — | — | 0 h | 0 |
+| 5. Integration and beta hardening | Candidate complete; hosted evidence pending | 8 Nov 2026 | — | 0.8 h | `N/R` |
 
 ### Usage change log
 
@@ -65,6 +66,8 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 8 November 2026, 11:09 CST | 4 | 0.4 h | `N/R` | Completed immutable verification planning/execution, signed results and attachments, exact coverage, explainable readiness, due events, complete deterministic export, live browser workflow, and a second clean PostgreSQL exit matrix. |
 | 8 November 2026, 11:13 CST | 4 | 0.1 h | `N/R` | Replayed the complete signed export with review discussion and lifecycle evidence, passed the full nine-test Chromium suite, and completed the final contract, CI-definition, and diff audit. |
 | 8 November 2026, 11:22 CST | 4 | 0.1 h | `N/R` | Protected `web`, `api`, and `database-path` checks passed in OpenRM CI run 42504423145; Phase 4 closure evidence recorded. |
+| 8 November 2026, 11:54 CST | 5 | 0.6 h | `N/R` | Implemented Jira delivery/replay, operational telemetry, recovery/deployment assets, security hardening, multi-browser/WCAG tests, load evidence, and pilot operating procedures; local candidate matrix passed. |
+| 8 November 2026, 12:08 CST | 5 | 0.2 h | `N/R` | Hardened production OIDC/JWKS and queue-health boundaries, reran Rust and web gates, and verified the final image as non-root with a read-only filesystem and all capabilities dropped. |
 
 ### Usage accounting rules
 
@@ -103,9 +106,9 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 
 ## Current priorities
 
-1. Begin Phase 5 API deployment and production OIDC integration.
-2. Add service observability, backup/restore validation, and recovery rehearsals.
-3. Deliver the first live connector with replay and failure handling.
+1. Pass the Phase 5 candidate through protected hosted CI and merge it without bypassing required checks.
+2. Commission the bounded pilot environment with production OIDC, secret delivery, PITR, and alert routing.
+3. Obtain environment-specific pilot acceptance and independent external assurance before broader regulated production use.
 
 ## Phase 3 completion evidence
 
@@ -150,10 +153,26 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 | Verification accessibility | 🟢 Browser verified | The live Verification workspace has no automatically detectable WCAG 2 A/AA violations. |
 | Protected hosted evidence | 🟢 CI verified | `web`, `api`, and `database-path` passed in [OpenRM CI run 42504423145](https://github.com/TJ-Engineer/OpenRM/actions/runs/42504423145) for the complete Phase 4 branch state. |
 
+## Phase 5 candidate evidence
+
+| Capability | State | Evidence |
+| --- | --- | --- |
+| Jira connector operations | 🟢 Locally verified | Administrator policy, external secret references, mapping, idempotent enqueue, fixed HTTPS paths, bounded attempts, rate-limit/backoff classification, dead letters, and attributable replay are implemented. |
+| Immutable connector evidence | 🟢 Locally verified | Two configuration versions and ordered delivery attempts were retained; PostgreSQL rejected direct changes to both histories. |
+| Operational telemetry | 🟢 Locally verified | Structured logs, Prometheus request/error/latency and queue metrics, administrator operations status, W3C propagation, optional OTLP/HTTP export, dashboards, and alerts are configured. |
+| Production deployment artifact | 🟢 Locally verified | The 40.1 MB API image built from the frozen candidate and passed health/readiness as UID 10001 with a read-only root filesystem and all capabilities dropped. |
+| Security hardening | 🟢 Locally verified | Threat review, HTTPS connector origin constraints, secret separation, request bounds, timeout, headers, CORS/authentication smoke checks, and dependency policies are present. |
+| Load and soak | 🟢 Locally verified | The final bounded load gate completed 300 requests at concurrency 20 with zero errors and 14.06 ms p95; a 30-second soak issued 118,130 requests at concurrency 10 with zero errors and 3.77 ms p95. |
+| Browser and accessibility | 🟢 Locally verified | All 33 workflows and WCAG 2 A/AA scans pass in Chromium, Firefox, and WebKit. |
+| Recovery and upgrades | 🟢 Locally verified | PostgreSQL 17 restored 55 controlled rows across nine migrations with all six critical evidence tables; two migration applications were idempotent. |
+| Pilot procedures | 🟢 Documented | Deployment, administration, SLO/alert, recovery, runbook, onboarding, threat-model, and security-review documents define the operating boundary. |
+| Protected hosted evidence | 🟡 Pending | The expanded `web`, `api`, `database-path`, `recovery-rehearsal`, and `production-artifact` jobs must pass before phase closure. |
+
 ## Known delivery gaps
 
-- The API, PostgreSQL database, and production OIDC provider are not deployed.
-- Release automation, full observability, backup/restore validation, and live connectors remain planned.
+- The bounded pilot API/database environment and production OIDC provider are not commissioned by this repository change.
+- Alert receivers, database encryption/PITR, backup retention, and secret-manager integration require environment-specific evidence.
+- Registry promotion and independent external penetration-test assurance remain required before broader regulated production exposure.
 
 ## Update policy
 

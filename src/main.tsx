@@ -26,7 +26,6 @@ import {
   Link2,
   LockKeyhole,
   Menu,
-  MessageSquareText,
   MoreHorizontal,
   PackageCheck,
   Search,
@@ -41,6 +40,7 @@ import {
 } from "lucide-react";
 import "./styles.css";
 import { BaselinesWorkspace } from "./baselines/BaselinesWorkspace";
+import { IntegrationWorkspace } from "./integrations/IntegrationWorkspace";
 import { RequirementsWorkspace } from "./requirements/RequirementsWorkspace";
 import { ReviewsWorkspace } from "./reviews/ReviewsWorkspace";
 import { TraceabilityWorkspace } from "./traceability/TraceabilityWorkspace";
@@ -118,9 +118,9 @@ const DEVELOPMENT_PHASES = [
     id: "phase-5",
     number: "05",
     name: "Pilot beta",
-    window: "Weeks 15–17",
-    status: "queued",
-    outcome: "Integration, operations, and hardening",
+    window: "Complete",
+    status: "complete",
+    outcome: "Connector, operations, recovery, and hardening gates passed",
   },
 ];
 
@@ -129,49 +129,49 @@ const DEVELOPMENT_WORKSTREAMS = [
     name: "Product experience",
     icon: Columns3,
     progress: 100,
-    status: "Review and verification live",
+    status: "Pilot workflows live",
     tone: "mint",
-    now: "Begin the Phase 5 integration and operations slice",
+    now: "Prepare the bounded pilot deployment decision",
   },
   {
     name: "Platform & API",
     icon: ServerCog,
     progress: 100,
-    status: "Phase 4 API implemented",
+    status: "Phase 5 operational API implemented",
     tone: "blue",
-    now: "Preserve the complete gate-evidence compatibility contract",
+    now: "Preserve the public contract through pilot operations",
   },
   {
     name: "Data & versioning",
     icon: Database,
     progress: 100,
-    status: "Signed gate evidence verified",
+    status: "Recovery and upgrade rehearsed",
     tone: "mint",
-    now: "Keep all controlled evidence append-only",
+    now: "Monitor backup age and recovery objectives",
   },
   {
     name: "Security & identity",
     icon: ShieldCheck,
-    progress: 60,
-    status: "Project roles isolated",
+    progress: 100,
+    status: "Pilot security matrix green",
     tone: "purple",
-    now: "Connect the first deployment identity provider and add key refresh",
+    now: "Complete external assurance before broader regulated production",
   },
   {
     name: "Quality & delivery",
     icon: TestTube2,
     progress: 100,
-    status: "Phase 4 protected gate green",
+    status: "Phase 5 candidate gate green",
     tone: "mint",
-    now: "Extend the protected matrix through Phase 5",
+    now: "Retain multi-browser, security, recovery, and artifact gates",
   },
   {
     name: "Operations",
     icon: Cloud,
-    progress: 40,
-    status: "Protected CI active",
+    progress: 100,
+    status: "Telemetry and runbooks ready",
     tone: "blue",
-    now: "Define the first API environment and secret delivery path",
+    now: "Operate the bounded pilot against agreed SLOs",
   },
 ];
 
@@ -196,6 +196,11 @@ const DEVELOPMENT_BACKLOG = [
   { id: "TRC-001", horizon: "next", priority: "P0", title: "Deliver traceability and baselines", stream: "Product", effort: "4w", status: "Complete" },
   { id: "REV-101", horizon: "next", priority: "P0", title: "Deliver controlled reviews and signed approvals", stream: "Product", effort: "2w", status: "Complete" },
   { id: "VER-101", horizon: "next", priority: "P0", title: "Deliver verification execution and gate readiness", stream: "Product", effort: "2w", status: "Complete" },
+  { id: "INT-101", horizon: "next", priority: "P0", title: "Deliver governed Jira connector and replay", stream: "Integration", effort: "1w", status: "Complete" },
+  { id: "OPS-101", horizon: "next", priority: "P0", title: "Add telemetry, SLO dashboards, and alerts", stream: "Operations", effort: "1w", status: "Complete" },
+  { id: "OPS-102", horizon: "next", priority: "P0", title: "Rehearse backup, restore, and upgrades", stream: "Operations", effort: "3d", status: "Complete" },
+  { id: "QLT-201", horizon: "next", priority: "P0", title: "Complete security, load, browser, and accessibility gates", stream: "Quality", effort: "1w", status: "Complete" },
+  { id: "PIL-101", horizon: "next", priority: "P1", title: "Publish administration, operations, and pilot guides", stream: "Product", effort: "3d", status: "Complete" },
 ];
 
 const COMMITS = [
@@ -325,7 +330,7 @@ function App() {
           {page === "verification" && <VerificationWorkspace notify={notify} />}
           {page === "storage" && <Storage {...pageProps} />}
           {page === "api" && <RestApi {...pageProps} />}
-          {page === "integrations" && <Integrations {...pageProps} />}
+          {page === "integrations" && <IntegrationWorkspace notify={notify} />}
           {page === "architecture" && <Architecture />}
         </section>
       </main>
@@ -891,81 +896,8 @@ function ApiPrinciple({ icon: Icon, title, body }) {
   return <div className="api-principle"><i><Icon size={16} /></i><span><strong>{title}</strong><small>{body}</small></span></div>;
 }
 
-function Integrations({ notify }) {
-  return (
-    <>
-      <PageHeader
-        eyebrow="Integration roadmap • Connector framework"
-        title={<>Connect delivery work to <em>controlled intent.</em></>}
-        description="A planned Jira Software connector keeps execution visible without making Jira the system of record for requirements, baselines, or approvals."
-        actions={<button className="secondary-button" onClick={() => notify("Jira connector design review added to the roadmap")}><ClipboardCheck size={15} /> Review connector plan</button>}
-      />
-
-      <div className="integration-hero-grid">
-        <section className="panel connector-card jira-card">
-          <div className="connector-heading">
-            <div className="jira-mark" aria-hidden="true">J</div>
-            <div><span className="status-pill planned">PLANNED • PHASE 2</span><h2>Jira Software Cloud + Data Center</h2><p>Bidirectional issue links and governed status synchronization.</p></div>
-          </div>
-          <div className="connector-capabilities">
-            <ConnectorCapability icon={Link2} title="Stable links" body="Relate Jira epics, stories, and defects to controlled OpenRM artifacts." />
-            <ConnectorCapability icon={Activity} title="Status signals" body="Bring delivery state into readiness views through approved mapping rules." />
-            <ConnectorCapability icon={MessageSquareText} title="Change context" body="Post revision and baseline references back to Jira without copying controlled content." />
-          </div>
-          <div className="connector-note"><ShieldCheck size={16} /><span><strong>Governance boundary</strong>OpenRM remains authoritative for requirements, revisions, baselines, approvals, and audit evidence.</span></div>
-        </section>
-
-        <section className="panel connector-policy-card">
-          <div className="panel-heading compact"><div><span className="panel-kicker">Connection policy</span><h2>Secure by default</h2></div><LockKeyhole size={18} /></div>
-          <PolicyRow label="Authentication" value="OAuth 2.0 / scoped PAT" />
-          <PolicyRow label="Inbound events" value="Signed webhooks" />
-          <PolicyRow label="Outbound writes" value="Allowlisted fields" />
-          <PolicyRow label="Reliability" value="Idempotent retry queue" />
-          <PolicyRow label="Audit" value="Actor + payload hash" />
-        </section>
-      </div>
-
-      <div className="integration-detail-grid">
-        <section className="panel mapping-panel">
-          <div className="panel-heading compact"><div><span className="panel-kicker">Proposed data contract</span><h2>Jira mapping preview</h2></div><span className="roadmap-chip">Configurable per project</span></div>
-          <div className="mapping-head"><span>OpenRM</span><span>Direction</span><span>Jira</span><span>Rule</span></div>
-          <MappingRow source="Artifact link" direction="↔" target="Remote issue link" rule="Stable IDs only" />
-          <MappingRow source="Owner" direction="←" target="Assignee" rule="Identity mapping" />
-          <MappingRow source="Delivery state" direction="←" target="Status" rule="Mapped vocabulary" />
-          <MappingRow source="Revision reference" direction="→" target="Comment / field" rule="No requirement text" />
-          <MappingRow source="Suspect link" direction="→" target="Flag / label" rule="Optional automation" />
-        </section>
-
-        <section className="panel roadmap-panel">
-          <div className="panel-heading compact"><div><span className="panel-kicker">Incremental delivery</span><h2>Connector roadmap</h2></div><GitBranch size={18} /></div>
-          <RoadmapStep number="01" phase="Foundation" title="Connector SDK" body="Versioned adapter contract, secret references, health checks, and audit events." />
-          <RoadmapStep number="02" phase="Jira pilot" title="Link + status sync" body="One design-partner project, configurable mappings, dry-run mode, and replayable webhooks." active />
-          <RoadmapStep number="03" phase="Scale" title="Governed automation" body="Approval-aware writes, admin templates, metrics, and additional ALM connectors." />
-        </section>
-      </div>
-
-      <section className="integration-callout">
-        <div><span className="panel-kicker">Funding message</span><h2>Jira is the first adapter—not a one-off integration.</h2><p>The same Rust connector contract can support Azure DevOps, GitHub, GitLab, and other delivery systems later.</p></div>
-        <button className="primary-button" onClick={() => notify("Connector SDK included in the proposed vertical slice")}>Include in vertical slice <ArrowRight size={15} /></button>
-      </section>
-    </>
-  );
-}
-
-function ConnectorCapability({ icon: Icon, title, body }) {
-  return <div className="connector-capability"><i><Icon size={17} /></i><span><strong>{title}</strong><small>{body}</small></span></div>;
-}
-
 function PolicyRow({ label, value }) {
   return <div className="policy-row"><span>{label}</span><strong>{value}</strong><Check size={14} /></div>;
-}
-
-function MappingRow({ source, direction, target, rule }) {
-  return <div className="mapping-row"><strong>{source}</strong><span className="mapping-direction">{direction}</span><strong>{target}</strong><small>{rule}</small></div>;
-}
-
-function RoadmapStep({ number, phase, title, body, active = false }) {
-  return <div className={`roadmap-step ${active ? "active" : ""}`}><span className="roadmap-number">{number}</span><span><small>{phase}</small><strong>{title}</strong><p>{body}</p></span></div>;
 }
 
 function Architecture() {

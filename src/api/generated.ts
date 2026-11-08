@@ -867,6 +867,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export service and connector SLIs in Prometheus text format */
+        get: operations["getPrometheusMetrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/operations/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Inspect administrator-only service, queue, audit, and SLO status */
+        get: operations["getOperationsStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/connectors/jira": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** Read Jira connector policy, history, and delivery health */
+        get: operations["getJiraConnector"];
+        /** Create or revise project Jira connector policy */
+        put: operations["configureJiraConnector"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/connectors/jira/deliveries": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** List Jira delivery state and append-only attempt evidence */
+        get: operations["listJiraDeliveries"];
+        put?: never;
+        /** Enqueue an idempotent governed Jira delivery */
+        post: operations["enqueueJiraDelivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/connectors/jira/deliveries/{delivery_id}/replay": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                delivery_id: components["parameters"]["DeliveryId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Replay a dead-letter Jira delivery with attributable audit evidence */
+        post: operations["replayJiraDelivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1601,6 +1704,162 @@ export interface components {
             signing_key_id: string;
             signature_valid: boolean;
         };
+        /** @enum {string} */
+        ConnectorMode: "disabled" | "dry_run" | "active";
+        /** @enum {string} */
+        ConnectorDeliveryStatus: "pending" | "processing" | "retry" | "delivered" | "dead_letter";
+        /** @enum {string} */
+        ConnectorOperation: "link_issue" | "comment_revision" | "sync_status";
+        UpsertJiraConfigurationRequest: {
+            expected_version: number;
+            mode: components["schemas"]["ConnectorMode"];
+            /** Format: uri */
+            base_url: string;
+            remote_project_key: string;
+            /**
+             * @description Fixed external secret reference for the pilot Jira adapter; the credential value is never persisted.
+             * @constant
+             */
+            secret_ref: "env:JIRA_API_TOKEN";
+            field_mapping: {
+                [key: string]: unknown;
+            };
+            max_attempts: number;
+        };
+        JiraConfiguration: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            project_id: string;
+            mode: components["schemas"]["ConnectorMode"];
+            /** Format: uri */
+            base_url: string;
+            remote_project_key: string;
+            secret_ref: string;
+            field_mapping: {
+                [key: string]: unknown;
+            };
+            max_attempts: number;
+            version: number;
+            created_by: string;
+            /** Format: date-time */
+            created_at: string;
+            updated_by: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        JiraConfigurationEvent: {
+            /** Format: uuid */
+            id: string;
+            version: number;
+            mode: components["schemas"]["ConnectorMode"];
+            /** Format: uri */
+            base_url: string;
+            remote_project_key: string;
+            secret_ref: string;
+            field_mapping: {
+                [key: string]: unknown;
+            };
+            max_attempts: number;
+            actor_subject: string;
+            /** Format: date-time */
+            occurred_at: string;
+        };
+        JiraConnector: {
+            configuration: components["schemas"]["JiraConfiguration"] | null;
+            configuration_history: components["schemas"]["JiraConfigurationEvent"][];
+            /** Format: int64 */
+            pending: number;
+            /** Format: int64 */
+            retrying: number;
+            /** Format: int64 */
+            delivered: number;
+            /** Format: int64 */
+            dead_letters: number;
+        };
+        EnqueueJiraDeliveryRequest: {
+            event_key: string;
+            operation: components["schemas"]["ConnectorOperation"];
+            external_issue_key: string;
+            payload: {
+                [key: string]: unknown;
+            };
+        };
+        JiraDeliveryAttempt: {
+            /** Format: uuid */
+            id: string;
+            attempt: number;
+            /** @enum {string} */
+            outcome: "delivered" | "retry" | "dead_letter";
+            response_status: number | null;
+            retry_after_seconds: number | null;
+            error: string | null;
+            /** Format: date-time */
+            occurred_at: string;
+        };
+        JiraDelivery: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            connector_id: string;
+            event_key: string;
+            operation: components["schemas"]["ConnectorOperation"];
+            external_issue_key: string;
+            payload: {
+                [key: string]: unknown;
+            };
+            payload_hash: string;
+            status: components["schemas"]["ConnectorDeliveryStatus"];
+            attempts: number;
+            /** Format: date-time */
+            available_at: string;
+            /** Format: date-time */
+            delivered_at: string | null;
+            last_error: string | null;
+            created_by: string;
+            /** Format: date-time */
+            created_at: string;
+            attempt_history: components["schemas"]["JiraDeliveryAttempt"][];
+        };
+        JiraDeliveryListResponse: {
+            items: components["schemas"]["JiraDelivery"][];
+        };
+        OperationsStatus: {
+            /** @enum {string} */
+            status: "healthy" | "attention_required";
+            /** @constant */
+            database: "available";
+            telemetry: {
+                structured_logs: boolean;
+                prometheus_metrics: boolean;
+                otlp_traces_configured: boolean;
+            };
+            service_levels: {
+                availability_target_percent: number;
+                latency_p95_target_ms: number;
+                /** Format: int64 */
+                request_count: number;
+                /** Format: int64 */
+                server_error_count: number;
+                observed_server_success_percent: number;
+            };
+            queues: {
+                /** Format: int64 */
+                outbox_pending: number;
+                /** Format: int64 */
+                connector_pending: number;
+                /** Format: int64 */
+                connector_retrying: number;
+                /** Format: int64 */
+                connector_dead_letters: number;
+                /** Format: int64 */
+                oldest_connector_age_seconds: number | null;
+            };
+            /** Format: date-time */
+            latest_audit_event_at: string | null;
+            /** Format: date-time */
+            timestamp: string;
+        };
         ErrorEnvelope: {
             error: components["schemas"]["ErrorBody"];
         };
@@ -1679,6 +1938,7 @@ export interface components {
         ReviewId: string;
         VerificationCaseId: string;
         VerificationRunId: string;
+        DeliveryId: string;
         CommentId: string;
         WorkspaceResource: "folders" | "tags" | "attribute-definitions" | "saved-views";
         /** @description Stable client command identifier scoped to tenant, actor, and operation. */
@@ -3399,6 +3659,224 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getPrometheusMetrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Prometheus metrics exposition. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getOperationsStatus: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Operational health and queue status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationsStatus"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getJiraConnector: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Jira connector status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JiraConnector"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    configureJiraConnector: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertJiraConfigurationRequest"];
+            };
+        };
+        responses: {
+            /** @description Materialized Jira connector configuration. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JiraConfiguration"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listJiraDeliveries: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["ConnectorDeliveryStatus"];
+            };
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Jira deliveries. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JiraDeliveryListResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    enqueueJiraDelivery: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnqueueJiraDeliveryRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of an existing delivery. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JiraDelivery"];
+                };
+            };
+            /** @description Delivery enqueued. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JiraDelivery"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    replayJiraDelivery: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                delivery_id: components["parameters"]["DeliveryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Delivery returned to the pending queue. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JiraDelivery"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             503: components["responses"]["ServiceUnavailable"];
         };
     };

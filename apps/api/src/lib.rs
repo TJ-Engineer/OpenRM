@@ -1,8 +1,10 @@
 pub mod auth;
 pub mod config;
+pub mod connectors;
 pub mod controlled_change;
 pub mod error;
 pub mod evidence;
+pub mod observability;
 pub mod outbox;
 pub mod policy;
 pub mod projects;
@@ -16,8 +18,10 @@ use std::time::Duration;
 use auth::{AuthVerifier, AuthenticatedPrincipal};
 use axum::{
     Json, Router,
+    extract::DefaultBodyLimit,
     extract::State,
     http::{HeaderName, HeaderValue, Method, StatusCode},
+    middleware,
     routing::get,
 };
 use chrono::{DateTime, Utc};
@@ -31,6 +35,9 @@ use tower_http::{
     catch_panic::CatchPanicLayer,
     cors::CorsLayer,
     request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer},
+    sensitive_headers::SetSensitiveRequestHeadersLayer,
+    set_header::SetResponseHeaderLayer,
+    timeout::TimeoutLayer,
     trace::TraceLayer,
 };
 
@@ -43,6 +50,7 @@ pub struct AppState {
     pub policy: PolicyEngine,
     pub build: BuildInfo,
     pub evidence_signer: EvidenceSigner,
+    pub metrics: observability::OperationsMetrics,
 }
 
 #[derive(Clone, Serialize)]
@@ -99,6 +107,7 @@ pub async fn migrate(pool: &PgPool) -> Result<(), sqlx::migrate::MigrateError> {
 }
 
 pub fn router(state: AppState) -> Router {
+    let metrics = state.metrics.clone();
     let request_id_header = HeaderName::from_static(REQUEST_ID_HEADER);
     let cors = CorsLayer::new()
         .allow_origin(
@@ -117,7 +126,12 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/health", get(health))
         .route("/ready", get(ready))
+        .route("/metrics", get(observability::prometheus_metrics))
         .route("/api/v1/session", get(session))
+        .route(
+            "/api/v1/operations/status",
+            get(observability::operations_status),
+        )
         .route(
             "/api/v1/projects",
             get(requirements::list_projects).post(projects::create_project),
@@ -258,13 +272,50 @@ pub fn router(state: AppState) -> Router {
             "/api/v1/projects/{project_id}/verification/due-events",
             get(verification::list_due_events).post(verification::generate_due_events),
         )
+        .route(
+            "/api/v1/projects/{project_id}/connectors/jira",
+            get(connectors::get_jira_connector).put(connectors::upsert_jira_connector),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/connectors/jira/deliveries",
+            get(connectors::list_jira_deliveries).post(connectors::enqueue_jira_delivery),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/connectors/jira/deliveries/{delivery_id}/replay",
+            axum::routing::post(connectors::replay_jira_delivery),
+        )
         .fallback(not_found)
         .with_state(state)
+        .layer(CatchPanicLayer::new())
+        .layer(DefaultBodyLimit::max(1024 * 1024))
+        .layer(TimeoutLayer::with_status_code(
+            StatusCode::REQUEST_TIMEOUT,
+            Duration::from_secs(30),
+        ))
+        .layer(SetSensitiveRequestHeadersLayer::new(std::iter::once(
+            http::header::AUTHORIZATION,
+        )))
+        .layer(cors)
+        .layer(middleware::from_fn(observability::propagate_trace_context))
+        .layer(TraceLayer::new_for_http())
         .layer(PropagateRequestIdLayer::new(request_id_header.clone()))
         .layer(SetRequestIdLayer::new(request_id_header, MakeRequestUuid))
-        .layer(TraceLayer::new_for_http())
-        .layer(cors)
-        .layer(CatchPanicLayer::new())
+        .layer(SetResponseHeaderLayer::if_not_present(
+            HeaderName::from_static("content-security-policy"),
+            HeaderValue::from_static("default-src 'none'; frame-ancestors 'none'"),
+        ))
+        .layer(SetResponseHeaderLayer::if_not_present(
+            HeaderName::from_static("referrer-policy"),
+            HeaderValue::from_static("no-referrer"),
+        ))
+        .layer(SetResponseHeaderLayer::if_not_present(
+            HeaderName::from_static("x-content-type-options"),
+            HeaderValue::from_static("nosniff"),
+        ))
+        .layer(middleware::from_fn_with_state(
+            metrics,
+            observability::observe_request,
+        ))
 }
 
 async fn health(State(state): State<AppState>) -> Json<HealthResponse> {
@@ -333,7 +384,10 @@ async fn not_found() -> ApiError {
 #[cfg(test)]
 mod tests {
     use super::{AppState, BuildInfo, router};
-    use crate::{auth::AuthVerifier, evidence::EvidenceSigner, policy::PolicyEngine};
+    use crate::{
+        auth::AuthVerifier, evidence::EvidenceSigner, observability::OperationsMetrics,
+        policy::PolicyEngine,
+    };
     use axum::{body::Body, http::Request};
     use http_body_util::BodyExt;
     use sqlx::postgres::PgPoolOptions;
@@ -348,6 +402,7 @@ mod tests {
             policy: PolicyEngine,
             build: BuildInfo::current(),
             evidence_signer: EvidenceSigner::development(),
+            metrics: OperationsMetrics::default(),
         }
     }
 

@@ -18,6 +18,7 @@ tags:
   - name: Baselines
   - name: Reviews
   - name: Verification
+  - name: Connectors
 paths:
   /health:
     get:
@@ -1586,6 +1587,196 @@ paths:
           $ref: "#/components/responses/NotFound"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+  /metrics:
+    get:
+      operationId: getPrometheusMetrics
+      tags: [Operations]
+      summary: Export service and connector SLIs in Prometheus text format
+      responses:
+        "200":
+          description: Prometheus metrics exposition.
+          content:
+            text/plain:
+              schema:
+                type: string
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/operations/status:
+    get:
+      operationId: getOperationsStatus
+      tags: [Operations]
+      summary: Inspect administrator-only service, queue, audit, and SLO status
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationHeader"
+      responses:
+        "200":
+          description: Operational health and queue status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OperationsStatus"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/connectors/jira:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: getJiraConnector
+      tags: [Connectors]
+      summary: Read Jira connector policy, history, and delivery health
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Jira connector status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JiraConnector"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    put:
+      operationId: configureJiraConnector
+      tags: [Connectors]
+      summary: Create or revise project Jira connector policy
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertJiraConfigurationRequest"
+      responses:
+        "200":
+          description: Materialized Jira connector configuration.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JiraConfiguration"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/connectors/jira/deliveries:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: listJiraDeliveries
+      tags: [Connectors]
+      summary: List Jira delivery state and append-only attempt evidence
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ConnectorDeliveryStatus"
+      responses:
+        "200":
+          description: Jira deliveries.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JiraDeliveryListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    post:
+      operationId: enqueueJiraDelivery
+      tags: [Connectors]
+      summary: Enqueue an idempotent governed Jira delivery
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnqueueJiraDeliveryRequest"
+      responses:
+        "200":
+          description: Idempotent replay of an existing delivery.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JiraDelivery"
+        "201":
+          description: Delivery enqueued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JiraDelivery"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/connectors/jira/deliveries/{delivery_id}/replay:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/DeliveryId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    post:
+      operationId: replayJiraDelivery
+      tags: [Connectors]
+      summary: Replay a dead-letter Jira delivery with attributable audit evidence
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Delivery returned to the pending queue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JiraDelivery"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
 components:
   securitySchemes:
     bearerAuth:
@@ -1653,6 +1844,13 @@ components:
         format: uuid
     VerificationRunId:
       name: run_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DeliveryId:
+      name: delivery_id
       in: path
       required: true
       schema:
@@ -3332,6 +3530,292 @@ components:
           type: string
         signature_valid:
           type: boolean
+    ConnectorMode:
+      type: string
+      enum: [disabled, dry_run, active]
+    ConnectorDeliveryStatus:
+      type: string
+      enum: [pending, processing, retry, delivered, dead_letter]
+    ConnectorOperation:
+      type: string
+      enum: [link_issue, comment_revision, sync_status]
+    UpsertJiraConfigurationRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_version, mode, base_url, remote_project_key, secret_ref, field_mapping, max_attempts]
+      properties:
+        expected_version:
+          type: integer
+          minimum: 0
+        mode:
+          $ref: "#/components/schemas/ConnectorMode"
+        base_url:
+          type: string
+          format: uri
+        remote_project_key:
+          type: string
+          pattern: "^[A-Z][A-Z0-9_-]{1,31}$"
+        secret_ref:
+          type: string
+          const: env:JIRA_API_TOKEN
+          description: Fixed external secret reference for the pilot Jira adapter; the credential value is never persisted.
+          minLength: 1
+          maxLength: 200
+        field_mapping:
+          type: object
+          additionalProperties: true
+        max_attempts:
+          type: integer
+          minimum: 1
+          maximum: 20
+    JiraConfiguration:
+      type: object
+      additionalProperties: false
+      required: [id, project_id, mode, base_url, remote_project_key, secret_ref, field_mapping, max_attempts, version, created_by, created_at, updated_by, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        mode:
+          $ref: "#/components/schemas/ConnectorMode"
+        base_url:
+          type: string
+          format: uri
+        remote_project_key:
+          type: string
+        secret_ref:
+          type: string
+        field_mapping:
+          type: object
+          additionalProperties: true
+        max_attempts:
+          type: integer
+        version:
+          type: integer
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_by:
+          type: string
+        updated_at:
+          type: string
+          format: date-time
+    JiraConfigurationEvent:
+      type: object
+      additionalProperties: false
+      required: [id, version, mode, base_url, remote_project_key, secret_ref, field_mapping, max_attempts, actor_subject, occurred_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+        mode:
+          $ref: "#/components/schemas/ConnectorMode"
+        base_url:
+          type: string
+          format: uri
+        remote_project_key:
+          type: string
+        secret_ref:
+          type: string
+        field_mapping:
+          type: object
+          additionalProperties: true
+        max_attempts:
+          type: integer
+        actor_subject:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+    JiraConnector:
+      type: object
+      additionalProperties: false
+      required: [configuration, configuration_history, pending, retrying, delivered, dead_letters]
+      properties:
+        configuration:
+          oneOf:
+            - $ref: "#/components/schemas/JiraConfiguration"
+            - type: "null"
+        configuration_history:
+          type: array
+          items:
+            $ref: "#/components/schemas/JiraConfigurationEvent"
+        pending:
+          type: integer
+          format: int64
+        retrying:
+          type: integer
+          format: int64
+        delivered:
+          type: integer
+          format: int64
+        dead_letters:
+          type: integer
+          format: int64
+    EnqueueJiraDeliveryRequest:
+      type: object
+      additionalProperties: false
+      required: [event_key, operation, external_issue_key, payload]
+      properties:
+        event_key:
+          type: string
+          minLength: 8
+          maxLength: 128
+        operation:
+          $ref: "#/components/schemas/ConnectorOperation"
+        external_issue_key:
+          type: string
+          pattern: "^[A-Z][A-Z0-9_-]{1,31}-[1-9][0-9]*$"
+        payload:
+          type: object
+          additionalProperties: true
+    JiraDeliveryAttempt:
+      type: object
+      additionalProperties: false
+      required: [id, attempt, outcome, response_status, retry_after_seconds, error, occurred_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        attempt:
+          type: integer
+        outcome:
+          type: string
+          enum: [delivered, retry, dead_letter]
+        response_status:
+          type: [integer, "null"]
+        retry_after_seconds:
+          type: [integer, "null"]
+        error:
+          type: [string, "null"]
+        occurred_at:
+          type: string
+          format: date-time
+    JiraDelivery:
+      type: object
+      additionalProperties: false
+      required: [id, connector_id, event_key, operation, external_issue_key, payload, payload_hash, status, attempts, available_at, delivered_at, last_error, created_by, created_at, attempt_history]
+      properties:
+        id:
+          type: string
+          format: uuid
+        connector_id:
+          type: string
+          format: uuid
+        event_key:
+          type: string
+        operation:
+          $ref: "#/components/schemas/ConnectorOperation"
+        external_issue_key:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+        payload_hash:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        status:
+          $ref: "#/components/schemas/ConnectorDeliveryStatus"
+        attempts:
+          type: integer
+        available_at:
+          type: string
+          format: date-time
+        delivered_at:
+          type: [string, "null"]
+          format: date-time
+        last_error:
+          type: [string, "null"]
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        attempt_history:
+          type: array
+          items:
+            $ref: "#/components/schemas/JiraDeliveryAttempt"
+    JiraDeliveryListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/JiraDelivery"
+    OperationsStatus:
+      type: object
+      additionalProperties: false
+      required: [status, database, telemetry, service_levels, queues, latest_audit_event_at, timestamp]
+      properties:
+        status:
+          type: string
+          enum: [healthy, attention_required]
+        database:
+          type: string
+          const: available
+        telemetry:
+          type: object
+          additionalProperties: false
+          required: [structured_logs, prometheus_metrics, otlp_traces_configured]
+          properties:
+            structured_logs:
+              type: boolean
+            prometheus_metrics:
+              type: boolean
+            otlp_traces_configured:
+              type: boolean
+        service_levels:
+          type: object
+          additionalProperties: false
+          required: [availability_target_percent, latency_p95_target_ms, request_count, server_error_count, observed_server_success_percent]
+          properties:
+            availability_target_percent:
+              type: number
+            latency_p95_target_ms:
+              type: integer
+            request_count:
+              type: integer
+              format: int64
+            server_error_count:
+              type: integer
+              format: int64
+            observed_server_success_percent:
+              type: number
+        queues:
+          type: object
+          additionalProperties: false
+          required: [outbox_pending, connector_pending, connector_retrying, connector_dead_letters, oldest_connector_age_seconds]
+          properties:
+            outbox_pending:
+              type: integer
+              format: int64
+            connector_pending:
+              type: integer
+              format: int64
+            connector_retrying:
+              type: integer
+              format: int64
+            connector_dead_letters:
+              type: integer
+              format: int64
+            oldest_connector_age_seconds:
+              type: [integer, "null"]
+              format: int64
+        latest_audit_event_at:
+          type: [string, "null"]
+          format: date-time
+        timestamp:
+          type: string
+          format: date-time
     ErrorEnvelope:
       type: object
       additionalProperties: false
