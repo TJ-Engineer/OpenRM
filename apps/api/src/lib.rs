@@ -2,6 +2,7 @@ pub mod auth;
 pub mod config;
 pub mod error;
 pub mod policy;
+pub mod projects;
 pub mod requirements;
 
 use std::time::Duration;
@@ -109,10 +110,29 @@ pub fn router(state: AppState) -> Router {
         .route("/health", get(health))
         .route("/ready", get(ready))
         .route("/api/v1/session", get(session))
-        .route("/api/v1/projects", get(requirements::list_projects))
+        .route(
+            "/api/v1/projects",
+            get(requirements::list_projects).post(projects::create_project),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/members",
+            get(projects::list_memberships).post(projects::upsert_membership),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/workspace/{resource}",
+            get(projects::list_workspace_resources).post(projects::create_workspace_resource),
+        )
         .route(
             "/api/v1/projects/{project_id}/requirements",
             get(requirements::list_requirements).post(requirements::create_requirement),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/requirements/import",
+            axum::routing::post(requirements::import_requirements),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/requirements/export",
+            get(requirements::export_requirements),
         )
         .route(
             "/api/v1/projects/{project_id}/requirements/{requirement_id}",
@@ -121,6 +141,10 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/projects/{project_id}/requirements/{requirement_id}/revisions",
             get(requirements::list_requirement_revisions),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/requirements/{requirement_id}/compare",
+            get(requirements::compare_requirement_revisions),
         )
         .fallback(not_found)
         .with_state(state)

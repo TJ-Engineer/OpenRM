@@ -211,15 +211,24 @@ pub async fn session_principal(
 }
 
 fn verify_dev_token(token: &str, organization_id: Uuid) -> Result<Principal, ApiError> {
-    let subject = token
+    let value = token
         .strip_prefix("dev:")
-        .filter(|subject| !subject.trim().is_empty())
+        .filter(|value| !value.trim().is_empty())
         .ok_or_else(|| ApiError::unauthorized("Development token must use dev:<subject>"))?;
+    let (subject, role) = value
+        .rsplit_once(':')
+        .filter(|(_, role)| matches!(*role, "administrator" | "author" | "reviewer" | "viewer"))
+        .unwrap_or((value, "administrator"));
+    if subject.trim().is_empty() {
+        return Err(ApiError::unauthorized(
+            "Development token subject must not be empty",
+        ));
+    }
 
     Ok(Principal {
         subject: subject.to_owned(),
         organization_id,
-        roles: vec!["administrator".to_owned()],
+        roles: vec![role.to_owned()],
     })
 }
 
@@ -241,5 +250,13 @@ mod tests {
     fn rejects_non_development_tokens_in_dev_mode() {
         let result = AuthVerifier::dev().verify("opaque", Uuid::new_v4());
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn development_token_can_select_a_project_role() {
+        let principal = verify_dev_token("dev:author-user:author", Uuid::new_v4())
+            .expect("role-scoped token should verify");
+        assert_eq!(principal.subject, "author-user");
+        assert_eq!(principal.roles, vec!["author"]);
     }
 }

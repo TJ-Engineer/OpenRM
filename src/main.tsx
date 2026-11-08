@@ -43,26 +43,15 @@ import {
   Users,
   X,
   Zap,
-  type LucideIcon,
 } from "lucide-react";
 import "./styles.css";
+import { RequirementsWorkspace } from "./requirements/RequirementsWorkspace";
 
 type PageHeaderProps = {
   eyebrow: React.ReactNode;
   title: React.ReactNode;
   description?: React.ReactNode;
   actions?: React.ReactNode;
-};
-
-type TreeRowProps = {
-  label: string;
-  count: string;
-  depth: number;
-  open?: boolean;
-  active?: boolean;
-  strong?: boolean;
-  icon?: LucideIcon;
-  tone?: string;
 };
 
 const NAV_ITEMS = [
@@ -207,75 +196,6 @@ const DEVELOPMENT_BACKLOG = [
   { id: "TRC-001", horizon: "later", priority: "P0", title: "Deliver traceability and baselines", stream: "Product", effort: "4w", status: "Phase 3" },
 ];
 
-const REQUIREMENTS = [
-  {
-    id: "SYS-184",
-    title: "The controller shall maintain attitude during failover",
-    type: "System requirement",
-    status: "Approved",
-    owner: "M. Chen",
-    coverage: 100,
-    revision: "r12",
-    changed: "2h ago",
-    statement:
-      "The flight controller shall maintain commanded vehicle attitude within ±2° during a primary compute failover event.",
-    rationale:
-      "Preserves controlled flight while the redundant compute lane assumes command authority.",
-  },
-  {
-    id: "SYS-203",
-    title: "The system shall record all command transitions",
-    type: "System requirement",
-    status: "In review",
-    owner: "A. Patel",
-    coverage: 75,
-    revision: "r8",
-    changed: "4h ago",
-    statement:
-      "The system shall record command source transitions with a monotonic timestamp and actor identity.",
-    rationale: "Enables deterministic reconstruction of operational events and audit evidence.",
-  },
-  {
-    id: "SFT-041",
-    title: "Failover shall complete within 150 milliseconds",
-    type: "Software requirement",
-    status: "Suspect",
-    owner: "R. Okafor",
-    coverage: 50,
-    revision: "r6",
-    changed: "Yesterday",
-    statement:
-      "Software command authority shall transition to the secondary lane within 150 ms of fault confirmation.",
-    rationale: "Limits the open-loop interval during compute-lane failover.",
-  },
-  {
-    id: "SFT-052",
-    title: "Audit records shall be integrity protected",
-    type: "Software requirement",
-    status: "Approved",
-    owner: "J. Rivera",
-    coverage: 100,
-    revision: "r4",
-    changed: "Oct 31",
-    statement:
-      "Each audit record shall include an integrity hash chained to the preceding record.",
-    rationale: "Makes modification or deletion of controlled evidence detectable.",
-  },
-  {
-    id: "VER-019",
-    title: "Verify compute-lane failover timing",
-    type: "Verification",
-    status: "Planned",
-    owner: "S. Brooks",
-    coverage: 80,
-    revision: "r3",
-    changed: "Oct 30",
-    statement:
-      "Inject a primary compute fault and measure elapsed time until the secondary lane asserts command authority.",
-    rationale: "Directly verifies the 150 ms failover performance requirement.",
-  },
-];
-
 const COMMITS = [
   {
     id: "c8a71f2",
@@ -384,7 +304,6 @@ const TOUR_STEPS = [
 
 function App() {
   const [page, setPage] = useState("overview");
-  const [selectedRequirement, setSelectedRequirement] = useState(REQUIREMENTS[0]);
   const [selectedTrace, setSelectedTrace] = useState(TRACE_NODES[2]);
   const [tourOpen, setTourOpen] = useState(false);
   const [tourStep, setTourStep] = useState(0);
@@ -411,8 +330,6 @@ function App() {
   const pageProps = {
     navigate,
     notify,
-    selectedRequirement,
-    setSelectedRequirement,
     selectedTrace,
     setSelectedTrace,
     reviewApproved,
@@ -453,7 +370,7 @@ function App() {
         <section className="page-stage" key={page}>
           {page === "development" && <DevelopmentDashboard {...pageProps} />}
           {page === "overview" && <Overview {...pageProps} />}
-          {page === "requirements" && <Requirements {...pageProps} />}
+          {page === "requirements" && <RequirementsWorkspace notify={notify} />}
           {page === "traceability" && <Traceability {...pageProps} />}
           {page === "baselines" && <Baselines {...pageProps} />}
           {page === "reviews" && <Reviews {...pageProps} />}
@@ -891,90 +808,6 @@ function AttentionItem({ tone, icon: Icon, title, body, action, onClick }) {
 
 function TechPill({ icon: Icon, label, detail }) {
   return <div className="tech-pill"><Icon size={18} /><span><strong>{label}</strong><small>{detail}</small></span></div>;
-}
-
-function Requirements({ selectedRequirement, setSelectedRequirement, notify }) {
-  return (
-    <>
-      <PageHeader
-        eyebrow="Controlled content • 1,248 artifacts"
-        title="Requirements workspace"
-        description="Author, relate, review, and version every requirement from one controlled workspace."
-        actions={<button className="primary-button" onClick={() => notify("New requirement draft opened")}><Plus size={16} /> New requirement</button>}
-      />
-      <div className="workspace-toolbar">
-        <div className="search-box"><Search size={16} /><input aria-label="Search requirements" placeholder="Search ID, title, or text…" /></div>
-        <button className="filter-button"><Filter size={15} /> Type: All <ChevronDown size={13} /></button>
-        <button className="filter-button">Status: Active <ChevronDown size={13} /></button>
-        <button className="filter-button">Owner: Anyone <ChevronDown size={13} /></button>
-        <span className="toolbar-spacer" />
-        <button className="icon-button"><Columns3 size={17} /></button>
-        <button className="icon-button"><MoreHorizontal size={17} /></button>
-      </div>
-
-      <div className="requirements-shell">
-        <aside className="requirements-tree panel">
-          <div className="tree-header"><span>Project structure</span><Plus size={15} /></div>
-          <TreeRow label="Aurora Flight Computer" count="1,248" depth={0} open strong />
-          <TreeRow label="01 • Stakeholder needs" count="48" depth={1} />
-          <TreeRow label="02 • System requirements" count="312" depth={1} open active />
-          <TreeRow label="Flight controls" count="86" depth={2} />
-          <TreeRow label="Navigation" count="74" depth={2} />
-          <TreeRow label="Telemetry" count="56" depth={2} />
-          <TreeRow label="03 • Software requirements" count="624" depth={1} />
-          <TreeRow label="04 • Verification" count="264" depth={1} />
-          <div className="saved-view-label">SAVED VIEWS</div>
-          <TreeRow label="My assigned items" count="18" depth={0} icon={UserRoundCheck} />
-          <TreeRow label="Suspect relationships" count="7" depth={0} icon={AlertTriangle} tone="amber" />
-        </aside>
-
-        <section className="requirements-table panel">
-          <div className="table-head"><span>ID</span><span>Requirement</span><span>Status</span><span>Coverage</span><span>Owner</span></div>
-          {REQUIREMENTS.map((req) => (
-            <button
-              key={req.id}
-              className={`requirement-row ${selectedRequirement.id === req.id ? "selected" : ""}`}
-              onClick={() => setSelectedRequirement(req)}
-            >
-              <code>{req.id}</code>
-              <span className="requirement-title"><strong>{req.title}</strong><small>{req.type} • {req.revision} • {req.changed}</small></span>
-              <StatusPill status={req.status} />
-              <span className="coverage-cell"><span><i style={{ width: `${req.coverage}%` }} /></span><small>{req.coverage}%</small></span>
-              <span className="owner-cell"><i>{req.owner.split(" ").map((n) => n[0]).join("")}</i>{req.owner}</span>
-            </button>
-          ))}
-        </section>
-
-        <aside className="requirement-inspector panel">
-          <div className="inspector-header"><div><code>{selectedRequirement.id}</code><StatusPill status={selectedRequirement.status} /></div><button className="icon-button"><MoreHorizontal size={17} /></button></div>
-          <h2>{selectedRequirement.title}</h2>
-          <div className="inspector-section"><label>Statement</label><p>{selectedRequirement.statement}</p></div>
-          <div className="inspector-section"><label>Rationale</label><p>{selectedRequirement.rationale}</p></div>
-          <div className="inspector-grid">
-            <div><label>Owner</label><strong>{selectedRequirement.owner}</strong></div>
-            <div><label>Revision</label><strong>{selectedRequirement.revision}</strong></div>
-            <div><label>Verification</label><strong>{selectedRequirement.coverage}%</strong></div>
-            <div><label>Priority</label><strong>Critical</strong></div>
-          </div>
-          <div className="relationship-summary">
-            <div><Link2 size={15} /><span><strong>3</strong> upstream</span></div>
-            <div><ArrowRight size={15} /><span><strong>5</strong> downstream</span></div>
-          </div>
-          <div className="revision-note"><GitCommitHorizontal size={15} /><span><strong>Last change</strong> in <code>c8a71f2</code><small>Clarified tolerance • Maya Chen</small></span></div>
-          <button className="secondary-button full-width" onClick={() => notify(`${selectedRequirement.id} opened in editor`)}>Open controlled editor <ArrowRight size={15} /></button>
-        </aside>
-      </div>
-    </>
-  );
-}
-
-function TreeRow({ label, count, depth, open = false, active = false, strong = false, icon: CustomIcon, tone = "" }: TreeRowProps) {
-  const Icon = CustomIcon || (open ? ChevronDown : ChevronRight);
-  return (
-    <button className={`tree-row ${active ? "active" : ""} ${strong ? "strong" : ""} ${tone || ""}`} style={{ paddingLeft: `${14 + depth * 16}px` }}>
-      <Icon size={14} /><span>{label}</span><small>{count}</small>
-    </button>
-  );
 }
 
 function StatusPill({ status }) {

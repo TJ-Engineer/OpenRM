@@ -65,7 +65,55 @@ export interface paths {
         /** List projects in the selected organization */
         get: operations["listProjects"];
         put?: never;
-        post?: never;
+        /** Create a project with its default requirement workspace */
+        post: operations["createProject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/members": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** List project-scoped roles */
+        get: operations["listProjectMemberships"];
+        put?: never;
+        /** Assign or replace a project-scoped role */
+        post: operations["setProjectMembership"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/workspace/{resource}": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                resource: components["parameters"]["WorkspaceResource"];
+            };
+            cookie?: never;
+        };
+        /** List folders, tags, attribute definitions, or saved views */
+        get: operations["listWorkspaceResources"];
+        put?: never;
+        /** Create a folder, tag, attribute definition, or saved view */
+        post: operations["createWorkspaceResource"];
         delete?: never;
         options?: never;
         head?: never;
@@ -142,6 +190,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/requirements/{requirement_id}/compare": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                requirement_id: components["parameters"]["RequirementId"];
+            };
+            cookie?: never;
+        };
+        /** Compare two immutable requirement revisions */
+        get: operations["compareRequirementRevisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/requirements/import": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import up to 100 requirements using idempotent row commands */
+        post: operations["importRequirements"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/requirements/export": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** Export all current requirements as JSON */
+        get: operations["exportRequirements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -181,11 +298,55 @@ export interface components {
             id: string;
             key: string;
             name: string;
+            description: string;
             /** Format: date-time */
             created_at: string;
         };
         ProjectListResponse: {
             items: components["schemas"]["Project"][];
+        };
+        CreateProjectRequest: {
+            key: string;
+            name: string;
+            /** @default  */
+            description: string;
+        };
+        ProjectMembershipRequest: {
+            subject: string;
+            /** @enum {string} */
+            role: "administrator" | "author" | "reviewer" | "viewer";
+        };
+        ProjectMembership: {
+            subject: string;
+            /** @enum {string} */
+            role: "administrator" | "author" | "reviewer" | "viewer";
+            /** Format: date-time */
+            created_at: string;
+        };
+        ProjectMembershipListResponse: {
+            items: components["schemas"]["ProjectMembership"][];
+        };
+        WorkspaceResourceRequest: {
+            name?: string;
+            /** Format: uuid */
+            parent_id?: string | null;
+            color?: string;
+            key?: string;
+            label?: string;
+            /** @enum {string} */
+            value_type?: "text" | "number" | "boolean" | "enum";
+            required?: boolean;
+            config?: {
+                [key: string]: unknown;
+            };
+            filters?: {
+                [key: string]: unknown;
+            };
+        };
+        WorkspaceResourceListResponse: {
+            items: {
+                [key: string]: unknown;
+            }[];
         };
         Requirement: {
             /** Format: uuid */
@@ -198,6 +359,9 @@ export interface components {
             attributes: {
                 [key: string]: unknown;
             };
+            /** Format: uuid */
+            folder_id: string | null;
+            tag_ids: string[];
             revision: number;
             created_by: string;
             /** Format: date-time */
@@ -219,6 +383,10 @@ export interface components {
             attributes: {
                 [key: string]: unknown;
             };
+            /** Format: uuid */
+            folder_id?: string | null;
+            /** @default [] */
+            tag_ids: string[];
         };
         ReviseRequirementRequest: {
             expected_revision: number;
@@ -228,6 +396,10 @@ export interface components {
             attributes: {
                 [key: string]: unknown;
             };
+            /** Format: uuid */
+            folder_id?: string | null;
+            /** @default [] */
+            tag_ids: string[];
         };
         RequirementRevision: {
             /** Format: uuid */
@@ -238,12 +410,29 @@ export interface components {
             attributes: {
                 [key: string]: unknown;
             };
+            /** Format: uuid */
+            folder_id: string | null;
+            tag_ids: string[];
             created_by: string;
             /** Format: date-time */
             created_at: string;
         };
         RequirementRevisionListResponse: {
             items: components["schemas"]["RequirementRevision"][];
+        };
+        RequirementComparison: {
+            /** Format: uuid */
+            requirement_id: string;
+            from: components["schemas"]["RequirementRevision"];
+            to: components["schemas"]["RequirementRevision"];
+            changed_fields: ("title" | "statement" | "attributes" | "folder_id" | "tag_ids")[];
+        };
+        RequirementImportRequest: {
+            items: components["schemas"]["CreateRequirementRequest"][];
+        };
+        RequirementImportResponse: {
+            items: components["schemas"]["Requirement"][];
+            imported: number;
         };
         ErrorEnvelope: {
             error: components["schemas"]["ErrorBody"];
@@ -317,6 +506,7 @@ export interface components {
         OrganizationHeader: string;
         ProjectId: string;
         RequirementId: string;
+        WorkspaceResource: "folders" | "tags" | "attribute-definitions" | "saved-views";
         /** @description Stable client command identifier scoped to tenant, actor, and operation. */
         IdempotencyHeader: string;
     };
@@ -419,12 +609,188 @@ export interface operations {
             503: components["responses"]["ServiceUnavailable"];
         };
     };
+    createProject: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProjectRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of a prior project command. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+            /** @description Project created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listProjectMemberships: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Project memberships. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectMembershipListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    setProjectMembership: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectMembershipRequest"];
+            };
+        };
+        responses: {
+            /** @description Membership assigned. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectMembership"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listWorkspaceResources: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                resource: components["parameters"]["WorkspaceResource"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Workspace resources. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceResourceListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    createWorkspaceResource: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                resource: components["parameters"]["WorkspaceResource"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceResourceRequest"];
+            };
+        };
+        responses: {
+            /** @description Workspace resource created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
     listRequirements: {
         parameters: {
             query?: {
                 search?: string;
                 limit?: number;
                 offset?: number;
+                folder_id?: string;
+                tag_id?: string;
             };
             header: {
                 /** @description Organization UUID selected for the request. */
@@ -534,6 +900,8 @@ export interface operations {
             header: {
                 /** @description Organization UUID selected for the request. */
                 "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
             };
             path: {
                 project_id: components["parameters"]["ProjectId"];
@@ -586,6 +954,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RequirementRevisionListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    compareRequirementRevisions: {
+        parameters: {
+            query: {
+                from_revision: number;
+                to_revision: number;
+            };
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                requirement_id: components["parameters"]["RequirementId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revision comparison. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementComparison"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    importRequirements: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequirementImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Imported requirements. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementImportResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    exportRequirements: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Complete current requirement export. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementListResponse"];
                 };
             };
             401: components["responses"]["Unauthorized"];
