@@ -1,7 +1,8 @@
 # OpenRM implementation plan
 
 **Planning baseline:** 7 November 2026  
-**Current stage:** Phase 4 reviews and verification active
+**Current stage:** Phase 4 implementation complete; protected hosted gate pending
+
 **Primary outcome:** Deliver a self-hostable configuration and requirements management platform with controlled change, end-to-end traceability, review evidence, and verification records.
 
 ## 1. Current state
@@ -25,17 +26,16 @@ What exists now:
 - Directed typed relationships with exact revision evidence, asynchronous suspect propagation, reviewer dispositions, and trace graph, matrix, coverage, and gap queries.
 - Attributable changesets, immutable signed baselines, exact baseline comparison, deterministic evidence export, and stale-snapshot protection.
 - Baseline-bound review packages with participants, exact-revision comments, append-only resolutions, segregation-of-duty policy, and signed decisions.
-- Browser end-to-end coverage for requirements, traceability, baselines, and live review workflows plus automated WCAG 2 A/AA checks.
+- Browser end-to-end coverage for requirements, traceability, baselines, live review, and verification workflows plus automated WCAG 2 A/AA checks.
 
 What does not exist yet:
 
 - Deployed API/database environments and a connected production OIDC provider.
-- Production deployment of the artifact, relationship, and baseline endpoints.
-- Verification cases, runs, results, coverage rollups, and browser workflows.
+- Production deployment of the artifact, relationship, baseline, review, and verification endpoints.
 - Release automation, full observability, or recovery validation.
 - Live Jira or other connector implementations.
 
-The next engineering gate must prove verification planning and execution from approved review scope through attributable result evidence.
+The next engineering gate must record the completed Phase 4 browser and PostgreSQL evidence in protected hosted CI before the branch is merged to `main`.
 
 ## 2. Delivery principles
 
@@ -178,32 +178,36 @@ Exit evidence:
 
 - Local PostgreSQL 17 validation passed the complete impact-to-disposition-to-signed-baseline path, including deterministic byte-for-byte evidence replay and append-only enforcement.
 - Five Chromium workflows pass for requirements, traceability, changesets, baselines, and automated WCAG 2 A/AA checks.
-- [OpenRM CI run 42499504834](https://github.com/TJ-Engineer/OpenRM/actions/runs/42499504834) passed `web`, `api`, and `database-path` for implementation evidence commit `4f50618`.
+- [OpenRM CI run 42499758656](https://github.com/TJ-Engineer/OpenRM/actions/runs/42499758656) passed `web`, `api`, and `database-path` for the final Phase 3 branch state.
 
 ### Phase 4 — Reviews and verification (Weeks 11–14)
 
 **Outcome:** Gate decisions can be made from attributable review and verification evidence.
 
-**Status:** Active from 8 November 2026. The review and approval increment is implemented and locally verified; verification execution, rollups, readiness, notifications, and protected hosted evidence remain open.
+**Status:** Implementation complete and locally verified on 8 November 2026. The protected hosted CI gate remains open before formal phase closure.
 
 Deliverables:
 
 - [x] Review packages, participants, comments, resolutions, and approvals.
 - [x] Approval-policy enforcement and segregation-of-duty checks.
-- [ ] Verification cases, procedures, runs, results, and attachments.
-- [ ] Coverage rollups from requirement to verification result.
-- [ ] Gate-readiness calculation with explainable contributors.
-- [ ] Notifications and due-date events.
+- [x] Verification cases, procedures, runs, results, and attachments.
+- [x] Coverage rollups from requirement to verification result.
+- [x] Gate-readiness calculation with explainable contributors.
+- [x] Notifications and due-date events.
 
 Exit gate:
 
 - A review package can be assembled from a baseline, approved under policy, verified, and exported with complete evidence.
 
-Increment evidence:
+Completion evidence:
 
 - A clean PostgreSQL 17 database passed package creation, idempotent replay, exact baseline-revision comment binding, blocker-held approval, resolution-triggered completion, tenant isolation, and signed-decision verification.
 - Direct updates to lifecycle events, participants, comments, resolutions, and decisions were rejected by append-only database triggers.
 - Chromium passes the complete live Review Room workflow and automated WCAG 2 A/AA checks.
+- A second clean PostgreSQL 17 database passed the complete requirements-to-trace-to-baseline-to-review-to-verification journey, including independent execution ownership, signed results, content-addressed attachment manifests, 100% exact-revision coverage, an explainable ready gate, due/overdue/completion events, tenant isolation, and idempotent replay.
+- Repeated complete gate exports were byte-for-byte identical and returned a valid HMAC-SHA256 signature over review decisions, verification cases, runs, results, attachments, coverage, readiness, and due events.
+- Direct changes to cases, targets, run events, results, attachment manifests, and due events were rejected by PostgreSQL append-only triggers.
+- Chromium passes planning, execution, result capture, coverage/readiness, signed export, and automated WCAG 2 A/AA verification workflows.
 
 ### Phase 5 — Integration and beta hardening (Weeks 15–17)
 
@@ -235,7 +239,7 @@ Exit gate:
 | WEB-001 | P1 | Migrate the client to TypeScript and API client | Typecheck + build | 3 days |
 | QLT-001 | P0 | Add CI quality and security gates | Protected CI run | 2 days |
 
-FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1, Phase 2, and Phase 3 are closed; Phase 4 is active.
+FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1, Phase 2, and Phase 3 are closed; Phase 4 implementation is complete with protected hosted evidence pending.
 
 ## 5.1 Phase 2 execution backlog
 
@@ -267,10 +271,10 @@ FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-
 | REV-101 | P0 | Persist baseline-bound packages, participants, comments, resolutions, and decisions | Complete | Migration plus clean PostgreSQL workflow |
 | REV-102 | P0 | Enforce approval threshold, segregation of duties, replay, tenancy, and audit | Complete | Policy denial and signed-decision runtime matrix |
 | REV-103 | P0 | Connect the Review Room to live review evidence | Complete | Chromium workflow and WCAG A/AA scan |
-| REV-104 | P0 | Protect the review matrix in hosted CI | Ready | Extended `database-path` and browser jobs; hosted run pending |
-| VER-101 | P0 | Persist verification cases, procedures, runs, results, and attachments | Planned | Migration, API, and PostgreSQL workflow |
-| VER-102 | P0 | Roll verification evidence into requirement coverage and gate readiness | Planned | Explainable readiness queries and browser evidence |
-| NTF-101 | P1 | Emit review and verification due-date notifications | Planned | Attributable event delivery and replay tests |
+| REV-104 | P0 | Protect the complete Phase 4 matrix in hosted CI | Ready | Extended `web`, `api`, and `database-path`; hosted run pending |
+| VER-101 | P0 | Persist verification cases, procedures, runs, results, and attachments | Complete | Migration, API, clean PostgreSQL workflow, and immutable evidence matrix |
+| VER-102 | P0 | Roll verification evidence into requirement coverage and gate readiness | Complete | Exact-revision coverage, explainable readiness, and browser evidence |
+| NTF-101 | P1 | Emit review and verification due-date notifications | Complete | Idempotent due-soon, overdue, and completion events |
 
 ## 6. Quality gates
 

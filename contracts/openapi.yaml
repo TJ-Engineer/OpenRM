@@ -17,6 +17,7 @@ tags:
   - name: Controlled Change
   - name: Baselines
   - name: Reviews
+  - name: Verification
 paths:
   /health:
     get:
@@ -1277,6 +1278,314 @@ paths:
           $ref: "#/components/responses/Conflict"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/reviews/{review_id}/evidence:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/ReviewId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: exportGateEvidence
+      tags: [Verification]
+      summary: Export deterministic signed review and verification gate evidence
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Complete signed gate evidence with server-side signature verification.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GateEvidenceExport"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/verification/cases:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: listVerificationCases
+      tags: [Verification]
+      summary: List immutable verification cases and attributable executions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: review_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Verification cases bound to the selected review baseline.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationCaseListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    post:
+      operationId: createVerificationCase
+      tags: [Verification]
+      summary: Create immutable verification intent against exact baseline revisions
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVerificationCaseRequest"
+      responses:
+        "200":
+          description: Idempotent replay of the case command.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationCase"
+        "201":
+          description: Verification case created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationCase"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/verification/cases/{case_id}/runs:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/VerificationCaseId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+      - $ref: "#/components/parameters/IdempotencyHeader"
+    post:
+      operationId: startVerificationRun
+      tags: [Verification]
+      summary: Start an attributable independent execution
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartVerificationRunRequest"
+      responses:
+        "200":
+          description: Idempotent replay of the run command.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationRun"
+        "201":
+          description: Verification execution started.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationRun"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/verification/runs/{run_id}/results:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/VerificationRunId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+      - $ref: "#/components/parameters/IdempotencyHeader"
+    post:
+      operationId: recordVerificationResult
+      tags: [Verification]
+      summary: Record a signed result and content-addressed attachment manifest
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordVerificationResultRequest"
+      responses:
+        "200":
+          description: Idempotent replay of the result command.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationResult"
+        "201":
+          description: Signed verification result recorded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/verification/coverage:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: getVerificationCoverage
+      tags: [Verification]
+      summary: Roll exact baseline requirements up to verification outcomes
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: review_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Exact baseline coverage and per-artifact status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationCoverage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/verification/readiness:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: getGateReadiness
+      tags: [Verification]
+      summary: Calculate explainable review and verification gate readiness
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: review_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Gate status, contributors, and blockers.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GateReadiness"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/verification/due-events:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: listVerificationDueEvents
+      tags: [Verification]
+      summary: List attributable due-date and completion events
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: review_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Append-only due-date event history.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationDueEventListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    post:
+      operationId: generateVerificationDueEvents
+      tags: [Verification]
+      summary: Emit idempotent due-soon and overdue events
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateDueEventsRequest"
+      responses:
+        "201":
+          description: Newly emitted due-date events.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationDueEventListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
 components:
   securitySchemes:
     bearerAuth:
@@ -1330,6 +1639,20 @@ components:
         format: uuid
     ReviewId:
       name: review_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    VerificationCaseId:
+      name: case_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    VerificationRunId:
+      name: run_id
       in: path
       required: true
       schema:
@@ -2577,6 +2900,438 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ReviewPackage"
+    CreateVerificationCaseRequest:
+      type: object
+      additionalProperties: false
+      required: [review_id, key, title, method, procedure, acceptance_criteria, owner_subject, target_artifact_ids]
+      properties:
+        review_id:
+          type: string
+          format: uuid
+        key:
+          type: string
+          pattern: "^[A-Z][A-Z0-9_-]{1,63}$"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        method:
+          type: string
+          enum: [analysis, inspection, demonstration, test]
+        procedure:
+          type: string
+          minLength: 1
+          maxLength: 8000
+        acceptance_criteria:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        owner_subject:
+          type: string
+          minLength: 1
+          maxLength: 200
+        due_at:
+          type: [string, "null"]
+          format: date-time
+        target_artifact_ids:
+          type: array
+          minItems: 1
+          maxItems: 500
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+    StartVerificationRunRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        execution_note:
+          type: string
+          maxLength: 8000
+          default: ""
+    VerificationAttachmentInput:
+      type: object
+      additionalProperties: false
+      required: [object_key, file_name, media_type, size_bytes, sha256]
+      properties:
+        object_key:
+          type: string
+          minLength: 1
+          maxLength: 512
+        file_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        media_type:
+          type: string
+          minLength: 1
+          maxLength: 127
+        size_bytes:
+          type: integer
+          format: int64
+          minimum: 0
+        sha256:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+    RecordVerificationResultRequest:
+      type: object
+      additionalProperties: false
+      required: [outcome]
+      properties:
+        outcome:
+          type: string
+          enum: [passed, failed, blocked]
+        notes:
+          type: string
+          maxLength: 8000
+          default: ""
+        measured_values:
+          type: object
+          additionalProperties: true
+          default: {}
+        attachments:
+          type: array
+          maxItems: 20
+          default: []
+          items:
+            $ref: "#/components/schemas/VerificationAttachmentInput"
+    GenerateDueEventsRequest:
+      type: object
+      additionalProperties: false
+      required: [review_id]
+      properties:
+        review_id:
+          type: string
+          format: uuid
+    VerificationTarget:
+      type: object
+      additionalProperties: false
+      required: [id, artifact_id, artifact_revision_id, artifact_key]
+      properties:
+        id:
+          type: string
+          format: uuid
+        artifact_id:
+          type: string
+          format: uuid
+        artifact_revision_id:
+          type: string
+          format: uuid
+        artifact_key:
+          type: string
+    VerificationAttachment:
+      type: object
+      additionalProperties: false
+      required: [id, object_key, file_name, media_type, size_bytes, sha256, recorded_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        object_key:
+          type: string
+        file_name:
+          type: string
+        media_type:
+          type: string
+        size_bytes:
+          type: integer
+          format: int64
+        sha256:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        recorded_at:
+          type: string
+          format: date-time
+    VerificationResult:
+      type: object
+      additionalProperties: false
+      required: [id, run_id, outcome, notes, measured_values, evidence_hash, signature, signing_algorithm, signing_key_id, recorded_by, recorded_at, signature_valid, attachments]
+      properties:
+        id:
+          type: string
+          format: uuid
+        run_id:
+          type: string
+          format: uuid
+        outcome:
+          type: string
+          enum: [passed, failed, blocked]
+        notes:
+          type: string
+        measured_values:
+          type: object
+          additionalProperties: true
+        evidence_hash:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        signature:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        signing_algorithm:
+          type: string
+          const: HMAC-SHA256
+        signing_key_id:
+          type: string
+        recorded_by:
+          type: string
+        recorded_at:
+          type: string
+          format: date-time
+        signature_valid:
+          type: boolean
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/VerificationAttachment"
+    VerificationRun:
+      type: object
+      additionalProperties: false
+      required: [id, case_id, sequence, status, executed_by, started_at, completed_at, result]
+      properties:
+        id:
+          type: string
+          format: uuid
+        case_id:
+          type: string
+          format: uuid
+        sequence:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum: [in_progress, passed, failed, blocked]
+        executed_by:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: [string, "null"]
+          format: date-time
+        result:
+          oneOf:
+            - $ref: "#/components/schemas/VerificationResult"
+            - type: "null"
+    VerificationCase:
+      type: object
+      additionalProperties: false
+      required: [id, project_id, review_id, baseline_id, sequence, key, title, method, procedure, acceptance_criteria, owner_subject, due_at, created_by, created_at, status, targets, runs]
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        review_id:
+          type: string
+          format: uuid
+        baseline_id:
+          type: string
+          format: uuid
+        sequence:
+          type: integer
+          minimum: 1
+        key:
+          type: string
+        title:
+          type: string
+        method:
+          type: string
+          enum: [analysis, inspection, demonstration, test]
+        procedure:
+          type: string
+        acceptance_criteria:
+          type: string
+        owner_subject:
+          type: string
+        due_at:
+          type: [string, "null"]
+          format: date-time
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [planned, in_progress, passed, failed, blocked]
+        targets:
+          type: array
+          items:
+            $ref: "#/components/schemas/VerificationTarget"
+        runs:
+          type: array
+          items:
+            $ref: "#/components/schemas/VerificationRun"
+    VerificationCaseListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/VerificationCase"
+    VerificationCoverageItem:
+      type: object
+      additionalProperties: false
+      required: [artifact_id, artifact_revision_id, artifact_key, status, case_count]
+      properties:
+        artifact_id:
+          type: string
+          format: uuid
+        artifact_revision_id:
+          type: string
+          format: uuid
+        artifact_key:
+          type: string
+        status:
+          type: string
+          enum: [unverified, planned, in_progress, passed, failed, blocked]
+        case_count:
+          type: integer
+          minimum: 0
+    VerificationCoverage:
+      type: object
+      additionalProperties: false
+      required: [review_id, baseline_id, total_artifacts, passed_artifacts, coverage_percent, items]
+      properties:
+        review_id:
+          type: string
+          format: uuid
+        baseline_id:
+          type: string
+          format: uuid
+        total_artifacts:
+          type: integer
+          minimum: 0
+        passed_artifacts:
+          type: integer
+          minimum: 0
+        coverage_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/VerificationCoverageItem"
+    GateReadiness:
+      type: object
+      additionalProperties: false
+      required: [review_id, review_status, ready, coverage_percent, total_cases, passed_cases, failed_cases, blocked_cases, in_progress_cases, planned_cases, open_blocking_comments, invalid_signatures, contributors, blockers]
+      properties:
+        review_id:
+          type: string
+          format: uuid
+        review_status:
+          type: string
+          enum: [draft, in_review, changes_requested, approved, closed]
+        ready:
+          type: boolean
+        coverage_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        total_cases:
+          type: integer
+          minimum: 0
+        passed_cases:
+          type: integer
+          minimum: 0
+        failed_cases:
+          type: integer
+          minimum: 0
+        blocked_cases:
+          type: integer
+          minimum: 0
+        in_progress_cases:
+          type: integer
+          minimum: 0
+        planned_cases:
+          type: integer
+          minimum: 0
+        open_blocking_comments:
+          type: integer
+          minimum: 0
+        invalid_signatures:
+          type: integer
+          minimum: 0
+        contributors:
+          type: array
+          items:
+            type: string
+        blockers:
+          type: array
+          items:
+            type: string
+    VerificationDueEvent:
+      type: object
+      additionalProperties: false
+      required: [id, review_id, case_id, case_key, event_type, due_at, actor_subject, occurred_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        review_id:
+          type: string
+          format: uuid
+        case_id:
+          type: string
+          format: uuid
+        case_key:
+          type: string
+        event_type:
+          type: string
+          enum: [due_soon, overdue, completed]
+        due_at:
+          type: [string, "null"]
+          format: date-time
+        actor_subject:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+    VerificationDueEventListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/VerificationDueEvent"
+    GateEvidenceExport:
+      type: object
+      additionalProperties: false
+      required: [review_id, project_id, schema_version, manifest, manifest_hash, signature, signing_algorithm, signing_key_id, signature_valid]
+      properties:
+        review_id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        schema_version:
+          type: string
+          const: openrm-gate-evidence-v1
+        manifest:
+          type: object
+          additionalProperties: true
+        manifest_hash:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        signature:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        signing_algorithm:
+          type: string
+          const: HMAC-SHA256
+        signing_key_id:
+          type: string
+        signature_valid:
+          type: boolean
     ErrorEnvelope:
       type: object
       additionalProperties: false

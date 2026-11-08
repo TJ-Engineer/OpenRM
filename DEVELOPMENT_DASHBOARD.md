@@ -1,11 +1,11 @@
 # OpenRM development dashboard
 
-**Last verified:** 8 November 2026, 10:45 CST<br>
+**Last verified:** 8 November 2026, 11:13 CST<br>
 **Foundation evidence commit:** `fc6687f`<br>
 **Phase 2 evidence commit:** `f498031`<br>
 **Phase 3 implementation evidence commit:** `4f50618`<br>
-**Phase 4 review evidence:** local branch validation pending commit and protected CI<br>
-**Overall status:** 🟡 Phase 4 reviews and verification active
+**Phase 4 implementation evidence:** local branch validation complete; protected CI pending<br>
+**Overall status:** 🟡 Phase 4 implementation complete; protected hosted gate pending
 
 This file is the repository-level status dashboard. It summarizes delivery evidence and immediate priorities; [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) remains the source for scope, architecture, phase definitions, and exit gates.
 
@@ -22,7 +22,7 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | Phase 2 — Requirements vertical slice | 🟢 Complete | The API-backed authoring workflow, organization controls, isolated roles, controlled history, import/export, browser E2E, and WCAG A/AA evidence passed the exit gate. |
 | Requirements runtime path | 🟢 Protected CI passed | The complete two-project authoring and isolation path passed against PostgreSQL 17 in [OpenRM CI run 42492278928](https://github.com/TJ-Engineer/OpenRM/actions/runs/42492278928). |
 | Phase 3 — Traceability and controlled change | 🟢 Complete | The complete trace, impact, changeset, baseline, comparison, and signed-export slice passed locally and in protected CI. |
-| Phase 4 — Reviews and verification | 🟡 Active | Baseline-bound reviews and signed approvals pass locally; verification execution and protected hosted evidence remain open. |
+| Phase 4 — Reviews and verification | 🟡 Hosted gate pending | The complete review-to-verification signed-evidence exit path passes locally; protected hosted evidence remains open. |
 | Production API and database | ⚪ Not deployed | Deployment environments, production OIDC, observability, and recovery controls remain future work. |
 
 ## Phase progress
@@ -33,7 +33,7 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | 🟢 | 1. Foundation | Complete | Web, Rust API, PostgreSQL migrations, OpenAPI generation, OIDC/policy harness, ADRs, bootstrap, hosted CI, and branch protection are verified. |
 | 🟢 | 2. Requirements vertical slice | Complete | Live authoring, project roles, organization, validation, immutable history, comparison, import/export, audit, E2E, and accessibility evidence are verified. |
 | 🟢 | 3. Traceability and controlled change | Complete | Directed relationships, trace queries, asynchronous impact, attributable changesets, immutable baselines, comparison, and signed export are protected-CI verified. |
-| 🟡 | 4. Reviews and verification | Active | Review packages, segregation of duties, comments, resolutions, and signed approvals are locally verified; verification is next. |
+| 🟡 | 4. Reviews and verification | Implementation complete | Reviews, independent verification, exact coverage, readiness, due events, and complete signed export are locally verified; hosted CI is pending. |
 | ⚪ | 5. Integration and beta hardening | Planned | Jira connector, observability, recovery, security hardening, performance, and pilot operations. |
 
 ## Phase time and token usage
@@ -46,7 +46,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 1. Foundation | Complete; partial usage history | `N/R` | 8 Nov 2026 | `N/R` historical + 0.1 h tracked | `N/R` |
 | 2. Requirements vertical slice | Complete; partial usage telemetry | 8 Nov 2026 | 8 Nov 2026 | 1.1 h tracked | `N/R` |
 | 3. Traceability and controlled change | Complete | 8 Nov 2026 | 8 Nov 2026 | 0.7 h | `N/R` |
-| 4. Reviews and verification | Active; review increment locally verified | 8 Nov 2026 | — | 0.3 h | `N/R` |
+| 4. Reviews and verification | Implementation complete; hosted gate pending | 8 Nov 2026 | — | 0.8 h | `N/R` |
 | 5. Integration and beta hardening | Not started | — | — | 0 h | 0 |
 
 ### Usage change log
@@ -62,6 +62,8 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 8 November 2026, 10:12 CST | 3 | 0.4 h | `N/R` | Completed live trace queries and UI, attributable changesets, immutable signed baselines, comparison, deterministic export, Chromium/WCAG coverage, and the isolated PostgreSQL exit matrix. |
 | 8 November 2026, 10:23 CST | 3 | 0.1 h | `N/R` | Protected `web`, `api`, and `database-path` checks passed in OpenRM CI run 42499758656; Phase 3 closure evidence recorded. |
 | 8 November 2026, 10:43 CST | 4 | 0.3 h | `N/R` | Implemented baseline-bound reviews, policy-controlled signed decisions, live Review Room, Chromium/WCAG coverage, and a clean PostgreSQL runtime and immutability matrix. |
+| 8 November 2026, 11:09 CST | 4 | 0.4 h | `N/R` | Completed immutable verification planning/execution, signed results and attachments, exact coverage, explainable readiness, due events, complete deterministic export, live browser workflow, and a second clean PostgreSQL exit matrix. |
+| 8 November 2026, 11:13 CST | 4 | 0.1 h | `N/R` | Replayed the complete signed export with review discussion and lifecycle evidence, passed the full nine-test Chromium suite, and completed the final contract, CI-definition, and diff audit. |
 
 ### Usage accounting rules
 
@@ -100,9 +102,9 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 
 ## Current priorities
 
-1. Implement verification cases, procedures, executions, results, and evidence attachments.
-2. Add requirement-to-result coverage rollups and explainable gate readiness.
-3. Define the first API deployment, production OIDC, secret delivery, observability, and recovery path.
+1. Record protected hosted Phase 4 evidence and close the phase.
+2. Merge the completed Phase 4 branch through protected `main`.
+3. Begin Phase 5 API deployment, production OIDC, observability, recovery, and integration work.
 
 ## Phase 3 completion evidence
 
@@ -123,7 +125,7 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 | Append-only controlled history | 🟢 Locally verified | PostgreSQL rejected updates to audit events, artifact revisions, relationship revisions, changesets, and baselines. |
 | Protected hosted evidence | 🟢 CI verified | `web`, `api`, and `database-path` passed in [OpenRM CI run 42499758656](https://github.com/TJ-Engineer/OpenRM/actions/runs/42499758656) for the final Phase 3 branch state. |
 
-## Phase 4 active evidence
+## Phase 4 completion evidence (hosted gate pending)
 
 | Capability | State | Evidence |
 | --- | --- | --- |
@@ -135,11 +137,20 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 | Database immutability | 🟢 Locally verified | PostgreSQL rejected direct changes to lifecycle events, participants, comments, resolutions, and decisions. |
 | Live Review Room | 🟢 Browser verified | Chromium creates a package, assigns an independent reviewer, starts a round, records a blocker and signed approval, resolves the blocker, and observes final approval. |
 | Accessibility | 🟢 Browser verified | The live Review Room has no automatically detectable WCAG 2 A/AA violations. |
+| Verification intent | 🟢 Locally verified | Immutable cases retain method, procedure, acceptance criteria, independent owner, due date, and exact baseline revision targets. |
+| Independent execution | 🟢 Locally verified | Only the assigned review participant can start and complete a run; the attributable executor is enforced and replay is safe. |
+| Signed results and attachments | 🟢 Locally verified | Result evidence binds the review, baseline, case, run, outcome, measurements, actor, and sorted content-addressed attachment manifest. |
+| Exact coverage rollup | 🟢 Locally verified | All three clean-database baseline revisions rolled to passed only after their bound verification evidence passed, producing 100% coverage. |
+| Explainable gate readiness | 🟢 Locally verified | Readiness reports review state, case outcomes, coverage, blockers, open comments, and signature validity; the clean exit path reached ready with no blockers. |
+| Due-date events | 🟢 Locally verified | Idempotent due-soon, overdue, and completion events retain case, actor, due date, and timestamp evidence. |
+| Complete gate export | 🟢 Locally verified | Repeated exports were byte-identical and HMAC-SHA256 verified across reviews, decisions, verification, coverage, readiness, attachments, and due events. |
+| Verification immutability | 🟢 Locally verified | PostgreSQL rejected updates to cases, exact targets, run events, results, attachment manifests, and due events. |
+| Live Verification workspace | 🟢 Browser verified | Chromium plans and executes a case, records signed attachment evidence, observes 100% coverage/readiness, and exports the gate package. |
+| Verification accessibility | 🟢 Browser verified | The live Verification workspace has no automatically detectable WCAG 2 A/AA violations. |
 | Protected hosted evidence | 🟡 Pending | CI contains the extended browser and PostgreSQL matrix; a protected branch run has not yet been recorded. |
 
 ## Known delivery gaps
 
-- Verification cases, execution, result coverage, readiness, and notification endpoints are not implemented.
 - The API, PostgreSQL database, and production OIDC provider are not deployed.
 - Release automation, full observability, backup/restore validation, and live connectors remain planned.
 

@@ -704,6 +704,169 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/reviews/{review_id}/evidence": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        /** Export deterministic signed review and verification gate evidence */
+        get: operations["exportGateEvidence"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/verification/cases": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** List immutable verification cases and attributable executions */
+        get: operations["listVerificationCases"];
+        put?: never;
+        /** Create immutable verification intent against exact baseline revisions */
+        post: operations["createVerificationCase"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/verification/cases/{case_id}/runs": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                case_id: components["parameters"]["VerificationCaseId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start an attributable independent execution */
+        post: operations["startVerificationRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/verification/runs/{run_id}/results": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                run_id: components["parameters"]["VerificationRunId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a signed result and content-addressed attachment manifest */
+        post: operations["recordVerificationResult"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/verification/coverage": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** Roll exact baseline requirements up to verification outcomes */
+        get: operations["getVerificationCoverage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/verification/readiness": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** Calculate explainable review and verification gate readiness */
+        get: operations["getGateReadiness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/verification/due-events": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** List attributable due-date and completion events */
+        get: operations["listVerificationDueEvents"];
+        put?: never;
+        /** Emit idempotent due-soon and overdue events */
+        post: operations["generateVerificationDueEvents"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1234,6 +1397,210 @@ export interface components {
         ReviewPackageListResponse: {
             items: components["schemas"]["ReviewPackage"][];
         };
+        CreateVerificationCaseRequest: {
+            /** Format: uuid */
+            review_id: string;
+            key: string;
+            title: string;
+            /** @enum {string} */
+            method: "analysis" | "inspection" | "demonstration" | "test";
+            procedure: string;
+            acceptance_criteria: string;
+            owner_subject: string;
+            /** Format: date-time */
+            due_at?: string | null;
+            target_artifact_ids: string[];
+        };
+        StartVerificationRunRequest: {
+            /** @default  */
+            execution_note: string;
+        };
+        VerificationAttachmentInput: {
+            object_key: string;
+            file_name: string;
+            media_type: string;
+            /** Format: int64 */
+            size_bytes: number;
+            sha256: string;
+        };
+        RecordVerificationResultRequest: {
+            /** @enum {string} */
+            outcome: "passed" | "failed" | "blocked";
+            /** @default  */
+            notes: string;
+            /** @default {} */
+            measured_values: {
+                [key: string]: unknown;
+            };
+            /** @default [] */
+            attachments: components["schemas"]["VerificationAttachmentInput"][];
+        };
+        GenerateDueEventsRequest: {
+            /** Format: uuid */
+            review_id: string;
+        };
+        VerificationTarget: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            artifact_id: string;
+            /** Format: uuid */
+            artifact_revision_id: string;
+            artifact_key: string;
+        };
+        VerificationAttachment: {
+            /** Format: uuid */
+            id: string;
+            object_key: string;
+            file_name: string;
+            media_type: string;
+            /** Format: int64 */
+            size_bytes: number;
+            sha256: string;
+            /** Format: date-time */
+            recorded_at: string;
+        };
+        VerificationResult: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            run_id: string;
+            /** @enum {string} */
+            outcome: "passed" | "failed" | "blocked";
+            notes: string;
+            measured_values: {
+                [key: string]: unknown;
+            };
+            evidence_hash: string;
+            signature: string;
+            /** @constant */
+            signing_algorithm: "HMAC-SHA256";
+            signing_key_id: string;
+            recorded_by: string;
+            /** Format: date-time */
+            recorded_at: string;
+            signature_valid: boolean;
+            attachments: components["schemas"]["VerificationAttachment"][];
+        };
+        VerificationRun: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            case_id: string;
+            sequence: number;
+            /** @enum {string} */
+            status: "in_progress" | "passed" | "failed" | "blocked";
+            executed_by: string;
+            /** Format: date-time */
+            started_at: string;
+            /** Format: date-time */
+            completed_at: string | null;
+            result: components["schemas"]["VerificationResult"] | null;
+        };
+        VerificationCase: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            project_id: string;
+            /** Format: uuid */
+            review_id: string;
+            /** Format: uuid */
+            baseline_id: string;
+            sequence: number;
+            key: string;
+            title: string;
+            /** @enum {string} */
+            method: "analysis" | "inspection" | "demonstration" | "test";
+            procedure: string;
+            acceptance_criteria: string;
+            owner_subject: string;
+            /** Format: date-time */
+            due_at: string | null;
+            created_by: string;
+            /** Format: date-time */
+            created_at: string;
+            /** @enum {string} */
+            status: "planned" | "in_progress" | "passed" | "failed" | "blocked";
+            targets: components["schemas"]["VerificationTarget"][];
+            runs: components["schemas"]["VerificationRun"][];
+        };
+        VerificationCaseListResponse: {
+            items: components["schemas"]["VerificationCase"][];
+        };
+        VerificationCoverageItem: {
+            /** Format: uuid */
+            artifact_id: string;
+            /** Format: uuid */
+            artifact_revision_id: string;
+            artifact_key: string;
+            /** @enum {string} */
+            status: "unverified" | "planned" | "in_progress" | "passed" | "failed" | "blocked";
+            case_count: number;
+        };
+        VerificationCoverage: {
+            /** Format: uuid */
+            review_id: string;
+            /** Format: uuid */
+            baseline_id: string;
+            total_artifacts: number;
+            passed_artifacts: number;
+            coverage_percent: number;
+            items: components["schemas"]["VerificationCoverageItem"][];
+        };
+        GateReadiness: {
+            /** Format: uuid */
+            review_id: string;
+            /** @enum {string} */
+            review_status: "draft" | "in_review" | "changes_requested" | "approved" | "closed";
+            ready: boolean;
+            coverage_percent: number;
+            total_cases: number;
+            passed_cases: number;
+            failed_cases: number;
+            blocked_cases: number;
+            in_progress_cases: number;
+            planned_cases: number;
+            open_blocking_comments: number;
+            invalid_signatures: number;
+            contributors: string[];
+            blockers: string[];
+        };
+        VerificationDueEvent: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            review_id: string;
+            /** Format: uuid */
+            case_id: string;
+            case_key: string;
+            /** @enum {string} */
+            event_type: "due_soon" | "overdue" | "completed";
+            /** Format: date-time */
+            due_at: string | null;
+            actor_subject: string;
+            /** Format: date-time */
+            occurred_at: string;
+        };
+        VerificationDueEventListResponse: {
+            items: components["schemas"]["VerificationDueEvent"][];
+        };
+        GateEvidenceExport: {
+            /** Format: uuid */
+            review_id: string;
+            /** Format: uuid */
+            project_id: string;
+            /** @constant */
+            schema_version: "openrm-gate-evidence-v1";
+            manifest: {
+                [key: string]: unknown;
+            };
+            manifest_hash: string;
+            signature: string;
+            /** @constant */
+            signing_algorithm: "HMAC-SHA256";
+            signing_key_id: string;
+            signature_valid: boolean;
+        };
         ErrorEnvelope: {
             error: components["schemas"]["ErrorBody"];
         };
@@ -1310,6 +1677,8 @@ export interface components {
         ChangesetId: string;
         BaselineId: string;
         ReviewId: string;
+        VerificationCaseId: string;
+        VerificationRunId: string;
         CommentId: string;
         WorkspaceResource: "folders" | "tags" | "attribute-definitions" | "saved-views";
         /** @description Stable client command identifier scoped to tenant, actor, and operation. */
@@ -2702,6 +3071,334 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    exportGateEvidence: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Complete signed gate evidence with server-side signature verification. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GateEvidenceExport"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listVerificationCases: {
+        parameters: {
+            query: {
+                review_id: string;
+            };
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Verification cases bound to the selected review baseline. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationCaseListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    createVerificationCase: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateVerificationCaseRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of the case command. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationCase"];
+                };
+            };
+            /** @description Verification case created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationCase"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    startVerificationRun: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                case_id: components["parameters"]["VerificationCaseId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartVerificationRunRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of the run command. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationRun"];
+                };
+            };
+            /** @description Verification execution started. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationRun"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    recordVerificationResult: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                run_id: components["parameters"]["VerificationRunId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordVerificationResultRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of the result command. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationResult"];
+                };
+            };
+            /** @description Signed verification result recorded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getVerificationCoverage: {
+        parameters: {
+            query: {
+                review_id: string;
+            };
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Exact baseline coverage and per-artifact status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationCoverage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getGateReadiness: {
+        parameters: {
+            query: {
+                review_id: string;
+            };
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Gate status, contributors, and blockers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GateReadiness"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listVerificationDueEvents: {
+        parameters: {
+            query: {
+                review_id: string;
+            };
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Append-only due-date event history. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationDueEventListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    generateVerificationDueEvents: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateDueEventsRequest"];
+            };
+        };
+        responses: {
+            /** @description Newly emitted due-date events. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationDueEventListResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             503: components["responses"]["ServiceUnavailable"];
         };
     };

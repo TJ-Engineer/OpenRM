@@ -9,6 +9,7 @@ pub mod projects;
 pub mod relationships;
 pub mod requirements;
 pub mod reviews;
+pub mod verification;
 
 use std::time::Duration;
 
@@ -228,6 +229,34 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/projects/{project_id}/reviews/{review_id}/decisions",
             axum::routing::post(reviews::record_decision),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/reviews/{review_id}/evidence",
+            get(verification::export_gate_evidence),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/verification/cases",
+            get(verification::list_cases).post(verification::create_case),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/verification/cases/{case_id}/runs",
+            axum::routing::post(verification::start_run),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/verification/runs/{run_id}/results",
+            axum::routing::post(verification::record_result),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/verification/coverage",
+            get(verification::get_coverage),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/verification/readiness",
+            get(verification::get_readiness),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/verification/due-events",
+            get(verification::list_due_events).post(verification::generate_due_events),
         )
         .fallback(not_found)
         .with_state(state)

@@ -29,7 +29,6 @@ import {
   MessageSquareText,
   MoreHorizontal,
   PackageCheck,
-  Play,
   Search,
   ServerCog,
   ShieldCheck,
@@ -45,6 +44,7 @@ import { BaselinesWorkspace } from "./baselines/BaselinesWorkspace";
 import { RequirementsWorkspace } from "./requirements/RequirementsWorkspace";
 import { ReviewsWorkspace } from "./reviews/ReviewsWorkspace";
 import { TraceabilityWorkspace } from "./traceability/TraceabilityWorkspace";
+import { VerificationWorkspace } from "./verification/VerificationWorkspace";
 
 type PageHeaderProps = {
   eyebrow: React.ReactNode;
@@ -110,9 +110,9 @@ const DEVELOPMENT_PHASES = [
     id: "phase-4",
     number: "04",
     name: "Evidence",
-    window: "Active",
+    window: "Hosted gate pending",
     status: "active",
-    outcome: "Baseline-bound reviews and signed approvals live",
+    outcome: "Review-to-verification signed gate implemented",
   },
   {
     id: "phase-5",
@@ -129,25 +129,25 @@ const DEVELOPMENT_WORKSTREAMS = [
     name: "Product experience",
     icon: Columns3,
     progress: 100,
-    status: "Review Room live",
+    status: "Review and verification live",
     tone: "mint",
-    now: "Extend signed review evidence into verification execution",
+    now: "Pass the protected Phase 4 browser and database gates",
   },
   {
     name: "Platform & API",
     icon: ServerCog,
     progress: 100,
-    status: "Review API implemented",
+    status: "Phase 4 API implemented",
     tone: "blue",
-    now: "Implement verification plans, runs, and results",
+    now: "Preserve the complete gate-evidence compatibility contract",
   },
   {
     name: "Data & versioning",
     icon: Database,
     progress: 100,
-    status: "Signed decisions verified",
+    status: "Signed gate evidence verified",
     tone: "mint",
-    now: "Preserve append-only review and verification evidence",
+    now: "Keep all controlled evidence append-only",
   },
   {
     name: "Security & identity",
@@ -161,9 +161,9 @@ const DEVELOPMENT_WORKSTREAMS = [
     name: "Quality & delivery",
     icon: TestTube2,
     progress: 100,
-    status: "Phase 3 protected gate green",
+    status: "Phase 4 local gate green",
     tone: "mint",
-    now: "Keep all required checks green on protected main",
+    now: "Record protected hosted evidence and close Phase 4",
   },
   {
     name: "Operations",
@@ -194,6 +194,8 @@ const DEVELOPMENT_BACKLOG = [
   { id: "REQ-106", horizon: "now", priority: "P1", title: "Add import, export, comparison, accessibility, and E2E", stream: "Quality", effort: "4d", status: "Complete" },
   { id: "REQ-001", horizon: "now", priority: "P0", title: "Complete requirements vertical slice", stream: "Product", effort: "4w", status: "Complete" },
   { id: "TRC-001", horizon: "next", priority: "P0", title: "Deliver traceability and baselines", stream: "Product", effort: "4w", status: "Local gate passed" },
+  { id: "REV-101", horizon: "next", priority: "P0", title: "Deliver controlled reviews and signed approvals", stream: "Product", effort: "2w", status: "Complete" },
+  { id: "VER-101", horizon: "next", priority: "P0", title: "Deliver verification execution and gate readiness", stream: "Product", effort: "2w", status: "Local gate passed" },
 ];
 
 const COMMITS = [
@@ -320,7 +322,7 @@ function App() {
           {page === "traceability" && <TraceabilityWorkspace notify={notify} />}
           {page === "baselines" && <BaselinesWorkspace notify={notify} />}
           {page === "reviews" && <ReviewsWorkspace notify={notify} />}
-          {page === "verification" && <Verification {...pageProps} />}
+          {page === "verification" && <VerificationWorkspace notify={notify} />}
           {page === "storage" && <Storage {...pageProps} />}
           {page === "api" && <RestApi {...pageProps} />}
           {page === "integrations" && <Integrations {...pageProps} />}
@@ -428,7 +430,7 @@ function DevelopmentDashboard({ notify }) {
       .join("\n");
 
     try {
-      await navigator.clipboard.writeText(`OpenRM Phase 3 completion — current evidence\n${brief}`);
+      await navigator.clipboard.writeText(`OpenRM Phase 4 completion — protected gate pending\n${brief}`);
       notify("Current sprint brief copied");
     } catch {
       notify("Sprint brief is listed in IMPLEMENTATION_PLAN.md");
@@ -460,46 +462,46 @@ function DevelopmentDashboard({ notify }) {
       <section className="development-command panel">
         <div className="development-command-copy">
           <div className="phase-status-row">
-            <span className="phase-chip complete"><span /> Phase 3 complete</span>
+            <span className="phase-chip"><span /> Phase 4 hosted gate pending</span>
             <span className="baseline-date">17-week beta path</span>
           </div>
           <p className="panel-kicker">Current delivery objective</p>
-          <h2>Protect the complete trace-to-baseline evidence path.</h2>
+          <h2>Protect the complete review-to-verification gate.</h2>
           <p>
-            Phase 3 provides live graph, matrix, coverage, gap, suspect-impact, attributable changeset,
-            immutable baseline, comparison, and deterministic signed-export workflows. The PostgreSQL,
-            browser, accessibility, and protected hosted exit matrix passes; Phase 4 evidence workflows are next.
+            Phase 4 now provides controlled review packages, independent approvals, immutable verification
+            procedures, signed results and attachments, exact-revision coverage, explainable readiness, due events,
+            and deterministic complete gate export. Local PostgreSQL, browser, and accessibility gates pass.
           </p>
           <div className="command-meta">
-            <span><GitBranch size={14} /> Stage: Phase 3 exit gate passed</span>
-            <span><BadgeCheck size={14} /> Next gate: Reviews and verification</span>
+            <span><GitBranch size={14} /> Stage: Phase 4 implementation complete</span>
+            <span><BadgeCheck size={14} /> Next gate: Protected hosted evidence</span>
           </div>
         </div>
         <div className="gate-card">
           <div className="gate-card-head">
             <div>
-              <span>Phase 3 protected exit evidence</span>
-              <strong>8 / 8 evidence checks</strong>
+              <span>Phase 4 exit evidence</span>
+              <strong>7 / 8 evidence checks</strong>
             </div>
-            <div className="gate-score complete">100%</div>
+            <div className="gate-score active">88%</div>
           </div>
           <div className="gate-checks">
-            <span className="complete"><CheckCircle2 size={13} /> Directed exact-revision relationships</span>
-            <span className="complete"><CheckCircle2 size={13} /> Coverage, matrix, graph, and gaps</span>
-            <span className="complete"><CheckCircle2 size={13} /> Asynchronous suspect propagation</span>
-            <span className="complete"><CheckCircle2 size={13} /> Reviewer-only attributable disposition</span>
-            <span className="complete"><CheckCircle2 size={13} /> Parent-relative immutable changesets</span>
-            <span className="complete"><CheckCircle2 size={13} /> Signed baselines and comparison</span>
-            <span className="complete"><CheckCircle2 size={13} /> Deterministic evidence export</span>
+            <span className="complete"><CheckCircle2 size={13} /> Baseline-bound review packages</span>
+            <span className="complete"><CheckCircle2 size={13} /> Independent signed approvals</span>
+            <span className="complete"><CheckCircle2 size={13} /> Immutable verification execution</span>
+            <span className="complete"><CheckCircle2 size={13} /> Signed results and attachment manifests</span>
+            <span className="complete"><CheckCircle2 size={13} /> Exact coverage and readiness</span>
+            <span className="complete"><CheckCircle2 size={13} /> Due events and deterministic export</span>
             <span className="complete"><CheckCircle2 size={13} /> Browser workflows and WCAG A/AA</span>
+            <span><CircleDot size={13} /> Protected hosted checks pending</span>
           </div>
         </div>
       </section>
 
       <div className="development-metrics">
         <DeliveryMetric icon={Columns3} value="10 / 10" label="Prototype surfaces" detail="Interaction model represented" tone="mint" />
-        <DeliveryMetric icon={ServerCog} value="16" label="Controlled capabilities" detail="Authoring, trace, change, baseline, and export" tone="blue" />
-        <DeliveryMetric icon={TestTube2} value="21 + 9" label="Automated tests" detail="Rust, web unit, browser, and WCAG" tone="mint" />
+        <DeliveryMetric icon={ServerCog} value="24" label="Controlled capabilities" detail="Authoring through signed gate evidence" tone="blue" />
+        <DeliveryMetric icon={TestTube2} value="30 + 9" label="Automated tests" detail="Rust and web unit + browser/WCAG" tone="mint" />
         <DeliveryMetric icon={AlertTriangle} value="4" label="Program risks" detail="Decisions accepted; controls remain" tone="red" />
       </div>
 
@@ -609,7 +611,7 @@ function DevelopmentDashboard({ notify }) {
 
       <div className="dashboard-source-note">
         <FileCheck2 size={16} />
-        <p><strong>Source of truth:</strong> Phase 3 passed its PostgreSQL, API, browser, accessibility, deterministic-export, isolation, append-only history, and protected hosted gates in OpenRM CI run 42499504834 on 8 November 2026.</p>
+        <p><strong>Source of truth:</strong> Phase 4 review-to-verification implementation passes clean PostgreSQL, API, browser, accessibility, deterministic-export, isolation, and append-only history gates locally. Protected hosted evidence is pending.</p>
       </div>
     </>
   );
@@ -755,49 +757,6 @@ function AttentionItem({ tone, icon: Icon, title, body, action, onClick }) {
 
 function TechPill({ icon: Icon, label, detail }) {
   return <div className="tech-pill"><Icon size={18} /><span><strong>{label}</strong><small>{detail}</small></span></div>;
-}
-
-function StatusPill({ status }) {
-  const slug = status.toLowerCase().replaceAll(" ", "-");
-  return <span className={`status-pill ${slug}`}>{status === "Approved" && <Check size={11} />}{status === "Suspect" && <AlertTriangle size={11} />}{status}</span>;
-}
-
-function MiniStat({ icon: Icon, value, label, warning = false }) {
-  return <div className={`mini-stat panel ${warning ? "warning" : ""}`}><Icon size={18} /><strong>{value}</strong><span>{label}</span></div>;
-}
-
-function Verification({ notify }) {
-  const tests = [
-    ["RUN-109", "Primary compute failover — nominal load", "Passed", "132 ms", "S. Brooks"],
-    ["RUN-110", "Primary compute failover — peak load", "Passed", "147 ms", "S. Brooks"],
-    ["RUN-111", "Failover during telemetry burst", "In progress", "—", "L. Gomez"],
-    ["RUN-112", "Repeated failover recovery", "Blocked", "—", "L. Gomez"],
-  ];
-  return (
-    <>
-      <PageHeader
-        eyebrow="Verification cycle • AUR-24.11"
-        title="Evidence, tied to intent"
-        description="Plan, execute, and report verification with direct links to the requirements being proven."
-        actions={<button className="primary-button" onClick={() => notify("Test run execution opened")}><Play size={15} /> Execute next run</button>}
-      />
-      <div className="verification-grid">
-        <section className="panel cycle-hero">
-          <div><span className="panel-kicker">Active cycle</span><h2>Flight control HIL qualification</h2><p>14 of 20 runs complete • ends Nov 12</p></div>
-          <div className="cycle-donut"><strong>70%</strong><span>complete</span></div>
-          <div className="result-legend"><span><i className="pass" /> 11 passed</span><span><i className="fail" /> 1 failed</span><span><i className="block" /> 2 blocked</span><span><i className="open" /> 6 open</span></div>
-        </section>
-        <MiniStat icon={PackageCheck} value="97%" label="Requirements allocated" />
-        <MiniStat icon={TestTube2} value="184" label="Test cases" />
-        <MiniStat icon={AlertTriangle} value="1" label="Failed run" warning />
-      </div>
-      <section className="panel test-table">
-        <div className="panel-heading compact"><div><span className="panel-kicker">Test execution</span><h2>Current cycle</h2></div><div className="search-box compact"><Search size={15} /><input placeholder="Find a run…" /></div></div>
-        <div className="test-table-head"><span>Run</span><span>Procedure</span><span>Result</span><span>Measured</span><span>Owner</span></div>
-        {tests.map(([id, name, status, measured, owner]) => <div className="test-row" key={id}><code>{id}</code><span><strong>{name}</strong><small>Verifies SFT-041 • revision r6</small></span><StatusPill status={status} /><strong>{measured}</strong><span>{owner}</span></div>)}
-      </section>
-    </>
-  );
 }
 
 function Storage({ notify }) {
