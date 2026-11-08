@@ -8,6 +8,8 @@ pub mod policy;
 pub mod projects;
 pub mod relationships;
 pub mod requirements;
+pub mod reviews;
+pub mod verification;
 
 use std::time::Duration;
 
@@ -199,6 +201,62 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/projects/{project_id}/baselines/{baseline_id}/evidence",
             get(controlled_change::export_evidence),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/reviews",
+            get(reviews::list_reviews).post(reviews::create_review),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/reviews/{review_id}",
+            get(reviews::get_review),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/reviews/{review_id}/participants",
+            axum::routing::post(reviews::add_participant),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/reviews/{review_id}/start",
+            axum::routing::post(reviews::start_review),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/reviews/{review_id}/comments",
+            axum::routing::post(reviews::add_comment),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/reviews/{review_id}/comments/{comment_id}/resolve",
+            axum::routing::post(reviews::resolve_comment),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/reviews/{review_id}/decisions",
+            axum::routing::post(reviews::record_decision),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/reviews/{review_id}/evidence",
+            get(verification::export_gate_evidence),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/verification/cases",
+            get(verification::list_cases).post(verification::create_case),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/verification/cases/{case_id}/runs",
+            axum::routing::post(verification::start_run),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/verification/runs/{run_id}/results",
+            axum::routing::post(verification::record_result),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/verification/coverage",
+            get(verification::get_coverage),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/verification/readiness",
+            get(verification::get_readiness),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/verification/due-events",
+            get(verification::list_due_events).post(verification::generate_due_events),
         )
         .fallback(not_found)
         .with_state(state)

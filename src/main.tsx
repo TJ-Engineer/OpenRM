@@ -29,7 +29,6 @@ import {
   MessageSquareText,
   MoreHorizontal,
   PackageCheck,
-  Play,
   Search,
   ServerCog,
   ShieldCheck,
@@ -43,7 +42,9 @@ import {
 import "./styles.css";
 import { BaselinesWorkspace } from "./baselines/BaselinesWorkspace";
 import { RequirementsWorkspace } from "./requirements/RequirementsWorkspace";
+import { ReviewsWorkspace } from "./reviews/ReviewsWorkspace";
 import { TraceabilityWorkspace } from "./traceability/TraceabilityWorkspace";
+import { VerificationWorkspace } from "./verification/VerificationWorkspace";
 
 type PageHeaderProps = {
   eyebrow: React.ReactNode;
@@ -57,7 +58,7 @@ const NAV_ITEMS = [
   { id: "requirements", label: "Requirements", icon: FileText, count: "Live" },
   { id: "traceability", label: "Traceability", icon: Link2, count: "Live" },
   { id: "baselines", label: "Baselines", icon: GitBranch },
-  { id: "reviews", label: "Reviews", icon: ClipboardCheck, count: "2" },
+  { id: "reviews", label: "Reviews", icon: ClipboardCheck, count: "Live" },
   { id: "verification", label: "Verification", icon: TestTube2 },
 ];
 
@@ -109,9 +110,9 @@ const DEVELOPMENT_PHASES = [
     id: "phase-4",
     number: "04",
     name: "Evidence",
-    window: "Weeks 11–14",
-    status: "queued",
-    outcome: "Reviews, approvals, and verification",
+    window: "Complete",
+    status: "complete",
+    outcome: "Protected review-to-verification gate passed",
   },
   {
     id: "phase-5",
@@ -128,25 +129,25 @@ const DEVELOPMENT_WORKSTREAMS = [
     name: "Product experience",
     icon: Columns3,
     progress: 100,
-    status: "Phase 3 workflows live",
+    status: "Review and verification live",
     tone: "mint",
-    now: "Decompose review packages and verification interactions",
+    now: "Begin the Phase 5 integration and operations slice",
   },
   {
     name: "Platform & API",
     icon: ServerCog,
     progress: 100,
-    status: "Phase 3 API protected",
+    status: "Phase 4 API implemented",
     tone: "blue",
-    now: "Define review and verification contracts",
+    now: "Preserve the complete gate-evidence compatibility contract",
   },
   {
     name: "Data & versioning",
     icon: Database,
     progress: 100,
-    status: "Signed baselines verified",
+    status: "Signed gate evidence verified",
     tone: "mint",
-    now: "Preserve append-only and deterministic export controls",
+    now: "Keep all controlled evidence append-only",
   },
   {
     name: "Security & identity",
@@ -160,9 +161,9 @@ const DEVELOPMENT_WORKSTREAMS = [
     name: "Quality & delivery",
     icon: TestTube2,
     progress: 100,
-    status: "Phase 3 protected gate green",
+    status: "Phase 4 protected gate green",
     tone: "mint",
-    now: "Keep all required checks green on protected main",
+    now: "Extend the protected matrix through Phase 5",
   },
   {
     name: "Operations",
@@ -192,7 +193,9 @@ const DEVELOPMENT_BACKLOG = [
   { id: "REQ-105", horizon: "now", priority: "P1", title: "Add folders, tags, attributes, and saved views", stream: "Product", effort: "5d", status: "Complete" },
   { id: "REQ-106", horizon: "now", priority: "P1", title: "Add import, export, comparison, accessibility, and E2E", stream: "Quality", effort: "4d", status: "Complete" },
   { id: "REQ-001", horizon: "now", priority: "P0", title: "Complete requirements vertical slice", stream: "Product", effort: "4w", status: "Complete" },
-  { id: "TRC-001", horizon: "next", priority: "P0", title: "Deliver traceability and baselines", stream: "Product", effort: "4w", status: "Local gate passed" },
+  { id: "TRC-001", horizon: "next", priority: "P0", title: "Deliver traceability and baselines", stream: "Product", effort: "4w", status: "Complete" },
+  { id: "REV-101", horizon: "next", priority: "P0", title: "Deliver controlled reviews and signed approvals", stream: "Product", effort: "2w", status: "Complete" },
+  { id: "VER-101", horizon: "next", priority: "P0", title: "Deliver verification execution and gate readiness", stream: "Product", effort: "2w", status: "Complete" },
 ];
 
 const COMMITS = [
@@ -259,7 +262,6 @@ function App() {
   const [tourStep, setTourStep] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toast, setToast] = useState("");
-  const [reviewApproved, setReviewApproved] = useState(false);
 
   const currentLabel = useMemo(
     () => [...DELIVERY_ITEMS, ...NAV_ITEMS, ...PLATFORM_ITEMS].find((item) => item.id === page)?.label || "Overview",
@@ -280,8 +282,6 @@ function App() {
   const pageProps = {
     navigate,
     notify,
-    reviewApproved,
-    setReviewApproved,
   };
 
   return (
@@ -321,8 +321,8 @@ function App() {
           {page === "requirements" && <RequirementsWorkspace notify={notify} />}
           {page === "traceability" && <TraceabilityWorkspace notify={notify} />}
           {page === "baselines" && <BaselinesWorkspace notify={notify} />}
-          {page === "reviews" && <Reviews {...pageProps} />}
-          {page === "verification" && <Verification {...pageProps} />}
+          {page === "reviews" && <ReviewsWorkspace notify={notify} />}
+          {page === "verification" && <VerificationWorkspace notify={notify} />}
           {page === "storage" && <Storage {...pageProps} />}
           {page === "api" && <RestApi {...pageProps} />}
           {page === "integrations" && <Integrations {...pageProps} />}
@@ -430,7 +430,7 @@ function DevelopmentDashboard({ notify }) {
       .join("\n");
 
     try {
-      await navigator.clipboard.writeText(`OpenRM Phase 3 completion — current evidence\n${brief}`);
+      await navigator.clipboard.writeText(`OpenRM Phase 5 kickoff — Phase 4 protected gate passed\n${brief}`);
       notify("Current sprint brief copied");
     } catch {
       notify("Sprint brief is listed in IMPLEMENTATION_PLAN.md");
@@ -462,46 +462,46 @@ function DevelopmentDashboard({ notify }) {
       <section className="development-command panel">
         <div className="development-command-copy">
           <div className="phase-status-row">
-            <span className="phase-chip complete"><span /> Phase 3 complete</span>
+            <span className="phase-chip"><span /> Phase 4 complete</span>
             <span className="baseline-date">17-week beta path</span>
           </div>
           <p className="panel-kicker">Current delivery objective</p>
-          <h2>Protect the complete trace-to-baseline evidence path.</h2>
+          <h2>Begin integration and beta hardening from a protected baseline.</h2>
           <p>
-            Phase 3 provides live graph, matrix, coverage, gap, suspect-impact, attributable changeset,
-            immutable baseline, comparison, and deterministic signed-export workflows. The PostgreSQL,
-            browser, accessibility, and protected hosted exit matrix passes; Phase 4 evidence workflows are next.
+            Phase 4 now provides controlled review packages, independent approvals, immutable verification
+            procedures, signed results and attachments, exact-revision coverage, explainable readiness, due events,
+            and deterministic complete gate export. Local and protected hosted gates pass.
           </p>
           <div className="command-meta">
-            <span><GitBranch size={14} /> Stage: Phase 3 exit gate passed</span>
-            <span><BadgeCheck size={14} /> Next gate: Reviews and verification</span>
+            <span><GitBranch size={14} /> Stage: Phase 4 complete</span>
+            <span><BadgeCheck size={14} /> Next: Phase 5 integration and operations</span>
           </div>
         </div>
         <div className="gate-card">
           <div className="gate-card-head">
             <div>
-              <span>Phase 3 protected exit evidence</span>
+              <span>Phase 4 exit evidence</span>
               <strong>8 / 8 evidence checks</strong>
             </div>
             <div className="gate-score complete">100%</div>
           </div>
           <div className="gate-checks">
-            <span className="complete"><CheckCircle2 size={13} /> Directed exact-revision relationships</span>
-            <span className="complete"><CheckCircle2 size={13} /> Coverage, matrix, graph, and gaps</span>
-            <span className="complete"><CheckCircle2 size={13} /> Asynchronous suspect propagation</span>
-            <span className="complete"><CheckCircle2 size={13} /> Reviewer-only attributable disposition</span>
-            <span className="complete"><CheckCircle2 size={13} /> Parent-relative immutable changesets</span>
-            <span className="complete"><CheckCircle2 size={13} /> Signed baselines and comparison</span>
-            <span className="complete"><CheckCircle2 size={13} /> Deterministic evidence export</span>
+            <span className="complete"><CheckCircle2 size={13} /> Baseline-bound review packages</span>
+            <span className="complete"><CheckCircle2 size={13} /> Independent signed approvals</span>
+            <span className="complete"><CheckCircle2 size={13} /> Immutable verification execution</span>
+            <span className="complete"><CheckCircle2 size={13} /> Signed results and attachment manifests</span>
+            <span className="complete"><CheckCircle2 size={13} /> Exact coverage and readiness</span>
+            <span className="complete"><CheckCircle2 size={13} /> Due events and deterministic export</span>
             <span className="complete"><CheckCircle2 size={13} /> Browser workflows and WCAG A/AA</span>
+            <span className="complete"><CheckCircle2 size={13} /> Protected hosted checks passed</span>
           </div>
         </div>
       </section>
 
       <div className="development-metrics">
         <DeliveryMetric icon={Columns3} value="10 / 10" label="Prototype surfaces" detail="Interaction model represented" tone="mint" />
-        <DeliveryMetric icon={ServerCog} value="16" label="Controlled capabilities" detail="Authoring, trace, change, baseline, and export" tone="blue" />
-        <DeliveryMetric icon={TestTube2} value="21 + 9" label="Automated tests" detail="Rust, web unit, browser, and WCAG" tone="mint" />
+        <DeliveryMetric icon={ServerCog} value="24" label="Controlled capabilities" detail="Authoring through signed gate evidence" tone="blue" />
+        <DeliveryMetric icon={TestTube2} value="30 + 9" label="Automated tests" detail="Rust and web unit + browser/WCAG" tone="mint" />
         <DeliveryMetric icon={AlertTriangle} value="4" label="Program risks" detail="Decisions accepted; controls remain" tone="red" />
       </div>
 
@@ -611,7 +611,7 @@ function DevelopmentDashboard({ notify }) {
 
       <div className="dashboard-source-note">
         <FileCheck2 size={16} />
-        <p><strong>Source of truth:</strong> Phase 3 passed its PostgreSQL, API, browser, accessibility, deterministic-export, isolation, append-only history, and protected hosted gates in OpenRM CI run 42499504834 on 8 November 2026.</p>
+        <p><strong>Source of truth:</strong> Phase 4 review-to-verification evidence passed clean PostgreSQL, API, browser, accessibility, deterministic-export, isolation, and append-only history gates locally and in protected OpenRM CI run 42504423145.</p>
       </div>
     </>
   );
@@ -757,117 +757,6 @@ function AttentionItem({ tone, icon: Icon, title, body, action, onClick }) {
 
 function TechPill({ icon: Icon, label, detail }) {
   return <div className="tech-pill"><Icon size={18} /><span><strong>{label}</strong><small>{detail}</small></span></div>;
-}
-
-function StatusPill({ status }) {
-  const slug = status.toLowerCase().replaceAll(" ", "-");
-  return <span className={`status-pill ${slug}`}>{status === "Approved" && <Check size={11} />}{status === "Suspect" && <AlertTriangle size={11} />}{status}</span>;
-}
-
-function MiniStat({ icon: Icon, value, label, warning = false }) {
-  return <div className={`mini-stat panel ${warning ? "warning" : ""}`}><Icon size={18} /><strong>{value}</strong><span>{label}</span></div>;
-}
-
-function Reviews({ notify, reviewApproved, setReviewApproved }) {
-  const participants = [
-    ["Maya Chen", "Systems engineering", "Approved", "MC"],
-    ["Arun Patel", "Software lead", "Approved", "AP"],
-    ["Renee Okafor", "Safety engineering", reviewApproved ? "Approved" : "Pending", "RO"],
-    ["Sam Brooks", "Verification lead", "In progress", "SB"],
-  ];
-  const complete = reviewApproved ? 10 : 9;
-  return (
-    <>
-      <PageHeader
-        eyebrow="Decision workflow • Commit c8a71f2"
-        title="Review room"
-        description="Collect structured feedback and approvals against an exact, immutable content state."
-        actions={<button className="secondary-button"><MessageSquareText size={15} /> 3 open comments</button>}
-      />
-      <div className="review-layout">
-        <section className="panel review-main">
-          <div className="review-title-row">
-            <div><span className="status-pill in-review">IN REVIEW</span><h2>SRR-04 • Flight control requirements</h2><p>System requirements review for the Aurora-2 flight control baseline.</p></div>
-            <div className="due-card"><span>Due</span><strong>Nov 13</strong><small>7 days remaining</small></div>
-          </div>
-          <div className="review-stat-row">
-            <div><strong>{complete}<span>/12</span></strong><small>Participants complete</small></div>
-            <div><strong>1,248</strong><small>Artifacts in scope</small></div>
-            <div><strong>3</strong><small>Open comments</small></div>
-            <div><strong>2</strong><small>Changes requested</small></div>
-          </div>
-          <div className="large-progress"><span style={{ width: `${(complete / 12) * 100}%` }} /></div>
-          <div className="participant-header"><span>Participants</span><span>Role</span><span>Decision</span></div>
-          {participants.map(([name, role, decision, initials]) => (
-            <div className="participant-row" key={name}>
-              <span className="person"><i>{initials}</i><strong>{name}</strong></span>
-              <span>{role}</span>
-              <StatusPill status={decision} />
-            </div>
-          ))}
-        </section>
-
-        <aside className="panel approval-panel">
-          <div className="approval-icon"><ShieldCheck size={28} /></div>
-          <span className="panel-kicker">Your decision</span>
-          <h2>{reviewApproved ? "Approval recorded" : "Ready for your approval?"}</h2>
-          <p>{reviewApproved ? "This illustrative approval is bound to changeset c8a71f2." : "Your decision will be cryptographically bound to the reviewed changeset and recorded in the audit trail."}</p>
-          <div className="commit-bound"><GitCommitHorizontal size={16} /><span>Bound changeset<code>c8a71f2</code></span><LockKeyhole size={14} /></div>
-          {!reviewApproved ? (
-            <>
-              <button className="primary-button full-width" onClick={() => { setReviewApproved(true); notify("Illustrative approval recorded"); }}><CheckCircle2 size={16} /> Record demo approval</button>
-              <button className="secondary-button full-width">Request changes</button>
-            </>
-          ) : <div className="approval-success"><BadgeCheck size={20} /> Signed by GJ • just now</div>}
-          <small className="demo-disclaimer">Demo only — no real electronic signature is created.</small>
-        </aside>
-      </div>
-
-      <section className="panel comment-panel">
-        <div className="panel-heading compact"><div><span className="panel-kicker">Discussion</span><h2>Open review comments</h2></div><button className="filter-button">All comments <ChevronDown size={13} /></button></div>
-        <Comment author="Renee Okafor" initials="RO" id="SFT-041" text="Please provide the analysis supporting the 150 ms allocation before approval." time="38 min ago" replies={2} />
-        <Comment author="Sam Brooks" initials="SB" id="VER-019" text="HIL procedure is drafted. I need the final fault-injection trigger definition." time="1h ago" replies={1} />
-      </section>
-    </>
-  );
-}
-
-function Comment({ author, initials, id, text, time, replies }) {
-  return <div className="comment"><span className="comment-avatar">{initials}</span><div><div className="comment-meta"><strong>{author}</strong><code>{id}</code><span>{time}</span></div><p>{text}</p><button className="text-button"><MessageSquareText size={13} /> {replies} replies</button></div><button className="icon-button"><MoreHorizontal size={16} /></button></div>;
-}
-
-function Verification({ notify }) {
-  const tests = [
-    ["RUN-109", "Primary compute failover — nominal load", "Passed", "132 ms", "S. Brooks"],
-    ["RUN-110", "Primary compute failover — peak load", "Passed", "147 ms", "S. Brooks"],
-    ["RUN-111", "Failover during telemetry burst", "In progress", "—", "L. Gomez"],
-    ["RUN-112", "Repeated failover recovery", "Blocked", "—", "L. Gomez"],
-  ];
-  return (
-    <>
-      <PageHeader
-        eyebrow="Verification cycle • AUR-24.11"
-        title="Evidence, tied to intent"
-        description="Plan, execute, and report verification with direct links to the requirements being proven."
-        actions={<button className="primary-button" onClick={() => notify("Test run execution opened")}><Play size={15} /> Execute next run</button>}
-      />
-      <div className="verification-grid">
-        <section className="panel cycle-hero">
-          <div><span className="panel-kicker">Active cycle</span><h2>Flight control HIL qualification</h2><p>14 of 20 runs complete • ends Nov 12</p></div>
-          <div className="cycle-donut"><strong>70%</strong><span>complete</span></div>
-          <div className="result-legend"><span><i className="pass" /> 11 passed</span><span><i className="fail" /> 1 failed</span><span><i className="block" /> 2 blocked</span><span><i className="open" /> 6 open</span></div>
-        </section>
-        <MiniStat icon={PackageCheck} value="97%" label="Requirements allocated" />
-        <MiniStat icon={TestTube2} value="184" label="Test cases" />
-        <MiniStat icon={AlertTriangle} value="1" label="Failed run" warning />
-      </div>
-      <section className="panel test-table">
-        <div className="panel-heading compact"><div><span className="panel-kicker">Test execution</span><h2>Current cycle</h2></div><div className="search-box compact"><Search size={15} /><input placeholder="Find a run…" /></div></div>
-        <div className="test-table-head"><span>Run</span><span>Procedure</span><span>Result</span><span>Measured</span><span>Owner</span></div>
-        {tests.map(([id, name, status, measured, owner]) => <div className="test-row" key={id}><code>{id}</code><span><strong>{name}</strong><small>Verifies SFT-041 • revision r6</small></span><StatusPill status={status} /><strong>{measured}</strong><span>{owner}</span></div>)}
-      </section>
-    </>
-  );
 }
 
 function Storage({ notify }) {

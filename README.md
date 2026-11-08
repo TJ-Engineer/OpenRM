@@ -1,12 +1,12 @@
 # OpenRM
 
-OpenRM is an open, self-hostable configuration and requirements management platform. The repository contains the interactive product preview, completed requirements vertical slice, and completed traceability and controlled-change implementation.
+OpenRM is an open, self-hostable configuration and requirements management platform. The repository contains the interactive product preview and complete local implementations for requirements, controlled change, reviews, approvals, verification, and signed gate evidence.
 
 [![OpenRM CI](https://github.com/TJ-Engineer/OpenRM/actions/workflows/ci.yml/badge.svg)](https://github.com/TJ-Engineer/OpenRM/actions/workflows/ci.yml)
 
 ## Development status
 
-**Current stage:** 🟢 Phase 3 traceability and controlled change is complete (updated 8 November 2026).
+**Current stage:** 🟢 Phase 4 is complete; Phase 5 integration and beta hardening is next (updated 8 November 2026).
 
 - 🟢 Phase 0, the interactive prototype and static delivery preview, is complete.
 - 🟢 Phase 1 is complete: all foundation deliverables and local evidence checks are implemented.
@@ -14,7 +14,8 @@ OpenRM is an open, self-hostable configuration and requirements management platf
 - 🟢 The protected `main` branch requires the `web`, `api`, and `database-path` GitHub Actions checks and disallows force-pushes and deletion.
 - 🟢 Phase 2 is complete. Teams can create isolated projects, assign scoped roles, create and revise requirements, organize with folders and tags, validate typed attributes, save filtered views, compare history, and import/export JSON.
 - 🟢 Controlled revisions and audit events are append-only, create/revise commands are idempotent, stale edits are rejected, and the primary browser workflow passes automated WCAG A/AA checks.
-- 🟢 Phase 3 is complete: live graph/matrix/coverage queries, gap reporting, directed relationship controls, asynchronous suspect propagation, reviewer dispositions, attributable changesets, immutable baseline comparison, and deterministic signed evidence export pass locally and in [protected OpenRM CI run 42499504834](https://github.com/TJ-Engineer/OpenRM/actions/runs/42499504834).
+- 🟢 Phase 3 is complete: live graph/matrix/coverage queries, gap reporting, directed relationship controls, asynchronous suspect propagation, reviewer dispositions, attributable changesets, immutable baseline comparison, and deterministic signed evidence export pass locally and in [protected OpenRM CI run 42499758656](https://github.com/TJ-Engineer/OpenRM/actions/runs/42499758656).
+- 🟢 Phase 4 is complete: baseline-bound reviews, segregation-of-duty approvals, immutable verification procedures, independent runs, signed results, content-addressed attachments, exact-revision coverage, explainable readiness, due events, and deterministic complete gate export pass locally and in [protected OpenRM CI run 42504423145](https://github.com/TJ-Engineer/OpenRM/actions/runs/42504423145).
 
 See the [development dashboard](DEVELOPMENT_DASHBOARD.md) for current evidence, priorities, gaps, and per-phase time/token accounting, and the [implementation plan](IMPLEMENTATION_PLAN.md) for the full roadmap and exit criteria.
 
@@ -80,7 +81,7 @@ Development tokens are rejected when `APP_ENV=production`. Deployed environments
 
 Role-scoped development tokens use `dev:<subject>:<role>`, where the role is `administrator`, `author`, `reviewer`, or `viewer`.
 
-## Verify the requirements and controlled-change slices
+## Verify the controlled evidence slices
 
 ```bash
 npm run check
@@ -90,7 +91,7 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --all-targets
 ```
 
-The protected `database-path` job applies all migrations to PostgreSQL 17 and exercises project isolation, controlled authoring, exact trace revisions, suspect resolution, coverage and gap queries, changeset diffs, reviewer-only baselines, baseline comparison, deterministic signed evidence, stale-snapshot rejection, and append-only history.
+The protected `database-path` job applies all migrations to PostgreSQL 17 and exercises project isolation, controlled authoring, exact trace revisions, suspect resolution, changesets, signed baselines, review-package assembly, segregation of duties, blocker-controlled approval, independent verification, signed results and attachments, exact-revision coverage, gate readiness, deterministic complete export, stale-snapshot rejection, and append-only history.
 
 ## Contract workflow
 

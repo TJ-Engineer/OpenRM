@@ -71,14 +71,14 @@ jobs:
       API_BIND_ADDRESS: 127.0.0.1:8080
       DATABASE_URL: postgres://openrm:openrm@127.0.0.1:5432/openrm
       RUN_MIGRATIONS: "false"
-      EVIDENCE_SIGNING_KEY: ci-phase-3-evidence-signing-key
-      EVIDENCE_SIGNING_KEY_ID: ci-phase-3
+      EVIDENCE_SIGNING_KEY: ci-phase-4-evidence-signing-key
+      EVIDENCE_SIGNING_KEY_ID: ci-phase-4
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo run -p openrm-api --bin migrate
-      - name: Exercise requirements and typed traceability paths
+      - name: Exercise controlled requirements through verification evidence
         run: |
           set -euo pipefail
           cargo run -p openrm-api > /tmp/openrm-api.log 2>&1 &
@@ -132,8 +132,10 @@ jobs:
             '{"subject":"ci-viewer","role":"viewer"}' > /tmp/viewer.json
           request POST 'dev:ci-admin' "${base_url}/projects/${project_id}/members" \
             '{"subject":"ci-reviewer","role":"reviewer"}' > /tmp/reviewer.json
+          request POST 'dev:ci-admin' "${base_url}/projects/${project_id}/members" \
+            '{"subject":"ci-approver","role":"reviewer"}' > /tmp/approver.json
           request GET 'dev:ci-admin' "${base_url}/projects/${project_id}/members" > /tmp/members.json
-          test "$(jq -r '.items | length' /tmp/members.json)" -eq 4
+          test "$(jq -r '.items | length' /tmp/members.json)" -eq 5
 
           request POST 'dev:ci-admin' "${base_url}/projects/${project_id}/workspace/folders" \
             '{"name":"System requirements"}' > /tmp/folder.json
@@ -350,9 +352,190 @@ jobs:
           test "$(jq -r '.signature_valid' /tmp/evidence-1.json)" = 'true'
           test "$(jq -r '.schema_version' /tmp/evidence-1.json)" = 'openrm-evidence-v1'
           test "$(jq -r '.signing_algorithm' /tmp/evidence-1.json)" = 'HMAC-SHA256'
-          test "$(jq -r '.signing_key_id' /tmp/evidence-1.json)" = 'ci-phase-3'
+          test "$(jq -r '.signing_key_id' /tmp/evidence-1.json)" = 'ci-phase-4'
           test "$(jq -r '.manifest.artifacts | length' /tmp/evidence-1.json)" -eq 3
           test "$(jq -r '.manifest.relationships | length' /tmp/evidence-1.json)" -eq 1
+
+          reviews_url="${base_url}/projects/${project_id}/reviews"
+          review_body='{"baseline_id":"'"${baseline_2_id}"'","title":"CI baseline review","description":"Protected Phase 4 decision evidence","required_approvals":1}'
+          request POST 'dev:ci-author:author' "${reviews_url}" "${review_body}" \
+            'ci-review-create-001' > /tmp/review.json
+          review_id="$(jq -r '.review_id' /tmp/review.json)"
+          test "$(jq -r '.status' /tmp/review.json)" = 'draft'
+          request POST 'dev:ci-author:author' "${reviews_url}" "${review_body}" \
+            'ci-review-create-001' > /tmp/review-replay.json
+          test "$(jq -r '.review_id' /tmp/review-replay.json)" = "${review_id}"
+
+          participants_url="${reviews_url}/${review_id}/participants"
+          request POST 'dev:ci-author:author' "${participants_url}" \
+            '{"subject":"ci-reviewer","role_label":"Baseline creator","required":false}' \
+            'ci-review-participant-001' > /tmp/review-baseline-creator.json
+          request POST 'dev:ci-author:author' "${participants_url}" \
+            '{"subject":"ci-approver","role_label":"Independent approver","required":true}' \
+            'ci-review-participant-002' > /tmp/review-approver.json
+          invalid_participant_status="$(curl --silent --output /tmp/review-invalid-participant.json --write-out '%{http_code}' \
+            -X POST -H 'Authorization: Bearer dev:ci-author:author' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            -H 'X-Idempotency-Key: ci-review-participant-invalid' -H 'Content-Type: application/json' \
+            --data '{"subject":"ci-viewer","role_label":"Invalid reviewer","required":true}' \
+            "${participants_url}")"
+          test "${invalid_participant_status}" = '400'
+
+          request POST 'dev:ci-author:author' "${reviews_url}/${review_id}/start" \
+            '{"rationale":"Independent reviewer and immutable scope are ready."}' \
+            'ci-review-start-001' > /tmp/review-start.json
+          test "$(jq -r '.status' /tmp/review-start.json)" = 'in_review'
+          test "$(jq -r '.current_round' /tmp/review-start.json)" -eq 1
+          request POST 'dev:ci-author:author' "${reviews_url}/${review_id}/start" \
+            '{"rationale":"Independent reviewer and immutable scope are ready."}' \
+            'ci-review-start-001' > /tmp/review-start-replay.json
+          test "$(jq -r '.current_round' /tmp/review-start-replay.json)" -eq 1
+
+          sod_status="$(curl --silent --output /tmp/review-sod-denied.json --write-out '%{http_code}' \
+            -X POST -H 'Authorization: Bearer dev:ci-reviewer:reviewer' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            -H 'X-Idempotency-Key: ci-review-sod-denied' -H 'Content-Type: application/json' \
+            --data '{"decision":"approved","comment":"Baseline creators cannot approve their own evidence."}' \
+            "${reviews_url}/${review_id}/decisions")"
+          test "${sod_status}" = '403'
+
+          request POST 'dev:ci-approver:reviewer' "${reviews_url}/${review_id}/comments" \
+            '{"target_artifact_id":"'"${requirement_id}"'","body":"Attach the independent safety analysis.","blocking":true}' \
+            'ci-review-comment-001' > /tmp/review-comment.json
+          review_comment_id="$(jq -r '.id' /tmp/review-comment.json)"
+          expected_review_revision="$(jq -r --arg artifact_id "${requirement_id}" '.manifest.artifacts[] | select(.artifact_id == $artifact_id) | .revision_id' /tmp/evidence-1.json)"
+          test "$(jq -r '.target_revision_id' /tmp/review-comment.json)" = "${expected_review_revision}"
+          test "$(jq -r '.target_key' /tmp/review-comment.json)" = 'CI-REQ-1'
+
+          request POST 'dev:ci-approver:reviewer' "${reviews_url}/${review_id}/decisions" \
+            '{"decision":"approved","comment":"Approved against the exact baseline; blocker must still be resolved."}' \
+            'ci-review-decision-001' > /tmp/review-decision.json
+          review_decision_id="$(jq -r '.id' /tmp/review-decision.json)"
+          test "$(jq -r '.package_status' /tmp/review-decision.json)" = 'in_review'
+          test "$(jq -r '.signature_valid' /tmp/review-decision.json)" = 'true'
+          test "$(jq -r '.evidence_hash | length' /tmp/review-decision.json)" -eq 64
+          test "$(jq -r '.signature | length' /tmp/review-decision.json)" -eq 64
+          request POST 'dev:ci-approver:reviewer' "${reviews_url}/${review_id}/decisions" \
+            '{"decision":"approved","comment":"Approved against the exact baseline; blocker must still be resolved."}' \
+            'ci-review-decision-001' > /tmp/review-decision-replay.json
+          test "$(jq -r '.id' /tmp/review-decision-replay.json)" = "${review_decision_id}"
+
+          request POST 'dev:ci-author:author' \
+            "${reviews_url}/${review_id}/comments/${review_comment_id}/resolve" \
+            '{"resolution":"Independent safety analysis attached and accepted."}' \
+            'ci-review-resolution-001' > /tmp/review-resolution.json
+          review_resolution_id="$(jq -r '.id' /tmp/review-resolution.json)"
+          test "$(jq -r '.package_status' /tmp/review-resolution.json)" = 'approved'
+          request GET 'dev:ci-viewer:viewer' "${reviews_url}/${review_id}" > /tmp/review-complete.json
+          test "$(jq -r '.status' /tmp/review-complete.json)" = 'approved'
+          test "$(jq -r '.approval_count' /tmp/review-complete.json)" -eq 1
+          test "$(jq -r '.blocking_comment_count' /tmp/review-complete.json)" -eq 0
+          test "$(jq -r '.comments[0].resolved' /tmp/review-complete.json)" = 'true'
+          test "$(jq -r '.decisions[0].signature_valid' /tmp/review-complete.json)" = 'true'
+
+          verification_url="${base_url}/projects/${project_id}/verification"
+          verification_case_body='{"review_id":"'"${review_id}"'","key":"VER-CI-1","title":"Verify approved baseline","method":"test","procedure":"Execute the controlled qualification procedure.","acceptance_criteria":"All exact baseline revisions pass.","owner_subject":"ci-approver","due_at":"2000-01-01T00:00:00Z","target_artifact_ids":["'"${requirement_id}"'","'"${target_requirement_id}"'","'"${imported_requirement_id}"'"]}'
+          request POST 'dev:ci-author:author' "${verification_url}/cases" \
+            "${verification_case_body}" 'ci-verification-case-001' > /tmp/verification-case.json
+          verification_case_id="$(jq -r '.id' /tmp/verification-case.json)"
+          verification_target_id="$(jq -r '.targets[0].id' /tmp/verification-case.json)"
+          test "$(jq -r '.targets | length' /tmp/verification-case.json)" -eq 3
+          test "$(jq -r '.status' /tmp/verification-case.json)" = 'planned'
+          request POST 'dev:ci-author:author' "${verification_url}/cases" \
+            "${verification_case_body}" 'ci-verification-case-001' > /tmp/verification-case-replay.json
+          test "$(jq -r '.id' /tmp/verification-case-replay.json)" = "${verification_case_id}"
+          invalid_owner_status="$(curl --silent --output /tmp/verification-invalid-owner.json --write-out '%{http_code}' \
+            -X POST -H 'Authorization: Bearer dev:ci-author:author' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            -H 'X-Idempotency-Key: ci-verification-invalid-owner' -H 'Content-Type: application/json' \
+            --data '{"review_id":"'"${review_id}"'","key":"VER-INVALID","title":"Invalid owner","method":"test","procedure":"Rejected procedure.","acceptance_criteria":"Rejected.","owner_subject":"ci-author","target_artifact_ids":["'"${requirement_id}"'"]}' \
+            "${verification_url}/cases")"
+          test "${invalid_owner_status}" = '400'
+
+          request POST 'dev:ci-author:author' "${verification_url}/due-events" \
+            '{"review_id":"'"${review_id}"'"}' > /tmp/verification-due-events.json
+          verification_due_event_id="$(jq -r '.items[0].id' /tmp/verification-due-events.json)"
+          test "$(jq -r '.items[0].event_type' /tmp/verification-due-events.json)" = 'overdue'
+
+          request POST 'dev:ci-approver:reviewer' \
+            "${verification_url}/cases/${verification_case_id}/runs" \
+            '{"execution_note":"Execute the exact approved scope."}' \
+            'ci-verification-run-001' > /tmp/verification-run.json
+          verification_run_id="$(jq -r '.id' /tmp/verification-run.json)"
+          test "$(jq -r '.status' /tmp/verification-run.json)" = 'in_progress'
+          request POST 'dev:ci-approver:reviewer' \
+            "${verification_url}/cases/${verification_case_id}/runs" \
+            '{"execution_note":"Execute the exact approved scope."}' \
+            'ci-verification-run-001' > /tmp/verification-run-replay.json
+          test "$(jq -r '.id' /tmp/verification-run-replay.json)" = "${verification_run_id}"
+          wrong_executor_status="$(curl --silent --output /tmp/verification-wrong-executor.json --write-out '%{http_code}' \
+            -X POST -H 'Authorization: Bearer dev:ci-reviewer:reviewer' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            -H 'X-Idempotency-Key: ci-verification-wrong-executor' -H 'Content-Type: application/json' \
+            --data '{"outcome":"passed","notes":"Not the attributable executor."}' \
+            "${verification_url}/runs/${verification_run_id}/results")"
+          test "${wrong_executor_status}" = '403'
+
+          verification_result_body='{"outcome":"passed","notes":"All acceptance criteria satisfied.","measured_values":{"latency_ms":147},"attachments":[{"object_key":"verification/ci/result.json","file_name":"result.json","media_type":"application/json","size_bytes":128,"sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]}'
+          request POST 'dev:ci-approver:reviewer' \
+            "${verification_url}/runs/${verification_run_id}/results" \
+            "${verification_result_body}" 'ci-verification-result-001' > /tmp/verification-result.json
+          verification_result_id="$(jq -r '.id' /tmp/verification-result.json)"
+          verification_attachment_id="$(jq -r '.attachments[0].id' /tmp/verification-result.json)"
+          test "$(jq -r '.signature_valid' /tmp/verification-result.json)" = 'true'
+          test "$(jq -r '.evidence_hash | length' /tmp/verification-result.json)" -eq 64
+          test "$(jq -r '.attachments | length' /tmp/verification-result.json)" -eq 1
+          request POST 'dev:ci-approver:reviewer' \
+            "${verification_url}/runs/${verification_run_id}/results" \
+            "${verification_result_body}" 'ci-verification-result-001' > /tmp/verification-result-replay.json
+          test "$(jq -r '.id' /tmp/verification-result-replay.json)" = "${verification_result_id}"
+          request POST 'dev:ci-author:author' "${verification_url}/due-events" \
+            '{"review_id":"'"${review_id}"'"}' > /tmp/verification-completion-events.json
+          test "$(jq -r '.items | length' /tmp/verification-completion-events.json)" -eq 0
+          request GET 'dev:ci-viewer:viewer' \
+            "${verification_url}/due-events?review_id=${review_id}" > /tmp/verification-all-due-events.json
+          test "$(jq -r '.items | map(.event_type) | sort == ["completed", "overdue"]' /tmp/verification-all-due-events.json)" = 'true'
+
+          request GET 'dev:ci-viewer:viewer' \
+            "${verification_url}/coverage?review_id=${review_id}" > /tmp/verification-coverage.json
+          jq -e '.coverage_percent == 100 and .passed_artifacts == 3' /tmp/verification-coverage.json > /dev/null
+          test "$(jq -r '.items | map(select(.status == "passed")) | length' /tmp/verification-coverage.json)" -eq 3
+          request GET 'dev:ci-viewer:viewer' \
+            "${verification_url}/readiness?review_id=${review_id}" > /tmp/verification-readiness.json
+          test "$(jq -r '.ready' /tmp/verification-readiness.json)" = 'true'
+          test "$(jq -r '.blockers | length' /tmp/verification-readiness.json)" -eq 0
+          request GET 'dev:ci-viewer:viewer' \
+            "${reviews_url}/${review_id}/evidence" > /tmp/gate-evidence-1.json
+          request GET 'dev:ci-viewer:viewer' \
+            "${reviews_url}/${review_id}/evidence" > /tmp/gate-evidence-2.json
+          cmp /tmp/gate-evidence-1.json /tmp/gate-evidence-2.json
+          test "$(jq -r '.schema_version' /tmp/gate-evidence-1.json)" = 'openrm-gate-evidence-v1'
+          test "$(jq -r '.signature_valid' /tmp/gate-evidence-1.json)" = 'true'
+          test "$(jq -r '.manifest.readiness.ready' /tmp/gate-evidence-1.json)" = 'true'
+          test "$(jq -r '.manifest.review.participants | length' /tmp/gate-evidence-1.json)" -eq 2
+          test "$(jq -r '.manifest.review.comments | length' /tmp/gate-evidence-1.json)" -eq 1
+          test "$(jq -r '.manifest.review.comments[0].resolution != null' /tmp/gate-evidence-1.json)" = 'true'
+          test "$(jq -r '.manifest.review.events | length' /tmp/gate-evidence-1.json)" -eq 3
+          test "$(jq -r '.manifest.decisions | length' /tmp/gate-evidence-1.json)" -eq 1
+          test "$(jq -r '.manifest.verification_cases[0].runs[0].result.attachments | length' /tmp/gate-evidence-1.json)" -eq 1
+          verification_isolation_status="$(curl --silent --output /tmp/verification-isolation.json --write-out '%{http_code}' \
+            -H 'Authorization: Bearer dev:ci-author:author' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            "${base_url}/projects/${isolated_project_id}/verification/cases?review_id=${review_id}")"
+          test "${verification_isolation_status}" = '403'
+
+          finalized_comment_status="$(curl --silent --output /tmp/review-finalized-comment.json --write-out '%{http_code}' \
+            -X POST -H 'Authorization: Bearer dev:ci-approver:reviewer' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            -H 'X-Idempotency-Key: ci-review-finalized-comment' -H 'Content-Type: application/json' \
+            --data '{"body":"Finalized reviews reject new comments.","blocking":false}' \
+            "${reviews_url}/${review_id}/comments")"
+          test "${finalized_comment_status}" = '409'
+          review_isolation_status="$(curl --silent --output /tmp/review-isolation.json --write-out '%{http_code}' \
+            -H 'Authorization: Bearer dev:ci-author:author' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            "${base_url}/projects/${isolated_project_id}/reviews")"
+          test "${review_isolation_status}" = '403'
 
           stale_revision_body='{"expected_revision":1,"title":"Imported requirement advanced","statement":"The workspace shall reject a baseline tied to a stale changeset.","attributes":{"priority":"medium","mass":1.1},"folder_id":"'"${folder_id}"'","tag_ids":["'"${tag_id}"'"]}'
           request PUT 'dev:ci-author:author' "${api_url}/${imported_requirement_id}" "${stale_revision_body}" \
@@ -417,6 +600,61 @@ jobs:
           if psql "${DATABASE_URL}" -c \
             "UPDATE baselines SET name = 'tampered' WHERE id = '${baseline_1_id}'"; then
             echo 'Baseline evidence accepted an update' >&2
+            exit 1
+          fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE review_package_events SET rationale = 'tampered' WHERE review_id = '${review_id}'"; then
+            echo 'Review lifecycle evidence accepted an update' >&2
+            exit 1
+          fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE review_participants SET role_label = 'tampered' WHERE review_id = '${review_id}'"; then
+            echo 'Review participant evidence accepted an update' >&2
+            exit 1
+          fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE review_comments SET body = 'tampered' WHERE id = '${review_comment_id}'"; then
+            echo 'Review comment evidence accepted an update' >&2
+            exit 1
+          fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE review_comment_resolutions SET resolution = 'tampered' WHERE id = '${review_resolution_id}'"; then
+            echo 'Review resolution evidence accepted an update' >&2
+            exit 1
+          fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE review_decisions SET comment = 'tampered' WHERE id = '${review_decision_id}'"; then
+            echo 'Review decision evidence accepted an update' >&2
+            exit 1
+          fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE verification_cases SET title = 'tampered' WHERE id = '${verification_case_id}'"; then
+            echo 'Verification case evidence accepted an update' >&2
+            exit 1
+          fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE verification_case_targets SET artifact_key = 'tampered' WHERE id = '${verification_target_id}'"; then
+            echo 'Verification target evidence accepted an update' >&2
+            exit 1
+          fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE verification_run_events SET note = 'tampered' WHERE run_id = '${verification_run_id}'"; then
+            echo 'Verification run history accepted an update' >&2
+            exit 1
+          fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE verification_results SET notes = 'tampered' WHERE id = '${verification_result_id}'"; then
+            echo 'Verification result evidence accepted an update' >&2
+            exit 1
+          fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE verification_attachments SET file_name = 'tampered' WHERE id = '${verification_attachment_id}'"; then
+            echo 'Verification attachment evidence accepted an update' >&2
+            exit 1
+          fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE verification_due_events SET event_type = 'due_soon' WHERE id = '${verification_due_event_id}'"; then
+            echo 'Verification due-event evidence accepted an update' >&2
             exit 1
           fi
           test "$(psql "${DATABASE_URL}" -tAc "SELECT count(*) FROM audit_events WHERE project_id = '${project_id}'")" -ge 10

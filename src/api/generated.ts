@@ -532,6 +532,341 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/reviews": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** List baseline-bound controlled review packages */
+        get: operations["listReviews"];
+        put?: never;
+        /** Assemble a draft review package from an immutable baseline */
+        post: operations["createReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/reviews/{review_id}": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        /** Read a review package with participants, comments, and signed decisions */
+        get: operations["getReview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/reviews/{review_id}/participants": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Assign a project reviewer before review start */
+        post: operations["addReviewParticipant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/reviews/{review_id}/start": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start a review round after approval-policy validation */
+        post: operations["startReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/reviews/{review_id}/comments": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add an append-only comment bound to an exact baseline revision */
+        post: operations["addReviewComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/reviews/{review_id}/comments/{comment_id}/resolve": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+                comment_id: components["parameters"]["CommentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Append an attributable review-comment resolution */
+        post: operations["resolveReviewComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/reviews/{review_id}/decisions": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a signed participant decision under segregation-of-duty policy */
+        post: operations["recordReviewDecision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/reviews/{review_id}/evidence": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        /** Export deterministic signed review and verification gate evidence */
+        get: operations["exportGateEvidence"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/verification/cases": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** List immutable verification cases and attributable executions */
+        get: operations["listVerificationCases"];
+        put?: never;
+        /** Create immutable verification intent against exact baseline revisions */
+        post: operations["createVerificationCase"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/verification/cases/{case_id}/runs": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                case_id: components["parameters"]["VerificationCaseId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start an attributable independent execution */
+        post: operations["startVerificationRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/verification/runs/{run_id}/results": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                run_id: components["parameters"]["VerificationRunId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a signed result and content-addressed attachment manifest */
+        post: operations["recordVerificationResult"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/verification/coverage": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** Roll exact baseline requirements up to verification outcomes */
+        get: operations["getVerificationCoverage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/verification/readiness": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** Calculate explainable review and verification gate readiness */
+        get: operations["getGateReadiness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/verification/due-events": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** List attributable due-date and completion events */
+        get: operations["listVerificationDueEvents"];
+        put?: never;
+        /** Emit idempotent due-soon and overdue events */
+        post: operations["generateVerificationDueEvents"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -915,6 +1250,357 @@ export interface components {
             signing_key_id: string;
             signature_valid: boolean;
         };
+        CreateReviewRequest: {
+            /** Format: uuid */
+            baseline_id: string;
+            title: string;
+            /** @default  */
+            description: string;
+            /** Format: date-time */
+            due_at?: string | null;
+            required_approvals: number;
+        };
+        AddReviewParticipantRequest: {
+            subject: string;
+            role_label: string;
+            /** @default true */
+            required: boolean;
+        };
+        StartReviewRequest: {
+            /** @default  */
+            rationale: string;
+        };
+        AddReviewCommentRequest: {
+            /** Format: uuid */
+            target_artifact_id?: string | null;
+            body: string;
+            /** @default false */
+            blocking: boolean;
+        };
+        ResolveReviewCommentRequest: {
+            resolution: string;
+        };
+        RecordReviewDecisionRequest: {
+            /** @enum {string} */
+            decision: "approved" | "changes_requested";
+            /** @default  */
+            comment: string;
+        };
+        ReviewCommandResponse: {
+            /** Format: uuid */
+            review_id: string;
+            /** @enum {string} */
+            status: "draft" | "in_review" | "changes_requested" | "approved" | "closed";
+            current_round: number;
+        };
+        ReviewParticipant: {
+            /** Format: uuid */
+            id: string;
+            subject: string;
+            role_label: string;
+            required: boolean;
+            assigned_by: string;
+            /** Format: date-time */
+            created_at: string;
+            /** @enum {string|null} */
+            current_decision: "approved" | "changes_requested" | null;
+            decision_comment: string | null;
+            /** Format: date-time */
+            decided_at: string | null;
+        };
+        ReviewComment: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            target_artifact_id: string | null;
+            /** Format: uuid */
+            target_revision_id: string | null;
+            target_key: string | null;
+            body: string;
+            blocking: boolean;
+            created_by: string;
+            /** Format: date-time */
+            created_at: string;
+            resolved: boolean;
+            resolution: string | null;
+            resolved_by: string | null;
+            /** Format: date-time */
+            resolved_at: string | null;
+        };
+        ReviewCommentResolution: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            review_id: string;
+            /** Format: uuid */
+            comment_id: string;
+            resolution: string;
+            resolved_by: string;
+            /** Format: date-time */
+            resolved_at: string;
+            /** @enum {string} */
+            package_status: "draft" | "in_review" | "changes_requested" | "approved" | "closed";
+        };
+        ReviewDecision: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            participant_id: string;
+            subject: string;
+            round: number;
+            /** @enum {string} */
+            decision: "approved" | "changes_requested";
+            comment: string;
+            evidence_hash: string;
+            signature: string;
+            /** @constant */
+            signing_algorithm: "HMAC-SHA256";
+            signing_key_id: string;
+            decided_by: string;
+            /** Format: date-time */
+            decided_at: string;
+            signature_valid: boolean;
+            /** @enum {string} */
+            package_status: "draft" | "in_review" | "changes_requested" | "approved" | "closed";
+        };
+        ReviewPackage: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            project_id: string;
+            sequence: number;
+            /** Format: uuid */
+            baseline_id: string;
+            baseline_sequence: number;
+            title: string;
+            description: string;
+            /** @enum {string} */
+            status: "draft" | "in_review" | "changes_requested" | "approved" | "closed";
+            /** Format: date-time */
+            due_at: string | null;
+            required_approvals: number;
+            current_round: number;
+            artifact_count: number;
+            participant_count: number;
+            approval_count: number;
+            open_comment_count: number;
+            blocking_comment_count: number;
+            created_by: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            participants: components["schemas"]["ReviewParticipant"][];
+            comments: components["schemas"]["ReviewComment"][];
+            decisions: components["schemas"]["ReviewDecision"][];
+        };
+        ReviewPackageListResponse: {
+            items: components["schemas"]["ReviewPackage"][];
+        };
+        CreateVerificationCaseRequest: {
+            /** Format: uuid */
+            review_id: string;
+            key: string;
+            title: string;
+            /** @enum {string} */
+            method: "analysis" | "inspection" | "demonstration" | "test";
+            procedure: string;
+            acceptance_criteria: string;
+            owner_subject: string;
+            /** Format: date-time */
+            due_at?: string | null;
+            target_artifact_ids: string[];
+        };
+        StartVerificationRunRequest: {
+            /** @default  */
+            execution_note: string;
+        };
+        VerificationAttachmentInput: {
+            object_key: string;
+            file_name: string;
+            media_type: string;
+            /** Format: int64 */
+            size_bytes: number;
+            sha256: string;
+        };
+        RecordVerificationResultRequest: {
+            /** @enum {string} */
+            outcome: "passed" | "failed" | "blocked";
+            /** @default  */
+            notes: string;
+            /** @default {} */
+            measured_values: {
+                [key: string]: unknown;
+            };
+            /** @default [] */
+            attachments: components["schemas"]["VerificationAttachmentInput"][];
+        };
+        GenerateDueEventsRequest: {
+            /** Format: uuid */
+            review_id: string;
+        };
+        VerificationTarget: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            artifact_id: string;
+            /** Format: uuid */
+            artifact_revision_id: string;
+            artifact_key: string;
+        };
+        VerificationAttachment: {
+            /** Format: uuid */
+            id: string;
+            object_key: string;
+            file_name: string;
+            media_type: string;
+            /** Format: int64 */
+            size_bytes: number;
+            sha256: string;
+            /** Format: date-time */
+            recorded_at: string;
+        };
+        VerificationResult: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            run_id: string;
+            /** @enum {string} */
+            outcome: "passed" | "failed" | "blocked";
+            notes: string;
+            measured_values: {
+                [key: string]: unknown;
+            };
+            evidence_hash: string;
+            signature: string;
+            /** @constant */
+            signing_algorithm: "HMAC-SHA256";
+            signing_key_id: string;
+            recorded_by: string;
+            /** Format: date-time */
+            recorded_at: string;
+            signature_valid: boolean;
+            attachments: components["schemas"]["VerificationAttachment"][];
+        };
+        VerificationRun: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            case_id: string;
+            sequence: number;
+            /** @enum {string} */
+            status: "in_progress" | "passed" | "failed" | "blocked";
+            executed_by: string;
+            /** Format: date-time */
+            started_at: string;
+            /** Format: date-time */
+            completed_at: string | null;
+            result: components["schemas"]["VerificationResult"] | null;
+        };
+        VerificationCase: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            project_id: string;
+            /** Format: uuid */
+            review_id: string;
+            /** Format: uuid */
+            baseline_id: string;
+            sequence: number;
+            key: string;
+            title: string;
+            /** @enum {string} */
+            method: "analysis" | "inspection" | "demonstration" | "test";
+            procedure: string;
+            acceptance_criteria: string;
+            owner_subject: string;
+            /** Format: date-time */
+            due_at: string | null;
+            created_by: string;
+            /** Format: date-time */
+            created_at: string;
+            /** @enum {string} */
+            status: "planned" | "in_progress" | "passed" | "failed" | "blocked";
+            targets: components["schemas"]["VerificationTarget"][];
+            runs: components["schemas"]["VerificationRun"][];
+        };
+        VerificationCaseListResponse: {
+            items: components["schemas"]["VerificationCase"][];
+        };
+        VerificationCoverageItem: {
+            /** Format: uuid */
+            artifact_id: string;
+            /** Format: uuid */
+            artifact_revision_id: string;
+            artifact_key: string;
+            /** @enum {string} */
+            status: "unverified" | "planned" | "in_progress" | "passed" | "failed" | "blocked";
+            case_count: number;
+        };
+        VerificationCoverage: {
+            /** Format: uuid */
+            review_id: string;
+            /** Format: uuid */
+            baseline_id: string;
+            total_artifacts: number;
+            passed_artifacts: number;
+            coverage_percent: number;
+            items: components["schemas"]["VerificationCoverageItem"][];
+        };
+        GateReadiness: {
+            /** Format: uuid */
+            review_id: string;
+            /** @enum {string} */
+            review_status: "draft" | "in_review" | "changes_requested" | "approved" | "closed";
+            ready: boolean;
+            coverage_percent: number;
+            total_cases: number;
+            passed_cases: number;
+            failed_cases: number;
+            blocked_cases: number;
+            in_progress_cases: number;
+            planned_cases: number;
+            open_blocking_comments: number;
+            invalid_signatures: number;
+            contributors: string[];
+            blockers: string[];
+        };
+        VerificationDueEvent: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            review_id: string;
+            /** Format: uuid */
+            case_id: string;
+            case_key: string;
+            /** @enum {string} */
+            event_type: "due_soon" | "overdue" | "completed";
+            /** Format: date-time */
+            due_at: string | null;
+            actor_subject: string;
+            /** Format: date-time */
+            occurred_at: string;
+        };
+        VerificationDueEventListResponse: {
+            items: components["schemas"]["VerificationDueEvent"][];
+        };
+        GateEvidenceExport: {
+            /** Format: uuid */
+            review_id: string;
+            /** Format: uuid */
+            project_id: string;
+            /** @constant */
+            schema_version: "openrm-gate-evidence-v1";
+            manifest: {
+                [key: string]: unknown;
+            };
+            manifest_hash: string;
+            signature: string;
+            /** @constant */
+            signing_algorithm: "HMAC-SHA256";
+            signing_key_id: string;
+            signature_valid: boolean;
+        };
         ErrorEnvelope: {
             error: components["schemas"]["ErrorBody"];
         };
@@ -990,6 +1676,10 @@ export interface components {
         RelationshipId: string;
         ChangesetId: string;
         BaselineId: string;
+        ReviewId: string;
+        VerificationCaseId: string;
+        VerificationRunId: string;
+        CommentId: string;
         WorkspaceResource: "folders" | "tags" | "attribute-definitions" | "saved-views";
         /** @description Stable client command identifier scoped to tenant, actor, and operation. */
         IdempotencyHeader: string;
@@ -2046,6 +2736,666 @@ export interface operations {
                     "application/json": components["schemas"]["EvidenceExport"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listReviews: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Review packages newest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPackageListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    createReview: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of a successful create command. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewCommandResponse"];
+                };
+            };
+            /** @description Draft review package created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewCommandResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getReview: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current review state backed by append-only evidence. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPackage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    addReviewParticipant: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddReviewParticipantRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of an assignment. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewParticipant"];
+                };
+            };
+            /** @description Participant assigned. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewParticipant"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    startReview: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Review round started or replayed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewCommandResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    addReviewComment: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddReviewCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of a comment. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewComment"];
+                };
+            };
+            /** @description Review comment recorded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewComment"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    resolveReviewComment: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+                comment_id: components["parameters"]["CommentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveReviewCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of a resolution. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewCommentResolution"];
+                };
+            };
+            /** @description Comment resolution recorded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewCommentResolution"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    recordReviewDecision: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordReviewDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of a signed decision. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewDecision"];
+                };
+            };
+            /** @description Signed decision recorded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewDecision"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    exportGateEvidence: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Complete signed gate evidence with server-side signature verification. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GateEvidenceExport"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listVerificationCases: {
+        parameters: {
+            query: {
+                review_id: string;
+            };
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Verification cases bound to the selected review baseline. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationCaseListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    createVerificationCase: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateVerificationCaseRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of the case command. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationCase"];
+                };
+            };
+            /** @description Verification case created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationCase"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    startVerificationRun: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                case_id: components["parameters"]["VerificationCaseId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartVerificationRunRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of the run command. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationRun"];
+                };
+            };
+            /** @description Verification execution started. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationRun"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    recordVerificationResult: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                run_id: components["parameters"]["VerificationRunId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordVerificationResultRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of the result command. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationResult"];
+                };
+            };
+            /** @description Signed verification result recorded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getVerificationCoverage: {
+        parameters: {
+            query: {
+                review_id: string;
+            };
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Exact baseline coverage and per-artifact status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationCoverage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getGateReadiness: {
+        parameters: {
+            query: {
+                review_id: string;
+            };
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Gate status, contributors, and blockers. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GateReadiness"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listVerificationDueEvents: {
+        parameters: {
+            query: {
+                review_id: string;
+            };
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Append-only due-date event history. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationDueEventListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    generateVerificationDueEvents: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateDueEventsRequest"];
+            };
+        };
+        responses: {
+            /** @description Newly emitted due-date events. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerificationDueEventListResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
