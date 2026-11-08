@@ -12,7 +12,7 @@ OpenRM is an open, self-hostable configuration and requirements management platf
 - 🟢 Phase 1 is complete: all foundation deliverables and local evidence checks are implemented.
 - 🟢 The first hosted Foundation CI run passed all web, API, security-audit, migration, and authenticated database-path checks.
 - 🟢 The protected `main` branch requires the `web`, `api`, and `database-path` GitHub Actions checks and disallows force-pushes and deletion.
-- 🟡 Phase 2 is active. Its first verified increment adds tenant-scoped project discovery; durable requirement creation, search, reads, and revisions; optimistic concurrency; idempotent creation; and transactional audit evidence.
+- 🟡 Phase 2 is active. Its first protected-CI-verified increment adds tenant-scoped project discovery; durable requirement creation, search, reads, and revisions; optimistic concurrency; idempotent creation; and transactional audit evidence.
 - ⚪ The Phase 2 authoring UI, folders, tags, saved views, import/export, and broader accessibility/end-to-end coverage remain planned.
 
 See the [development dashboard](DEVELOPMENT_DASHBOARD.md) for current evidence, priorities, gaps, and per-phase time/token accounting, and the [implementation plan](IMPLEMENTATION_PLAN.md) for the full roadmap and exit criteria.

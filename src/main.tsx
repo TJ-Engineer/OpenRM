@@ -108,7 +108,7 @@ const DEVELOPMENT_PHASES = [
     name: "Requirements",
     window: "Weeks 3–6",
     status: "active",
-    outcome: "First API/data increment verified locally",
+    outcome: "First API/data increment verified in protected CI",
   },
   {
     id: "phase-3",
@@ -745,7 +745,7 @@ function DevelopmentDashboard({ notify }) {
 
       <div className="dashboard-source-note">
         <FileCheck2 size={16} />
-        <p><strong>Source of truth:</strong> Phase 2 started on 8 November 2026. The first requirements API/data increment is locally verified; UI integration and the remaining Phase 2 exit evidence are still open.</p>
+        <p><strong>Source of truth:</strong> Phase 2 started on 8 November 2026. The first requirements API/data increment passed protected CI; UI integration and the remaining Phase 2 exit evidence are still open.</p>
       </div>
     </>
   );

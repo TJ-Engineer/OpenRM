@@ -113,7 +113,7 @@ Local evidence:
 
 **Outcome:** A team can create, revise, organize, search, and inspect requirements with durable history.
 
-**Status:** In progress from 8 November 2026. The first API/data increment is implemented and locally verified; the authoring UI and remaining Phase 2 capabilities are next.
+**Status:** In progress from 8 November 2026. The first API/data increment is implemented and verified in protected CI; the authoring UI and remaining Phase 2 capabilities are next.
 
 Implemented increment:
 

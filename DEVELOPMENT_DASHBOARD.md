@@ -1,8 +1,8 @@
 # OpenRM development dashboard
 
-**Last verified:** 8 November 2026, 08:12 CST<br>
+**Last verified:** 8 November 2026, 08:13 CST<br>
 **Foundation evidence commit:** `fc6687f`<br>
-**Overall status:** 🟡 Phase 2 active; first requirements API/data increment verified locally
+**Overall status:** 🟡 Phase 2 active; first requirements API/data increment verified in protected CI
 
 This file is the repository-level status dashboard. It summarizes delivery evidence and immediate priorities; [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) remains the source for scope, architecture, phase definitions, and exit gates.
 
@@ -16,8 +16,8 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | Phase 1 — Foundation | 🟢 Complete | All foundation deliverables, local checks, hosted CI jobs, and protected-branch controls are complete. |
 | Hosted CI | 🟢 Passed | `web`, `api`, and `database-path` passed in [Foundation CI run 42486750287](https://github.com/TJ-Engineer/OpenRM/actions/runs/42486750287). |
 | `main` branch protection | 🟢 Enforced | Requires `web`, `api`, and `database-path`; applies to administrators; disallows force-pushes and deletion. |
-| Phase 2 — Requirements vertical slice | 🟡 Active | First API/data increment is implemented; authoring UI and remaining product capabilities are next. |
-| Requirements runtime path | 🟢 Verified locally | Create/replay/revise/search/history/audit behavior passed against PostgreSQL 17. |
+| Phase 2 — Requirements vertical slice | 🟡 Active | First API/data increment is protected-CI verified; authoring UI and remaining product capabilities are next. |
+| Requirements runtime path | 🟢 Protected CI passed | Create/replay/revise/search/history/audit behavior passed against PostgreSQL 17 in [Foundation CI run 42488729744](https://github.com/TJ-Engineer/OpenRM/actions/runs/42488729744). |
 | Production API and database | ⚪ Not deployed | Deployment environments, production OIDC, observability, and recovery controls remain future work. |
 
 ## Phase progress
@@ -39,7 +39,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | --- | --- | --- | --- | ---: | ---: |
 | 0. Prototype and preview | Historical usage unavailable | `N/R` | Before tracking baseline | `N/R` | `N/R` |
 | 1. Foundation | Complete; partial usage history | `N/R` | 8 Nov 2026 | `N/R` historical + 0.1 h tracked | `N/R` |
-| 2. Requirements vertical slice | Active; partial usage telemetry | 8 Nov 2026 | — | 0.2 h tracked | `N/R` |
+| 2. Requirements vertical slice | Active; partial usage telemetry | 8 Nov 2026 | — | 0.3 h tracked | `N/R` |
 | 3. Traceability and controlled change | Not started | — | — | 0 h | 0 |
 | 4. Reviews and verification | Not started | — | — | 0 h | 0 |
 | 5. Integration and beta hardening | Not started | — | — | 0 h | 0 |
@@ -50,7 +50,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | --- | --- | ---: | ---: | --- |
 | 8 November 2026, 07:56 CST | 0–1 | `N/R` | `N/R` | Tracking baseline created; earlier session telemetry is unavailable. |
 | 8 November 2026, 08:00 CST | 1 | 0.1 h | `N/R` | Branch protection, closure status updates, and local validation. Token telemetry is unavailable. |
-| 8 November 2026, 08:12 CST | 2 | 0.2 h | `N/R` | First requirements API/data increment, contract, migration, CI path, and PostgreSQL runtime validation. |
+| 8 November 2026, 08:13 CST | 2 | 0.3 h | `N/R` | First requirements API/data increment, contract, migration, local PostgreSQL runtime validation, and protected CI. |
 
 ### Usage accounting rules
 
@@ -79,10 +79,10 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 | --- | --- | --- |
 | Project discovery | 🟢 Implemented | Tenant-scoped project list endpoint and typed contract. |
 | Requirement persistence | 🟢 Implemented | Materialized artifacts with immutable revision rows and composite tenant foreign keys. |
-| Authoring commands | 🟢 API verified | Create and revise paths validated against PostgreSQL 17. |
-| Concurrency and replay | 🟢 API verified | Stale revision rejected with `409`; repeated create key returned the original artifact. |
-| Search and pagination | 🟢 API verified | PostgreSQL full-text query plus bounded limit/offset response. |
-| Audit evidence | 🟢 API verified | Create and revise committed two tenant/project-scoped audit events transactionally. |
+| Authoring commands | 🟢 CI verified | Create and revise paths validated against PostgreSQL 17. |
+| Concurrency and replay | 🟢 CI verified | Stale revision rejected with `409`; repeated create key returned the original response. |
+| Search and pagination | 🟢 CI verified | PostgreSQL full-text query plus bounded limit/offset response. |
+| Audit evidence | 🟢 CI verified | Create and revise committed two tenant/project-scoped audit events transactionally. |
 | Web authoring workflow | ⚪ Ready | Generated TypeScript contract and command headers exist; screen integration remains. |
 
 ## Current priorities
