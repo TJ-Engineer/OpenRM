@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use axum::{
     extract::{FromRequestParts, State},
@@ -86,7 +86,13 @@ impl AuthVerifier {
 impl OidcVerifier {
     async fn discover(issuer: &str, audience: &str) -> Result<Self, ApiError> {
         let issuer = issuer.trim_end_matches('/');
-        let client = reqwest::Client::new();
+        let client = reqwest::Client::builder()
+            .connect_timeout(Duration::from_secs(5))
+            .timeout(Duration::from_secs(10))
+            .build()
+            .map_err(|error| {
+                ApiError::unavailable(format!("OIDC client configuration failed: {error}"))
+            })?;
         let discovery: DiscoveryDocument = client
             .get(format!("{issuer}/.well-known/openid-configuration"))
             .send()
@@ -105,9 +111,22 @@ impl OidcVerifier {
                 "OIDC discovery issuer does not match configuration",
             ));
         }
+        let jwks_url = reqwest::Url::parse(&discovery.jwks_uri)
+            .map_err(|_| ApiError::unavailable("OIDC discovery returned an invalid JWKS URL"))?;
+        if jwks_url.scheme() != "https"
+            || jwks_url.host_str().is_none()
+            || !jwks_url.username().is_empty()
+            || jwks_url.password().is_some()
+            || jwks_url.query().is_some()
+            || jwks_url.fragment().is_some()
+        {
+            return Err(ApiError::unavailable(
+                "OIDC JWKS URL must use HTTPS without credentials, query, or fragment",
+            ));
+        }
 
         let keys: JwkSet = client
-            .get(&discovery.jwks_uri)
+            .get(jwks_url)
             .send()
             .await
             .map_err(|error| ApiError::unavailable(format!("OIDC JWKS request failed: {error}")))?

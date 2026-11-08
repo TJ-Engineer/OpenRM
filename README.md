@@ -6,16 +6,17 @@ OpenRM is an open, self-hostable configuration and requirements management platf
 
 ## Development status
 
-**Current stage:** 🟢 Phase 4 is complete; Phase 5 integration and beta hardening is next (updated 8 November 2026).
+**Current stage:** 🟢 Phase 5 integration and beta hardening is complete; bounded pilot commissioning is next (updated 8 November 2026).
 
 - 🟢 Phase 0, the interactive prototype and static delivery preview, is complete.
 - 🟢 Phase 1 is complete: all foundation deliverables and local evidence checks are implemented.
-- 🟢 Hosted OpenRM CI passes web, API, security-audit, migration, browser, accessibility, and authenticated PostgreSQL checks.
-- 🟢 The protected `main` branch requires the `web`, `api`, and `database-path` GitHub Actions checks and disallows force-pushes and deletion.
+- 🟢 Hosted OpenRM CI passes web, API, security-audit, migration, browser, accessibility, authenticated PostgreSQL, recovery, upgrade, and production-artifact checks.
+- 🟢 The protected `main` branch requires `web`, `api`, `database-path`, `recovery-rehearsal`, and `production-artifact`, and disallows force-pushes and deletion.
 - 🟢 Phase 2 is complete. Teams can create isolated projects, assign scoped roles, create and revise requirements, organize with folders and tags, validate typed attributes, save filtered views, compare history, and import/export JSON.
 - 🟢 Controlled revisions and audit events are append-only, create/revise commands are idempotent, stale edits are rejected, and the primary browser workflow passes automated WCAG A/AA checks.
 - 🟢 Phase 3 is complete: live graph/matrix/coverage queries, gap reporting, directed relationship controls, asynchronous suspect propagation, reviewer dispositions, attributable changesets, immutable baseline comparison, and deterministic signed evidence export pass locally and in [protected OpenRM CI run 42499758656](https://github.com/TJ-Engineer/OpenRM/actions/runs/42499758656).
 - 🟢 Phase 4 is complete: baseline-bound reviews, segregation-of-duty approvals, immutable verification procedures, independent runs, signed results, content-addressed attachments, exact-revision coverage, explainable readiness, due events, and deterministic complete gate export pass locally and in [protected OpenRM CI run 42504423145](https://github.com/TJ-Engineer/OpenRM/actions/runs/42504423145).
+- 🟢 Phase 5 is complete: governed Jira delivery/replay, Prometheus/OTLP observability, hardened deployment assets, recovery and upgrade rehearsals, three-browser/WCAG validation, load and security gates, and pilot operations procedures pass locally and in [protected OpenRM CI run 42508760769](https://github.com/TJ-Engineer/OpenRM/actions/runs/42508760769).
 
 See the [development dashboard](DEVELOPMENT_DASHBOARD.md) for current evidence, priorities, gaps, and per-phase time/token accounting, and the [implementation plan](IMPLEMENTATION_PLAN.md) for the full roadmap and exit criteria.
 
@@ -91,7 +92,9 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --all-targets
 ```
 
-The protected `database-path` job applies all migrations to PostgreSQL 17 and exercises project isolation, controlled authoring, exact trace revisions, suspect resolution, changesets, signed baselines, review-package assembly, segregation of duties, blocker-controlled approval, independent verification, signed results and attachments, exact-revision coverage, gate readiness, deterministic complete export, stale-snapshot rejection, and append-only history.
+The protected `database-path` job applies all migrations to PostgreSQL 17 and exercises project isolation, controlled authoring, exact trace revisions, suspect resolution, changesets, signed baselines, review-package assembly, segregation of duties, blocker-controlled approval, independent verification, signed results and attachments, exact-revision coverage, gate readiness, deterministic complete export, Jira dead-letter/replay operations, security smoke tests, bounded load, stale-snapshot rejection, and append-only history. Separate jobs rehearse recovery/upgrades and build the production API image.
+
+Phase 5 operating procedures are under [`docs/operations`](docs/operations), with the threat model and security review under [`docs/security`](docs/security).
 
 ## Contract workflow
 
