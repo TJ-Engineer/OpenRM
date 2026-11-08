@@ -1,7 +1,7 @@
 # OpenRM implementation plan
 
 **Planning baseline:** 7 November 2026  
-**Current stage:** Phase 3 implementation complete locally; protected hosted evidence pending
+**Current stage:** Phase 3 traceability and controlled change complete
 **Primary outcome:** Deliver a self-hostable configuration and requirements management platform with controlled change, end-to-end traceability, review evidence, and verification records.
 
 ## 1. Current state
@@ -158,7 +158,7 @@ Exit evidence:
 
 **Outcome:** Users can connect intent to evidence, detect impact, and freeze reproducible baselines.
 
-**Status:** Implementation complete locally on 8 November 2026. The full contract-led slice now covers directed relationship controls, live trace queries, asynchronous suspect impact and reviewer disposition, attributable changesets, immutable signed baselines, comparison, deterministic evidence export, browser workflows, and PostgreSQL exit-gate validation. Protected hosted evidence remains the closure condition.
+**Status:** Complete on 8 November 2026. The full contract-led slice covers directed relationship controls, live trace queries, asynchronous suspect impact and reviewer disposition, attributable changesets, immutable signed baselines, comparison, deterministic evidence export, browser workflows, and PostgreSQL exit-gate validation. All protected hosted checks passed.
 
 Deliverables:
 
@@ -177,7 +177,7 @@ Exit evidence:
 
 - Local PostgreSQL 17 validation passed the complete impact-to-disposition-to-signed-baseline path, including deterministic byte-for-byte evidence replay and append-only enforcement.
 - Five Chromium workflows pass for requirements, traceability, changesets, baselines, and automated WCAG 2 A/AA checks.
-- Closure remains pending until the expanded protected CI jobs pass for the evidence commit.
+- [OpenRM CI run 42499504834](https://github.com/TJ-Engineer/OpenRM/actions/runs/42499504834) passed `web`, `api`, and `database-path` for implementation evidence commit `4f50618`.
 
 ### Phase 4 — Reviews and verification (Weeks 11–14)
 
@@ -226,7 +226,7 @@ Exit gate:
 | WEB-001 | P1 | Migrate the client to TypeScript and API client | Typecheck + build | 3 days |
 | QLT-001 | P0 | Add CI quality and security gates | Protected CI run | 2 days |
 
-FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1 and Phase 2 are closed; Phase 3 implementation is locally complete and awaiting protected hosted evidence.
+FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1, Phase 2, and Phase 3 are closed; Phase 4 is next.
 
 ## 5.1 Phase 2 execution backlog
 
@@ -244,12 +244,12 @@ FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-
 
 | ID | Priority | Work item | Status | Primary evidence |
 | --- | --- | --- | --- | --- |
-| TRC-101 | P0 | Persist directed typed relationships with cardinality and exact revision evidence | Local evidence complete; hosted CI pending | Isolated PostgreSQL API and immutability matrix |
-| TRC-102 | P0 | Propagate and resolve suspect links with attributable dispositions | Local evidence complete; hosted CI pending | Upstream revision impact workflow |
-| TRC-103 | P1 | Add trace graph, matrix, coverage, and gap queries | Local evidence complete; hosted CI pending | API queries and Chromium acceptance path |
-| CHG-101 | P0 | Add changesets with attributable diffs and commit messages | Local evidence complete; hosted CI pending | Parent-relative controlled commit workflow |
-| BAS-101 | P0 | Add immutable baselines and baseline comparison | Local evidence complete; hosted CI pending | Reviewer-only reproducible manifest comparison |
-| EVD-101 | P0 | Export deterministic hashed and signed evidence | Local evidence complete; hosted CI pending | Repeated byte-for-byte manifest verification |
+| TRC-101 | P0 | Persist directed typed relationships with cardinality and exact revision evidence | Complete | Isolated PostgreSQL API and immutability matrix |
+| TRC-102 | P0 | Propagate and resolve suspect links with attributable dispositions | Complete | Upstream revision impact workflow |
+| TRC-103 | P1 | Add trace graph, matrix, coverage, and gap queries | Complete | API queries and Chromium acceptance path |
+| CHG-101 | P0 | Add changesets with attributable diffs and commit messages | Complete | Parent-relative controlled commit workflow |
+| BAS-101 | P0 | Add immutable baselines and baseline comparison | Complete | Reviewer-only reproducible manifest comparison |
+| EVD-101 | P0 | Export deterministic hashed and signed evidence | Complete | Repeated byte-for-byte manifest verification |
 
 ## 6. Quality gates
 

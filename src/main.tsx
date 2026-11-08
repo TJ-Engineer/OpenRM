@@ -101,9 +101,9 @@ const DEVELOPMENT_PHASES = [
     id: "phase-3",
     number: "03",
     name: "Change control",
-    window: "Hosted evidence pending",
-    status: "active",
-    outcome: "Local impact-to-signed-baseline gate passed",
+    window: "Complete",
+    status: "complete",
+    outcome: "Protected impact-to-signed-baseline gate passed",
   },
   {
     id: "phase-4",
@@ -130,15 +130,15 @@ const DEVELOPMENT_WORKSTREAMS = [
     progress: 100,
     status: "Phase 3 workflows live",
     tone: "mint",
-    now: "Run the complete browser path in protected CI",
+    now: "Decompose review packages and verification interactions",
   },
   {
     name: "Platform & API",
     icon: ServerCog,
     progress: 100,
-    status: "Phase 3 API locally complete",
+    status: "Phase 3 API protected",
     tone: "blue",
-    now: "Protect the evidence commit with hosted checks",
+    now: "Define review and verification contracts",
   },
   {
     name: "Data & versioning",
@@ -160,7 +160,7 @@ const DEVELOPMENT_WORKSTREAMS = [
     name: "Quality & delivery",
     icon: TestTube2,
     progress: 100,
-    status: "Phase 3 local gate green",
+    status: "Phase 3 protected gate green",
     tone: "mint",
     now: "Keep all required checks green on protected main",
   },
@@ -430,7 +430,7 @@ function DevelopmentDashboard({ notify }) {
       .join("\n");
 
     try {
-      await navigator.clipboard.writeText(`OpenRM Phase 3 local completion — current evidence\n${brief}`);
+      await navigator.clipboard.writeText(`OpenRM Phase 3 completion — current evidence\n${brief}`);
       notify("Current sprint brief copied");
     } catch {
       notify("Sprint brief is listed in IMPLEMENTATION_PLAN.md");
@@ -462,25 +462,25 @@ function DevelopmentDashboard({ notify }) {
       <section className="development-command panel">
         <div className="development-command-copy">
           <div className="phase-status-row">
-            <span className="phase-chip active"><span /> Phase 3 local gate passed</span>
+            <span className="phase-chip complete"><span /> Phase 3 complete</span>
             <span className="baseline-date">17-week beta path</span>
           </div>
           <p className="panel-kicker">Current delivery objective</p>
           <h2>Protect the complete trace-to-baseline evidence path.</h2>
           <p>
-            Phase 3 now provides live graph, matrix, coverage, gap, suspect-impact, attributable changeset,
-            immutable baseline, comparison, and deterministic signed-export workflows. The local PostgreSQL,
-            browser, and accessibility exit matrix passes; protected hosted evidence is the remaining closure gate.
+            Phase 3 provides live graph, matrix, coverage, gap, suspect-impact, attributable changeset,
+            immutable baseline, comparison, and deterministic signed-export workflows. The PostgreSQL,
+            browser, accessibility, and protected hosted exit matrix passes; Phase 4 evidence workflows are next.
           </p>
           <div className="command-meta">
-            <span><GitBranch size={14} /> Stage: Phase 3 local exit gate passed</span>
-            <span><BadgeCheck size={14} /> Next gate: Protected hosted evidence</span>
+            <span><GitBranch size={14} /> Stage: Phase 3 exit gate passed</span>
+            <span><BadgeCheck size={14} /> Next gate: Reviews and verification</span>
           </div>
         </div>
         <div className="gate-card">
           <div className="gate-card-head">
             <div>
-              <span>Phase 3 local exit evidence</span>
+              <span>Phase 3 protected exit evidence</span>
               <strong>8 / 8 evidence checks</strong>
             </div>
             <div className="gate-score complete">100%</div>
@@ -611,7 +611,7 @@ function DevelopmentDashboard({ notify }) {
 
       <div className="dashboard-source-note">
         <FileCheck2 size={16} />
-        <p><strong>Source of truth:</strong> Phase 3 implementation passed its local PostgreSQL, API, browser, accessibility, deterministic-export, isolation, and append-only history gates on 8 November 2026. Protected hosted evidence remains pending.</p>
+        <p><strong>Source of truth:</strong> Phase 3 passed its PostgreSQL, API, browser, accessibility, deterministic-export, isolation, append-only history, and protected hosted gates in OpenRM CI run 42499504834 on 8 November 2026.</p>
       </div>
     </>
   );

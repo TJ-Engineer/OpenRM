@@ -1,9 +1,10 @@
 # OpenRM development dashboard
 
-**Last verified:** 8 November 2026, 10:12 CST<br>
+**Last verified:** 8 November 2026, 10:23 CST<br>
 **Foundation evidence commit:** `fc6687f`<br>
 **Phase 2 evidence commit:** `f498031`<br>
-**Overall status:** 🟡 Phase 3 implementation complete locally; protected hosted evidence pending
+**Phase 3 implementation evidence commit:** `4f50618`<br>
+**Overall status:** 🟢 Phase 3 traceability and controlled change complete
 
 This file is the repository-level status dashboard. It summarizes delivery evidence and immediate priorities; [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) remains the source for scope, architecture, phase definitions, and exit gates.
 
@@ -15,11 +16,11 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | --- | --- | --- |
 | Phase 0 — Prototype and delivery preview | 🟢 Complete | Interactive React preview and restricted static AWS delivery path are implemented. |
 | Phase 1 — Foundation | 🟢 Complete | All foundation deliverables, local checks, hosted CI jobs, and protected-branch controls are complete. |
-| Hosted CI | 🟢 Passed | `web`, `api`, and `database-path` passed the complete Phase 2 matrix in [OpenRM CI run 42492278928](https://github.com/TJ-Engineer/OpenRM/actions/runs/42492278928). |
+| Hosted CI | 🟢 Passed | `web`, `api`, and `database-path` passed the complete Phase 3 matrix in [OpenRM CI run 42499504834](https://github.com/TJ-Engineer/OpenRM/actions/runs/42499504834). |
 | `main` branch protection | 🟢 Enforced | Requires `web`, `api`, and `database-path`; applies to administrators; disallows force-pushes and deletion. |
 | Phase 2 — Requirements vertical slice | 🟢 Complete | The API-backed authoring workflow, organization controls, isolated roles, controlled history, import/export, browser E2E, and WCAG A/AA evidence passed the exit gate. |
 | Requirements runtime path | 🟢 Protected CI passed | The complete two-project authoring and isolation path passed against PostgreSQL 17 in [OpenRM CI run 42492278928](https://github.com/TJ-Engineer/OpenRM/actions/runs/42492278928). |
-| Phase 3 — Traceability and controlled change | 🟡 Hosted evidence pending | The complete trace, impact, changeset, baseline, comparison, and signed-export slice passes locally. |
+| Phase 3 — Traceability and controlled change | 🟢 Complete | The complete trace, impact, changeset, baseline, comparison, and signed-export slice passed locally and in protected CI. |
 | Production API and database | ⚪ Not deployed | Deployment environments, production OIDC, observability, and recovery controls remain future work. |
 
 ## Phase progress
@@ -29,7 +30,7 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | 🟢 | 0. Prototype and preview | Complete | Product surfaces, guided preview, and static hosting path are available. |
 | 🟢 | 1. Foundation | Complete | Web, Rust API, PostgreSQL migrations, OpenAPI generation, OIDC/policy harness, ADRs, bootstrap, hosted CI, and branch protection are verified. |
 | 🟢 | 2. Requirements vertical slice | Complete | Live authoring, project roles, organization, validation, immutable history, comparison, import/export, audit, E2E, and accessibility evidence are verified. |
-| 🟡 | 3. Traceability and controlled change | Local gate passed | Directed relationships, trace queries, asynchronous impact, attributable changesets, immutable baselines, comparison, and signed export pass locally; protected CI remains. |
+| 🟢 | 3. Traceability and controlled change | Complete | Directed relationships, trace queries, asynchronous impact, attributable changesets, immutable baselines, comparison, and signed export are protected-CI verified. |
 | ⚪ | 4. Reviews and verification | Planned | Review packages, approvals, verification runs, coverage, and gate readiness. |
 | ⚪ | 5. Integration and beta hardening | Planned | Jira connector, observability, recovery, security hardening, performance, and pilot operations. |
 
@@ -42,7 +43,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 0. Prototype and preview | Historical usage unavailable | `N/R` | Before tracking baseline | `N/R` | `N/R` |
 | 1. Foundation | Complete; partial usage history | `N/R` | 8 Nov 2026 | `N/R` historical + 0.1 h tracked | `N/R` |
 | 2. Requirements vertical slice | Complete; partial usage telemetry | 8 Nov 2026 | 8 Nov 2026 | 1.1 h tracked | `N/R` |
-| 3. Traceability and controlled change | Local gate passed; hosted evidence pending | 8 Nov 2026 | — | 0.6 h | `N/R` |
+| 3. Traceability and controlled change | Complete | 8 Nov 2026 | 8 Nov 2026 | 0.7 h | `N/R` |
 | 4. Reviews and verification | Not started | — | — | 0 h | 0 |
 | 5. Integration and beta hardening | Not started | — | — | 0 h | 0 |
 
@@ -57,6 +58,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 8 November 2026, 09:43 CST | 3 | 0.1 h | `N/R` | Added directed typed relationship schema, exact revision evidence, API contract and generated client, policy/idempotency/audit controls, CI assertions, and isolated PostgreSQL runtime validation. |
 | 8 November 2026, 09:47 CST | 3 | 0.1 h | `N/R` | Added transactional-outbox suspect propagation, reviewer-only attributable resolution, optimistic concurrency, replay, immutable version history, and isolated PostgreSQL runtime validation. |
 | 8 November 2026, 10:12 CST | 3 | 0.4 h | `N/R` | Completed live trace queries and UI, attributable changesets, immutable signed baselines, comparison, deterministic export, Chromium/WCAG coverage, and the isolated PostgreSQL exit matrix. |
+| 8 November 2026, 10:23 CST | 3 | 0.1 h | `N/R` | Protected `web`, `api`, and `database-path` checks passed in OpenRM CI run 42499504834; Phase 3 closure evidence recorded. |
 
 ### Usage accounting rules
 
@@ -95,11 +97,11 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 
 ## Current priorities
 
-1. Run the expanded `web`, `api`, and `database-path` jobs on the protected hosted path.
-2. Record the hosted evidence commit and CI run, then close Phase 3.
-3. Begin Phase 4 review-package and verification decomposition only after the Phase 3 closure gate.
+1. Decompose Phase 4 review-package, approval-policy, and verification workflows.
+2. Preserve the Phase 3 signed-evidence compatibility contract while extending evidence packages.
+3. Define the first API deployment, production OIDC, secret delivery, observability, and recovery path.
 
-## Phase 3 local completion evidence
+## Phase 3 completion evidence
 
 | Capability | State | Evidence |
 | --- | --- | --- |
@@ -116,7 +118,7 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 | Deterministic signed export | 🟢 Locally verified | Repeated evidence downloads were byte-for-byte identical, HMAC-SHA256 verification passed, and manifest rows retained exact revision identifiers. |
 | Live browser workflows | 🟢 Locally verified | Five Chromium tests cover requirements, trace impact resolution, changesets, baselines, and WCAG 2 A/AA automation. |
 | Append-only controlled history | 🟢 Locally verified | PostgreSQL rejected updates to audit events, artifact revisions, relationship revisions, changesets, and baselines. |
-| Protected hosted evidence | ⚪ Pending | The expanded `web`, `api`, and `database-path` jobs are implemented but have not yet run on hosted CI for this evidence commit. |
+| Protected hosted evidence | 🟢 CI verified | `web`, `api`, and `database-path` passed in [OpenRM CI run 42499504834](https://github.com/TJ-Engineer/OpenRM/actions/runs/42499504834) for implementation evidence commit `4f50618`. |
 
 ## Known delivery gaps
 
