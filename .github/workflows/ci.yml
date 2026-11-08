@@ -1,4 +1,4 @@
-name: Foundation CI
+name: OpenRM CI
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: foundation-${{ github.ref }}
+  group: openrm-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -29,6 +29,8 @@ jobs:
       - run: npm run typecheck
       - run: npm run test
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
       - run: npm audit --audit-level=high
 
   api:
@@ -74,8 +76,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo run -p openrm-api --bin migrate
-      - name: Exercise authenticated health-to-database path
+      - name: Exercise the Phase 2 requirements vertical slice
         run: |
+          set -euo pipefail
           cargo run -p openrm-api > /tmp/openrm-api.log 2>&1 &
           api_pid=$!
           trap 'kill ${api_pid}' EXIT
@@ -89,59 +92,114 @@ jobs:
             fi
             sleep 1
           done
-          curl --fail --silent \
-            -H 'Authorization: Bearer dev:ci-user' \
-            -H 'X-OpenRM-Organization: 00000000-0000-4000-8000-000000000001' \
-            http://127.0.0.1:8080/api/v1/session | tee /tmp/session.json
-          grep -q '"database":"available"' /tmp/session.json
           organization_id='00000000-0000-4000-8000-000000000001'
-          project_id='00000000-0000-4000-8000-000000000101'
-          api_url="http://127.0.0.1:8080/api/v1/projects/${project_id}/requirements"
-          curl --fail --silent \
-            -X POST \
-            -H 'Authorization: Bearer dev:ci-user' \
-            -H "X-OpenRM-Organization: ${organization_id}" \
-            -H 'X-Idempotency-Key: ci-requirement-create-001' \
-            -H 'Content-Type: application/json' \
-            --data '{"key":"CI-REQ-1","title":"CI requirement","statement":"The CI path shall persist controlled requirements.","attributes":{"priority":"high"}}' \
-            "${api_url}" | tee /tmp/requirement.json
+          base_url='http://127.0.0.1:8080/api/v1'
+          request() {
+            local method="$1"
+            local token="$2"
+            local url="$3"
+            local data="${4:-}"
+            local idempotency_key="${5:-}"
+            local args=(--fail --silent -X "${method}"
+              -H "Authorization: Bearer ${token}"
+              -H "X-OpenRM-Organization: ${organization_id}")
+            if [[ -n "${data}" ]]; then
+              args+=(-H 'Content-Type: application/json' --data "${data}")
+            fi
+            if [[ -n "${idempotency_key}" ]]; then
+              args+=(-H "X-Idempotency-Key: ${idempotency_key}")
+            fi
+            curl "${args[@]}" "${url}"
+          }
+
+          request GET 'dev:ci-admin' "${base_url}/session" > /tmp/session.json
+          grep -q '"database":"available"' /tmp/session.json
+
+          request POST 'dev:ci-admin' "${base_url}/projects" \
+            '{"key":"CISLICE","name":"CI requirements slice","description":"Phase 2 runtime validation"}' \
+            'ci-project-create-001' > /tmp/project.json
+          project_id="$(jq -r '.id' /tmp/project.json)"
+          request POST 'dev:ci-admin' "${base_url}/projects" \
+            '{"key":"CIISO","name":"CI isolated project","description":"Project role boundary"}' \
+            'ci-project-create-002' > /tmp/isolated-project.json
+          isolated_project_id="$(jq -r '.id' /tmp/isolated-project.json)"
+
+          request POST 'dev:ci-admin' "${base_url}/projects/${project_id}/members" \
+            '{"subject":"ci-author","role":"author"}' > /tmp/author.json
+          request POST 'dev:ci-admin' "${base_url}/projects/${project_id}/members" \
+            '{"subject":"ci-viewer","role":"viewer"}' > /tmp/viewer.json
+          request GET 'dev:ci-admin' "${base_url}/projects/${project_id}/members" > /tmp/members.json
+          test "$(jq -r '.items | length' /tmp/members.json)" -eq 3
+
+          request POST 'dev:ci-admin' "${base_url}/projects/${project_id}/workspace/folders" \
+            '{"name":"System requirements"}' > /tmp/folder.json
+          folder_id="$(jq -r '.id' /tmp/folder.json)"
+          request POST 'dev:ci-admin' "${base_url}/projects/${project_id}/workspace/tags" \
+            '{"name":"Safety","color":"#2563eb"}' > /tmp/tag.json
+          tag_id="$(jq -r '.id' /tmp/tag.json)"
+          request POST 'dev:ci-admin' "${base_url}/projects/${project_id}/workspace/attribute-definitions" \
+            '{"key":"mass","label":"Mass","value_type":"number","required":false}' > /tmp/attribute.json
+          request POST 'dev:ci-author:author' "${base_url}/projects/${project_id}/workspace/saved-views" \
+            '{"name":"Safety requirements","filters":{"tag_id":"'"${tag_id}"'"}}' > /tmp/saved-view.json
+
+          api_url="${base_url}/projects/${project_id}/requirements"
+          requirement_body='{"key":"CI-REQ-1","title":"CI requirement","statement":"The CI path shall persist controlled requirements.","attributes":{"priority":"high","mass":12.5},"folder_id":"'"${folder_id}"'","tag_ids":["'"${tag_id}"'"]}'
+          request POST 'dev:ci-author:author' "${api_url}" "${requirement_body}" \
+            'ci-requirement-create-001' > /tmp/requirement.json
           requirement_id="$(jq -r '.id' /tmp/requirement.json)"
           test "$(jq -r '.revision' /tmp/requirement.json)" -eq 1
-          curl --fail --silent \
-            -X POST \
-            -H 'Authorization: Bearer dev:ci-user' \
-            -H "X-OpenRM-Organization: ${organization_id}" \
-            -H 'X-Idempotency-Key: ci-requirement-create-001' \
-            -H 'Content-Type: application/json' \
-            --data '{"key":"CI-REQ-1","title":"CI requirement","statement":"The CI path shall persist controlled requirements.","attributes":{"priority":"high"}}' \
-            "${api_url}" | tee /tmp/requirement-replay.json
+          request POST 'dev:ci-author:author' "${api_url}" "${requirement_body}" \
+            'ci-requirement-create-001' > /tmp/requirement-replay.json
           test "$(jq -r '.id' /tmp/requirement-replay.json)" = "${requirement_id}"
-          curl --fail --silent \
-            -X PUT \
-            -H 'Authorization: Bearer dev:ci-user' \
-            -H "X-OpenRM-Organization: ${organization_id}" \
-            -H 'Content-Type: application/json' \
-            --data '{"expected_revision":1,"title":"CI requirement revised","statement":"The CI path shall persist immutable requirement revisions.","attributes":{"priority":"high"}}' \
-            "${api_url}/${requirement_id}" | tee /tmp/requirement-revised.json
+
+          revision_body='{"expected_revision":1,"title":"CI requirement revised","statement":"The CI path shall persist immutable requirement revisions.","attributes":{"priority":"critical","mass":12.7},"folder_id":"'"${folder_id}"'","tag_ids":["'"${tag_id}"'"]}'
+          request PUT 'dev:ci-author:author' "${api_url}/${requirement_id}" "${revision_body}" \
+            'ci-requirement-revise-001' > /tmp/requirement-revised.json
           test "$(jq -r '.revision' /tmp/requirement-revised.json)" -eq 2
-          curl --fail --silent \
-            -X POST \
-            -H 'Authorization: Bearer dev:ci-user' \
-            -H "X-OpenRM-Organization: ${organization_id}" \
-            -H 'X-Idempotency-Key: ci-requirement-create-001' \
-            -H 'Content-Type: application/json' \
-            --data '{"key":"CI-REQ-1","title":"CI requirement","statement":"The CI path shall persist controlled requirements.","attributes":{"priority":"high"}}' \
-            "${api_url}" | tee /tmp/requirement-late-replay.json
-          test "$(jq -r '.revision' /tmp/requirement-late-replay.json)" -eq 1
-          curl --fail --silent \
-            -H 'Authorization: Bearer dev:ci-user' \
-            -H "X-OpenRM-Organization: ${organization_id}" \
-            "${api_url}/${requirement_id}/revisions" | tee /tmp/revisions.json
-          test "$(jq -r '.items | length' /tmp/revisions.json)" -eq 2
-          curl --fail --silent \
-            -H 'Authorization: Bearer dev:ci-user' \
-            -H "X-OpenRM-Organization: ${organization_id}" \
-            "${api_url}?search=immutable" | tee /tmp/requirements.json
+          request PUT 'dev:ci-author:author' "${api_url}/${requirement_id}" "${revision_body}" \
+            'ci-requirement-revise-001' > /tmp/requirement-revised-replay.json
+          test "$(jq -r '.revision' /tmp/requirement-revised-replay.json)" -eq 2
+
+          request GET 'dev:ci-author:author' \
+            "${api_url}?search=immutable&folder_id=${folder_id}&tag_id=${tag_id}" > /tmp/requirements.json
           test "$(jq -r '.total' /tmp/requirements.json)" -eq 1
-          test "$(psql "${DATABASE_URL}" -tAc "SELECT count(*) FROM audit_events WHERE aggregate_id = '${requirement_id}'")" -eq 2
+          request GET 'dev:ci-author:author' "${api_url}/${requirement_id}/revisions" > /tmp/revisions.json
+          test "$(jq -r '.items | length' /tmp/revisions.json)" -eq 2
+          request GET 'dev:ci-author:author' \
+            "${api_url}/${requirement_id}/compare?from_revision=1&to_revision=2" > /tmp/comparison.json
+          test "$(jq -r '.changed_fields | index("title") != null' /tmp/comparison.json)" = 'true'
+          request GET 'dev:ci-author:author' "${api_url}/export" > /tmp/export.json
+          test "$(jq -r '.total' /tmp/export.json)" -eq 1
+          request POST 'dev:ci-author:author' "${api_url}/import" \
+            '{"items":[{"key":"CI-IMP-1","title":"Imported requirement","statement":"The workspace shall import controlled requirements.","attributes":{"priority":"medium","mass":1},"folder_id":"'"${folder_id}"'","tag_ids":["'"${tag_id}"'"]}]}' \
+            'ci-requirement-import-001' > /tmp/import.json
+          test "$(jq -r '.imported' /tmp/import.json)" -eq 1
+
+          request GET 'dev:ci-viewer:viewer' "${api_url}" > /tmp/viewer-list.json
+          viewer_status="$(curl --silent --output /tmp/viewer-write.json --write-out '%{http_code}' \
+            -X POST -H 'Authorization: Bearer dev:ci-viewer:viewer' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            -H 'X-Idempotency-Key: ci-viewer-denied' -H 'Content-Type: application/json' \
+            --data '{"key":"DENIED-1","title":"Denied","statement":"Viewer writes shall be denied.","attributes":{"priority":"low"},"folder_id":null,"tag_ids":[]}' \
+            "${api_url}")"
+          test "${viewer_status}" = '403'
+          isolation_status="$(curl --silent --output /tmp/project-isolation.json --write-out '%{http_code}' \
+            -H 'Authorization: Bearer dev:ci-author:author' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            "${base_url}/projects/${isolated_project_id}/requirements")"
+          test "${isolation_status}" = '403'
+          request GET 'dev:ci-author:author' "${base_url}/projects" > /tmp/author-projects.json
+          test "$(jq -r '.items | length' /tmp/author-projects.json)" -eq 1
+
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE audit_events SET event_type = 'tampered' WHERE aggregate_id = '${requirement_id}'"; then
+            echo 'Audit history accepted an update' >&2
+            exit 1
+          fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE artifact_revisions SET title = 'tampered' WHERE artifact_id = '${requirement_id}'"; then
+            echo 'Revision history accepted an update' >&2
+            exit 1
+          fi
+          test "$(psql "${DATABASE_URL}" -tAc "SELECT count(*) FROM audit_events WHERE project_id = '${project_id}'")" -ge 10
 

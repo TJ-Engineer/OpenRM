@@ -15,16 +15,19 @@ use crate::{
     authorize,
     error::ApiError,
     policy::{Action, Principal},
+    projects::authorize_project,
 };
 
 const IDEMPOTENCY_HEADER: &str = "x-idempotency-key";
 const CREATE_COMMAND: &str = "requirement.create";
+const REVISE_COMMAND: &str = "requirement.revise";
 
 #[derive(Debug, FromRow, Serialize)]
 pub struct ProjectSummary {
     pub id: Uuid,
     pub key: String,
     pub name: String,
+    pub description: String,
     pub created_at: DateTime<Utc>,
 }
 
@@ -40,6 +43,9 @@ pub struct CreateRequirementRequest {
     pub statement: String,
     #[serde(default = "empty_object")]
     pub attributes: Value,
+    pub folder_id: Option<Uuid>,
+    #[serde(default)]
+    pub tag_ids: Vec<Uuid>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -49,6 +55,9 @@ pub struct ReviseRequirementRequest {
     pub statement: String,
     #[serde(default = "empty_object")]
     pub attributes: Value,
+    pub folder_id: Option<Uuid>,
+    #[serde(default)]
+    pub tag_ids: Vec<Uuid>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -57,6 +66,8 @@ struct ValidatedRequirement {
     title: String,
     statement: String,
     attributes: Value,
+    folder_id: Option<Uuid>,
+    tag_ids: Vec<Uuid>,
 }
 
 #[derive(Debug, FromRow)]
@@ -67,6 +78,8 @@ struct RequirementRecord {
     title: String,
     statement: String,
     attributes: Value,
+    folder_id: Option<Uuid>,
+    tag_ids: Vec<Uuid>,
     revision: i32,
     created_by: String,
     created_at: DateTime<Utc>,
@@ -81,6 +94,8 @@ pub struct RequirementResponse {
     pub title: String,
     pub statement: String,
     pub attributes: Value,
+    pub folder_id: Option<Uuid>,
+    pub tag_ids: Vec<Uuid>,
     pub revision: i32,
     pub created_by: String,
     pub created_at: DateTime<Utc>,
@@ -96,6 +111,8 @@ impl From<RequirementRecord> for RequirementResponse {
             title: record.title,
             statement: record.statement,
             attributes: record.attributes,
+            folder_id: record.folder_id,
+            tag_ids: record.tag_ids,
             revision: record.revision,
             created_by: record.created_by,
             created_at: record.created_at,
@@ -109,6 +126,8 @@ pub struct RequirementListQuery {
     pub search: Option<String>,
     pub limit: Option<i64>,
     pub offset: Option<i64>,
+    pub folder_id: Option<Uuid>,
+    pub tag_id: Option<Uuid>,
 }
 
 #[derive(Debug, Serialize)]
@@ -126,6 +145,8 @@ pub struct RequirementRevisionResponse {
     pub title: String,
     pub statement: String,
     pub attributes: Value,
+    pub folder_id: Option<Uuid>,
+    pub tag_ids: Vec<Uuid>,
     pub created_by: String,
     pub created_at: DateTime<Utc>,
 }
@@ -135,10 +156,43 @@ pub struct RequirementRevisionListResponse {
     pub items: Vec<RequirementRevisionResponse>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct RequirementComparisonQuery {
+    pub from_revision: i32,
+    pub to_revision: i32,
+}
+
+#[derive(Debug, Serialize)]
+pub struct RequirementComparisonResponse {
+    pub requirement_id: Uuid,
+    pub from: RequirementRevisionResponse,
+    pub to: RequirementRevisionResponse,
+    pub changed_fields: Vec<&'static str>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RequirementImportRequest {
+    pub items: Vec<CreateRequirementRequest>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct RequirementImportResponse {
+    pub items: Vec<RequirementResponse>,
+    pub imported: usize,
+}
+
 #[derive(Debug, FromRow)]
 struct CommandResult {
     request_fingerprint: String,
     response_payload: Value,
+}
+
+#[derive(Debug, FromRow)]
+struct AttributeDefinition {
+    key: String,
+    value_type: String,
+    required: bool,
+    config: Value,
 }
 
 pub async fn list_projects(
@@ -146,15 +200,26 @@ pub async fn list_projects(
     AuthenticatedPrincipal(principal): AuthenticatedPrincipal,
 ) -> Result<Json<ProjectListResponse>, ApiError> {
     authorize(&state, &principal, Action::Read)?;
+    let administrator = principal.roles.iter().any(|role| role == "administrator");
     let items = sqlx::query_as::<_, ProjectSummary>(
         r#"
-        SELECT id, key, name, created_at
-        FROM projects
-        WHERE organization_id = $1
-        ORDER BY key
+        SELECT p.id, p.key, p.name, p.description, p.created_at
+        FROM projects p
+        WHERE p.organization_id = $1
+          AND (
+            $2 OR EXISTS (
+              SELECT 1 FROM project_memberships m
+              WHERE m.organization_id = p.organization_id
+                AND m.project_id = p.id
+                AND m.subject = $3
+            )
+          )
+        ORDER BY p.key
         "#,
     )
     .bind(principal.organization_id)
+    .bind(administrator)
+    .bind(&principal.subject)
     .fetch_all(&state.db)
     .await
     .map_err(database_error)?;
@@ -167,8 +232,7 @@ pub async fn list_requirements(
     Path(project_id): Path<Uuid>,
     Query(query): Query<RequirementListQuery>,
 ) -> Result<Json<RequirementListResponse>, ApiError> {
-    authorize(&state, &principal, Action::Read)?;
-    ensure_project(&state.db, &principal, project_id).await?;
+    authorize_project(&state, &principal, project_id, Action::Read).await?;
 
     let limit = query.limit.unwrap_or(50).clamp(1, 100);
     let offset = query.offset.unwrap_or(0).max(0);
@@ -180,7 +244,13 @@ pub async fn list_requirements(
 
     let items = sqlx::query_as::<_, RequirementRecord>(
         r#"
-        SELECT a.id, a.project_id, a.key, a.title, a.statement, a.attributes,
+        SELECT a.id, a.project_id, a.key, a.title, a.statement, a.attributes, a.folder_id,
+               COALESCE((
+                 SELECT array_agg(at.tag_id ORDER BY at.tag_id)
+                 FROM artifact_tags at
+                 WHERE at.organization_id = a.organization_id
+                   AND at.project_id = a.project_id AND at.artifact_id = a.id
+               ), '{}'::uuid[]) AS tag_ids,
                a.current_revision_number AS revision, a.created_by, a.created_at, a.updated_at
         FROM artifacts a
         JOIN artifact_types t
@@ -195,13 +265,23 @@ pub async fn list_requirements(
             to_tsvector('english', a.key || ' ' || a.title || ' ' || a.statement)
               @@ websearch_to_tsquery('english', $3)
           )
+          AND ($4::uuid IS NULL OR a.folder_id = $4)
+          AND ($5::uuid IS NULL OR EXISTS (
+            SELECT 1 FROM artifact_tags filter_tag
+            WHERE filter_tag.organization_id = a.organization_id
+              AND filter_tag.project_id = a.project_id
+              AND filter_tag.artifact_id = a.id
+              AND filter_tag.tag_id = $5
+          ))
         ORDER BY a.updated_at DESC, a.key
-        LIMIT $4 OFFSET $5
+        LIMIT $6 OFFSET $7
         "#,
     )
     .bind(principal.organization_id)
     .bind(project_id)
     .bind(search)
+    .bind(query.folder_id)
+    .bind(query.tag_id)
     .bind(limit)
     .bind(offset)
     .fetch_all(&state.db)
@@ -224,11 +304,21 @@ pub async fn list_requirements(
             to_tsvector('english', a.key || ' ' || a.title || ' ' || a.statement)
               @@ websearch_to_tsquery('english', $3)
           )
+          AND ($4::uuid IS NULL OR a.folder_id = $4)
+          AND ($5::uuid IS NULL OR EXISTS (
+            SELECT 1 FROM artifact_tags filter_tag
+            WHERE filter_tag.organization_id = a.organization_id
+              AND filter_tag.project_id = a.project_id
+              AND filter_tag.artifact_id = a.id
+              AND filter_tag.tag_id = $5
+          ))
         "#,
     )
     .bind(principal.organization_id)
     .bind(project_id)
     .bind(search)
+    .bind(query.folder_id)
+    .bind(query.tag_id)
     .fetch_one(&state.db)
     .await
     .map_err(database_error)?;
@@ -248,9 +338,10 @@ pub async fn create_requirement(
     headers: HeaderMap,
     Json(request): Json<CreateRequirementRequest>,
 ) -> Result<(StatusCode, Json<RequirementResponse>), ApiError> {
-    authorize(&state, &principal, Action::Write)?;
+    authorize_project(&state, &principal, project_id, Action::Write).await?;
     let idempotency_key = parse_idempotency_key(&headers)?;
     let requirement = validate_create(request)?;
+    validate_requirement_workspace(&state.db, &principal, project_id, &requirement).await?;
     let fingerprint = serde_json::to_string(&(project_id, &requirement))
         .map_err(|_| ApiError::internal("Could not fingerprint requirement command"))?;
 
@@ -288,9 +379,9 @@ pub async fn create_requirement(
         r#"
         INSERT INTO artifacts (
             id, organization_id, project_id, artifact_type_id, key, title, statement,
-            attributes, current_revision_id, current_revision_number, created_by
+            attributes, folder_id, current_revision_id, current_revision_number, created_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 1, $10)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 1, $11)
         "#,
     )
     .bind(artifact_id)
@@ -301,6 +392,7 @@ pub async fn create_requirement(
     .bind(&requirement.title)
     .bind(&requirement.statement)
     .bind(&requirement.attributes)
+    .bind(requirement.folder_id)
     .bind(revision_id)
     .bind(&principal.subject)
     .execute(&mut *transaction)
@@ -311,9 +403,9 @@ pub async fn create_requirement(
         r#"
         INSERT INTO artifact_revisions (
             id, organization_id, project_id, artifact_id, revision_number,
-            title, statement, attributes, created_by
+            title, statement, attributes, folder_id, tag_ids, created_by
         )
-        VALUES ($1, $2, $3, $4, 1, $5, $6, $7, $8)
+        VALUES ($1, $2, $3, $4, 1, $5, $6, $7, $8, $9, $10)
         "#,
     )
     .bind(revision_id)
@@ -323,10 +415,21 @@ pub async fn create_requirement(
     .bind(&requirement.title)
     .bind(&requirement.statement)
     .bind(&requirement.attributes)
+    .bind(requirement.folder_id)
+    .bind(&requirement.tag_ids)
     .bind(&principal.subject)
     .execute(&mut *transaction)
     .await
     .map_err(database_error)?;
+
+    replace_tags(
+        &mut transaction,
+        &principal,
+        project_id,
+        artifact_id,
+        &requirement.tag_ids,
+    )
+    .await?;
 
     insert_audit_event(
         &mut transaction,
@@ -340,7 +443,8 @@ pub async fn create_requirement(
 
     let created = sqlx::query_as::<_, RequirementRecord>(
         r#"
-        SELECT id, project_id, key, title, statement, attributes,
+        SELECT id, project_id, key, title, statement, attributes, folder_id,
+               $4::uuid[] AS tag_ids,
                current_revision_number AS revision, created_by, created_at, updated_at
         FROM artifacts
         WHERE organization_id = $1 AND project_id = $2 AND id = $3
@@ -349,6 +453,7 @@ pub async fn create_requirement(
     .bind(principal.organization_id)
     .bind(project_id)
     .bind(artifact_id)
+    .bind(&requirement.tag_ids)
     .fetch_one(&mut *transaction)
     .await
     .map_err(database_error)?;
@@ -385,7 +490,7 @@ pub async fn get_requirement(
     AuthenticatedPrincipal(principal): AuthenticatedPrincipal,
     Path((project_id, requirement_id)): Path<(Uuid, Uuid)>,
 ) -> Result<Json<RequirementResponse>, ApiError> {
-    authorize(&state, &principal, Action::Read)?;
+    authorize_project(&state, &principal, project_id, Action::Read).await?;
     let requirement = fetch_requirement(&state.db, &principal, project_id, requirement_id).await?;
     Ok(Json(requirement.into()))
 }
@@ -394,18 +499,49 @@ pub async fn revise_requirement(
     State(state): State<AppState>,
     AuthenticatedPrincipal(principal): AuthenticatedPrincipal,
     Path((project_id, requirement_id)): Path<(Uuid, Uuid)>,
+    headers: HeaderMap,
     Json(request): Json<ReviseRequirementRequest>,
 ) -> Result<Json<RequirementResponse>, ApiError> {
-    authorize(&state, &principal, Action::Write)?;
+    authorize_project(&state, &principal, project_id, Action::Write).await?;
     if request.expected_revision < 1 {
         return Err(ApiError::bad_request("expected_revision must be positive"));
     }
-    let content = validate_content(request.title, request.statement, request.attributes)?;
+    let idempotency_key = parse_idempotency_key(&headers)?;
+    let expected_revision = request.expected_revision;
+    let content = validate_content(
+        request.title,
+        request.statement,
+        request.attributes,
+        request.folder_id,
+        request.tag_ids,
+    )?;
+    validate_requirement_workspace(&state.db, &principal, project_id, &content).await?;
+    let fingerprint =
+        serde_json::to_string(&(project_id, requirement_id, expected_revision, &content))
+            .map_err(|_| ApiError::internal("Could not fingerprint revision command"))?;
+    if let Some(command) =
+        find_command_result(&state.db, &principal, REVISE_COMMAND, idempotency_key).await?
+    {
+        if command.request_fingerprint != fingerprint {
+            return Err(ApiError::conflict(
+                "Idempotency key was already used with a different revision request",
+            ));
+        }
+        let existing = serde_json::from_value::<RequirementResponse>(command.response_payload)
+            .map_err(|_| ApiError::internal("Stored revision response is invalid"))?;
+        return Ok(Json(existing));
+    }
 
     let mut transaction = state.db.begin().await.map_err(database_error)?;
     let current = sqlx::query_as::<_, RequirementRecord>(
         r#"
-        SELECT a.id, a.project_id, a.key, a.title, a.statement, a.attributes,
+        SELECT a.id, a.project_id, a.key, a.title, a.statement, a.attributes, a.folder_id,
+               COALESCE((
+                 SELECT array_agg(at.tag_id ORDER BY at.tag_id)
+                 FROM artifact_tags at
+                 WHERE at.organization_id = a.organization_id
+                   AND at.project_id = a.project_id AND at.artifact_id = a.id
+               ), '{}'::uuid[]) AS tag_ids,
                a.current_revision_number AS revision, a.created_by, a.created_at, a.updated_at
         FROM artifacts a
         JOIN artifact_types t
@@ -425,11 +561,11 @@ pub async fn revise_requirement(
     .map_err(database_error)?
     .ok_or_else(|| ApiError::not_found("Requirement does not exist"))?;
 
-    if current.revision != request.expected_revision {
+    if current.revision != expected_revision {
         return Err(ApiError::conflict_with_details(
             "Requirement has changed since it was read",
             json!({
-                "expected_revision": request.expected_revision,
+                "expected_revision": expected_revision,
                 "current_revision": current.revision,
             }),
         ));
@@ -441,9 +577,9 @@ pub async fn revise_requirement(
         r#"
         INSERT INTO artifact_revisions (
             id, organization_id, project_id, artifact_id, revision_number,
-            title, statement, attributes, created_by
+            title, statement, attributes, folder_id, tag_ids, created_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         "#,
     )
     .bind(revision_id)
@@ -454,6 +590,8 @@ pub async fn revise_requirement(
     .bind(&content.title)
     .bind(&content.statement)
     .bind(&content.attributes)
+    .bind(content.folder_id)
+    .bind(&content.tag_ids)
     .bind(&principal.subject)
     .execute(&mut *transaction)
     .await
@@ -463,7 +601,8 @@ pub async fn revise_requirement(
         r#"
         UPDATE artifacts
         SET title = $4, statement = $5, attributes = $6,
-            current_revision_id = $7, current_revision_number = $8, updated_at = now()
+            folder_id = $7, current_revision_id = $8,
+            current_revision_number = $9, updated_at = now()
         WHERE organization_id = $1 AND project_id = $2 AND id = $3
         "#,
     )
@@ -473,11 +612,21 @@ pub async fn revise_requirement(
     .bind(&content.title)
     .bind(&content.statement)
     .bind(&content.attributes)
+    .bind(content.folder_id)
     .bind(revision_id)
     .bind(next_revision)
     .execute(&mut *transaction)
     .await
     .map_err(database_error)?;
+
+    replace_tags(
+        &mut transaction,
+        &principal,
+        project_id,
+        requirement_id,
+        &content.tag_ids,
+    )
+    .await?;
 
     insert_audit_event(
         &mut transaction,
@@ -488,10 +637,48 @@ pub async fn revise_requirement(
         json!({"from_revision": current.revision, "to_revision": next_revision}),
     )
     .await?;
-    transaction.commit().await.map_err(database_error)?;
 
-    let updated = fetch_requirement(&state.db, &principal, project_id, requirement_id).await?;
-    Ok(Json(updated.into()))
+    let updated = sqlx::query_as::<_, RequirementRecord>(
+        r#"
+        SELECT id, project_id, key, title, statement, attributes, folder_id,
+               $4::uuid[] AS tag_ids,
+               current_revision_number AS revision, created_by, created_at, updated_at
+        FROM artifacts
+        WHERE organization_id = $1 AND project_id = $2 AND id = $3
+        "#,
+    )
+    .bind(principal.organization_id)
+    .bind(project_id)
+    .bind(requirement_id)
+    .bind(&content.tag_ids)
+    .fetch_one(&mut *transaction)
+    .await
+    .map_err(database_error)?;
+    let updated = RequirementResponse::from(updated);
+    let response_payload = serde_json::to_value(&updated)
+        .map_err(|_| ApiError::internal("Could not store revision response"))?;
+    sqlx::query(
+        r#"
+        INSERT INTO command_results (
+            organization_id, actor_subject, command_name, idempotency_key,
+            request_fingerprint, aggregate_type, aggregate_id, response_revision, response_payload
+        )
+        VALUES ($1, $2, $3, $4, $5, 'requirement', $6, $7, $8)
+        "#,
+    )
+    .bind(principal.organization_id)
+    .bind(&principal.subject)
+    .bind(REVISE_COMMAND)
+    .bind(idempotency_key)
+    .bind(fingerprint)
+    .bind(requirement_id)
+    .bind(next_revision)
+    .bind(response_payload)
+    .execute(&mut *transaction)
+    .await
+    .map_err(database_error)?;
+    transaction.commit().await.map_err(database_error)?;
+    Ok(Json(updated))
 }
 
 pub async fn list_requirement_revisions(
@@ -499,11 +686,12 @@ pub async fn list_requirement_revisions(
     AuthenticatedPrincipal(principal): AuthenticatedPrincipal,
     Path((project_id, requirement_id)): Path<(Uuid, Uuid)>,
 ) -> Result<Json<RequirementRevisionListResponse>, ApiError> {
-    authorize(&state, &principal, Action::Read)?;
+    authorize_project(&state, &principal, project_id, Action::Read).await?;
     fetch_requirement(&state.db, &principal, project_id, requirement_id).await?;
     let items = sqlx::query_as::<_, RequirementRevisionResponse>(
         r#"
-        SELECT id, revision_number AS revision, title, statement, attributes, created_by, created_at
+        SELECT id, revision_number AS revision, title, statement, attributes,
+               folder_id, tag_ids, created_by, created_at
         FROM artifact_revisions
         WHERE organization_id = $1 AND project_id = $2 AND artifact_id = $3
         ORDER BY revision_number DESC
@@ -518,22 +706,159 @@ pub async fn list_requirement_revisions(
     Ok(Json(RequirementRevisionListResponse { items }))
 }
 
-async fn ensure_project(
+pub async fn compare_requirement_revisions(
+    State(state): State<AppState>,
+    AuthenticatedPrincipal(principal): AuthenticatedPrincipal,
+    Path((project_id, requirement_id)): Path<(Uuid, Uuid)>,
+    Query(query): Query<RequirementComparisonQuery>,
+) -> Result<Json<RequirementComparisonResponse>, ApiError> {
+    authorize_project(&state, &principal, project_id, Action::Read).await?;
+    if query.from_revision < 1 || query.to_revision < 1 {
+        return Err(ApiError::bad_request("Revision numbers must be positive"));
+    }
+    let from = fetch_revision(
+        &state.db,
+        &principal,
+        project_id,
+        requirement_id,
+        query.from_revision,
+    )
+    .await?;
+    let to = fetch_revision(
+        &state.db,
+        &principal,
+        project_id,
+        requirement_id,
+        query.to_revision,
+    )
+    .await?;
+    let mut changed_fields = Vec::new();
+    if from.title != to.title {
+        changed_fields.push("title");
+    }
+    if from.statement != to.statement {
+        changed_fields.push("statement");
+    }
+    if from.attributes != to.attributes {
+        changed_fields.push("attributes");
+    }
+    if from.folder_id != to.folder_id {
+        changed_fields.push("folder_id");
+    }
+    if from.tag_ids != to.tag_ids {
+        changed_fields.push("tag_ids");
+    }
+    Ok(Json(RequirementComparisonResponse {
+        requirement_id,
+        from,
+        to,
+        changed_fields,
+    }))
+}
+
+pub async fn import_requirements(
+    State(state): State<AppState>,
+    AuthenticatedPrincipal(principal): AuthenticatedPrincipal,
+    Path(project_id): Path<Uuid>,
+    headers: HeaderMap,
+    Json(request): Json<RequirementImportRequest>,
+) -> Result<(StatusCode, Json<RequirementImportResponse>), ApiError> {
+    authorize_project(&state, &principal, project_id, Action::Write).await?;
+    let import_key = parse_idempotency_key(&headers)?.to_owned();
+    if request.items.is_empty() || request.items.len() > 100 {
+        return Err(ApiError::bad_request(
+            "Import must contain between 1 and 100 requirements",
+        ));
+    }
+    let mut items = Vec::with_capacity(request.items.len());
+    for (index, request) in request.items.into_iter().enumerate() {
+        let mut command_headers = HeaderMap::new();
+        let child_key = format!("{import_key}:{index}");
+        command_headers.insert(
+            IDEMPOTENCY_HEADER,
+            child_key
+                .parse()
+                .map_err(|_| ApiError::bad_request("Import idempotency key is invalid"))?,
+        );
+        let (_, Json(created)) = create_requirement(
+            State(state.clone()),
+            AuthenticatedPrincipal(principal.clone()),
+            Path(project_id),
+            command_headers,
+            Json(request),
+        )
+        .await?;
+        items.push(created);
+    }
+    let imported = items.len();
+    Ok((
+        StatusCode::CREATED,
+        Json(RequirementImportResponse { items, imported }),
+    ))
+}
+
+pub async fn export_requirements(
+    State(state): State<AppState>,
+    AuthenticatedPrincipal(principal): AuthenticatedPrincipal,
+    Path(project_id): Path<Uuid>,
+) -> Result<Json<RequirementListResponse>, ApiError> {
+    authorize_project(&state, &principal, project_id, Action::Read).await?;
+    let mut items = Vec::new();
+    let mut offset = 0_i64;
+    let total = loop {
+        let Json(page) = list_requirements(
+            State(state.clone()),
+            AuthenticatedPrincipal(principal.clone()),
+            Path(project_id),
+            Query(RequirementListQuery {
+                search: None,
+                limit: Some(100),
+                offset: Some(offset),
+                folder_id: None,
+                tag_id: None,
+            }),
+        )
+        .await?;
+        let page_total = page.total;
+        let count = page.items.len() as i64;
+        items.extend(page.items);
+        offset += count;
+        if count == 0 || offset >= page_total {
+            break page_total;
+        }
+    };
+    Ok(Json(RequirementListResponse {
+        items,
+        total,
+        limit: total.max(1),
+        offset: 0,
+    }))
+}
+
+async fn fetch_revision(
     pool: &PgPool,
     principal: &Principal,
     project_id: Uuid,
-) -> Result<(), ApiError> {
-    let exists = sqlx::query_scalar::<_, bool>(
-        "SELECT EXISTS(SELECT 1 FROM projects WHERE organization_id = $1 AND id = $2)",
+    requirement_id: Uuid,
+    revision: i32,
+) -> Result<RequirementRevisionResponse, ApiError> {
+    sqlx::query_as::<_, RequirementRevisionResponse>(
+        r#"
+        SELECT id, revision_number AS revision, title, statement, attributes,
+               folder_id, tag_ids, created_by, created_at
+        FROM artifact_revisions
+        WHERE organization_id = $1 AND project_id = $2
+          AND artifact_id = $3 AND revision_number = $4
+        "#,
     )
     .bind(principal.organization_id)
     .bind(project_id)
-    .fetch_one(pool)
+    .bind(requirement_id)
+    .bind(revision)
+    .fetch_optional(pool)
     .await
-    .map_err(database_error)?;
-    exists
-        .then_some(())
-        .ok_or_else(|| ApiError::not_found("Project does not exist"))
+    .map_err(database_error)?
+    .ok_or_else(|| ApiError::not_found("Requirement revision does not exist"))
 }
 
 async fn fetch_requirement(
@@ -544,7 +869,13 @@ async fn fetch_requirement(
 ) -> Result<RequirementRecord, ApiError> {
     sqlx::query_as::<_, RequirementRecord>(
         r#"
-        SELECT a.id, a.project_id, a.key, a.title, a.statement, a.attributes,
+        SELECT a.id, a.project_id, a.key, a.title, a.statement, a.attributes, a.folder_id,
+               COALESCE((
+                 SELECT array_agg(at.tag_id ORDER BY at.tag_id)
+                 FROM artifact_tags at
+                 WHERE at.organization_id = a.organization_id
+                   AND at.project_id = a.project_id AND at.artifact_id = a.id
+               ), '{}'::uuid[]) AS tag_ids,
                a.current_revision_number AS revision, a.created_by, a.created_at, a.updated_at
         FROM artifacts a
         JOIN artifact_types t
@@ -623,12 +954,20 @@ fn validate_create(request: CreateRequirementRequest) -> Result<ValidatedRequire
             "key must contain 2-32 uppercase letters, digits, or hyphens and start with a letter",
         ));
     }
-    let content = validate_content(request.title, request.statement, request.attributes)?;
+    let content = validate_content(
+        request.title,
+        request.statement,
+        request.attributes,
+        request.folder_id,
+        request.tag_ids,
+    )?;
     Ok(ValidatedRequirement {
         key,
         title: content.title,
         statement: content.statement,
         attributes: content.attributes,
+        folder_id: content.folder_id,
+        tag_ids: content.tag_ids,
     })
 }
 
@@ -636,6 +975,8 @@ fn validate_content(
     title: String,
     statement: String,
     attributes: Value,
+    folder_id: Option<Uuid>,
+    mut tag_ids: Vec<Uuid>,
 ) -> Result<ValidatedRequirement, ApiError> {
     let title = title.trim().to_owned();
     let statement = statement.trim().to_owned();
@@ -652,12 +993,161 @@ fn validate_content(
     if !attributes.is_object() {
         return Err(ApiError::bad_request("attributes must be a JSON object"));
     }
+    tag_ids.sort_unstable();
+    tag_ids.dedup();
+    if tag_ids.len() > 50 {
+        return Err(ApiError::bad_request(
+            "A requirement may have at most 50 tags",
+        ));
+    }
     Ok(ValidatedRequirement {
         key: String::new(),
         title,
         statement,
         attributes,
+        folder_id,
+        tag_ids,
     })
+}
+
+async fn validate_requirement_workspace(
+    pool: &PgPool,
+    principal: &Principal,
+    project_id: Uuid,
+    requirement: &ValidatedRequirement,
+) -> Result<(), ApiError> {
+    if let Some(folder_id) = requirement.folder_id {
+        let exists = sqlx::query_scalar::<_, bool>(
+            r#"
+            SELECT EXISTS(
+                SELECT 1 FROM folders
+                WHERE organization_id = $1 AND project_id = $2 AND id = $3
+            )
+            "#,
+        )
+        .bind(principal.organization_id)
+        .bind(project_id)
+        .bind(folder_id)
+        .fetch_one(pool)
+        .await
+        .map_err(database_error)?;
+        if !exists {
+            return Err(ApiError::bad_request("folder_id is not in this project"));
+        }
+    }
+    if !requirement.tag_ids.is_empty() {
+        let count = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT count(*) FROM tags
+            WHERE organization_id = $1 AND project_id = $2 AND id = ANY($3)
+            "#,
+        )
+        .bind(principal.organization_id)
+        .bind(project_id)
+        .bind(&requirement.tag_ids)
+        .fetch_one(pool)
+        .await
+        .map_err(database_error)?;
+        if count != requirement.tag_ids.len() as i64 {
+            return Err(ApiError::bad_request(
+                "One or more tags are not in this project",
+            ));
+        }
+    }
+
+    let definitions = sqlx::query_as::<_, AttributeDefinition>(
+        r#"
+        SELECT key, value_type, required, config
+        FROM custom_attribute_definitions
+        WHERE organization_id = $1 AND project_id = $2
+        ORDER BY key
+        "#,
+    )
+    .bind(principal.organization_id)
+    .bind(project_id)
+    .fetch_all(pool)
+    .await
+    .map_err(database_error)?;
+    let values = requirement
+        .attributes
+        .as_object()
+        .expect("validated attributes are an object");
+    for key in values.keys() {
+        if !definitions.iter().any(|definition| definition.key == *key) {
+            return Err(ApiError::bad_request(format!(
+                "Attribute '{key}' is not defined for this project"
+            )));
+        }
+    }
+    for definition in definitions {
+        let value = values.get(&definition.key);
+        if definition.required && value.is_none() {
+            return Err(ApiError::bad_request(format!(
+                "Attribute '{}' is required",
+                definition.key
+            )));
+        }
+        let Some(value) = value else { continue };
+        let valid_type = match definition.value_type.as_str() {
+            "text" => value.is_string(),
+            "number" => value.is_number(),
+            "boolean" => value.is_boolean(),
+            "enum" => {
+                let options = definition
+                    .config
+                    .get("options")
+                    .and_then(Value::as_array)
+                    .cloned()
+                    .unwrap_or_default();
+                value.is_string() && options.iter().any(|option| option == value)
+            }
+            _ => false,
+        };
+        if !valid_type {
+            return Err(ApiError::bad_request(format!(
+                "Attribute '{}' does not match type '{}'",
+                definition.key, definition.value_type
+            )));
+        }
+    }
+    Ok(())
+}
+
+async fn replace_tags(
+    transaction: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    principal: &Principal,
+    project_id: Uuid,
+    artifact_id: Uuid,
+    tag_ids: &[Uuid],
+) -> Result<(), ApiError> {
+    sqlx::query(
+        r#"
+        DELETE FROM artifact_tags
+        WHERE organization_id = $1 AND project_id = $2 AND artifact_id = $3
+        "#,
+    )
+    .bind(principal.organization_id)
+    .bind(project_id)
+    .bind(artifact_id)
+    .execute(&mut **transaction)
+    .await
+    .map_err(database_error)?;
+    for tag_id in tag_ids {
+        sqlx::query(
+            r#"
+            INSERT INTO artifact_tags (organization_id, project_id, artifact_id, tag_id)
+            VALUES ($1, $2, $3, $4)
+            "#,
+        )
+        .bind(principal.organization_id)
+        .bind(project_id)
+        .bind(artifact_id)
+        .bind(tag_id)
+        .execute(&mut **transaction)
+        .await
+        .map_err(database_error)?;
+    }
+    Ok(())
 }
 
 fn parse_idempotency_key(headers: &HeaderMap) -> Result<&str, ApiError> {
@@ -734,6 +1224,8 @@ mod tests {
             title: "  Stable control  ".to_owned(),
             statement: "  The controller shall remain stable.  ".to_owned(),
             attributes: json!({"priority": "high"}),
+            folder_id: None,
+            tag_ids: Vec::new(),
         })
         .expect("request should be valid");
         assert_eq!(validated.title, "Stable control");

@@ -43,9 +43,9 @@ import {
   Users,
   X,
   Zap,
-  type LucideIcon,
 } from "lucide-react";
 import "./styles.css";
+import { RequirementsWorkspace } from "./requirements/RequirementsWorkspace";
 
 type PageHeaderProps = {
   eyebrow: React.ReactNode;
@@ -54,20 +54,9 @@ type PageHeaderProps = {
   actions?: React.ReactNode;
 };
 
-type TreeRowProps = {
-  label: string;
-  count: string;
-  depth: number;
-  open?: boolean;
-  active?: boolean;
-  strong?: boolean;
-  icon?: LucideIcon;
-  tone?: string;
-};
-
 const NAV_ITEMS = [
   { id: "overview", label: "Overview", icon: Columns3 },
-  { id: "requirements", label: "Requirements", icon: FileText, count: "1,248" },
+  { id: "requirements", label: "Requirements", icon: FileText, count: "Live" },
   { id: "traceability", label: "Traceability", icon: Link2, count: "7" },
   { id: "baselines", label: "Baselines", icon: GitBranch },
   { id: "reviews", label: "Reviews", icon: ClipboardCheck, count: "2" },
@@ -106,15 +95,15 @@ const DEVELOPMENT_PHASES = [
     id: "phase-2",
     number: "02",
     name: "Requirements",
-    window: "Weeks 3–6",
-    status: "active",
-    outcome: "First API/data increment verified in protected CI",
+    window: "Complete",
+    status: "complete",
+    outcome: "Live authoring and isolation gate passed",
   },
   {
     id: "phase-3",
     number: "03",
     name: "Change control",
-    window: "Weeks 7–10",
+    window: "Ready",
     status: "queued",
     outcome: "Traceability, suspect links, baselines",
   },
@@ -140,32 +129,32 @@ const DEVELOPMENT_WORKSTREAMS = [
   {
     name: "Product experience",
     icon: Columns3,
-    progress: 78,
-    status: "Prototype complete",
+    progress: 85,
+    status: "Requirements workflow live",
     tone: "mint",
-    now: "Validate workflows with target users",
+    now: "Shape traceability and controlled-change interactions",
   },
   {
     name: "Platform & API",
     icon: ServerCog,
-    progress: 52,
-    status: "Requirements API implemented",
+    progress: 68,
+    status: "Phase 2 API complete",
     tone: "blue",
-    now: "Connect the authoring screen to the typed requirements contract",
+    now: "Define typed relationship and changeset operations",
   },
   {
     name: "Data & versioning",
     icon: Database,
-    progress: 42,
-    status: "Immutable revisions verified",
+    progress: 62,
+    status: "Workspace controls verified",
     tone: "mint",
-    now: "Add folders, tags, and typed project attributes",
+    now: "Add relationship revisions and immutable baselines",
   },
   {
     name: "Security & identity",
     icon: ShieldCheck,
-    progress: 48,
-    status: "OIDC + policy harness",
+    progress: 60,
+    status: "Project roles isolated",
     tone: "purple",
     now: "Connect the first deployment identity provider and add key refresh",
   },
@@ -173,7 +162,7 @@ const DEVELOPMENT_WORKSTREAMS = [
     name: "Quality & delivery",
     icon: TestTube2,
     progress: 100,
-    status: "Foundation gate green",
+    status: "Phase 2 gate green",
     tone: "mint",
     now: "Keep all required checks green on protected main",
   },
@@ -200,80 +189,12 @@ const DEVELOPMENT_BACKLOG = [
   { id: "REQ-000", horizon: "now", priority: "P1", title: "Decompose the requirements vertical slice", stream: "Product", effort: "2d", status: "Complete" },
   { id: "REQ-101", horizon: "now", priority: "P0", title: "Persist requirements and immutable revisions", stream: "Data", effort: "3d", status: "Complete" },
   { id: "REQ-102", horizon: "now", priority: "P0", title: "Create, search, read, revise, and inspect history", stream: "API", effort: "4d", status: "Complete" },
-  { id: "REQ-103", horizon: "now", priority: "P0", title: "Enforce concurrency, idempotency, tenancy, and audit", stream: "Security", effort: "3d", status: "In progress" },
-  { id: "REQ-104", horizon: "next", priority: "P0", title: "Connect the authoring UI to the API", stream: "Web", effort: "4d", status: "Ready" },
-  { id: "REQ-105", horizon: "next", priority: "P1", title: "Add folders, tags, attributes, and saved views", stream: "Product", effort: "5d", status: "Planned" },
-  { id: "REQ-001", horizon: "later", priority: "P0", title: "Complete requirements vertical slice", stream: "Product", effort: "4w", status: "Phase 2" },
-  { id: "TRC-001", horizon: "later", priority: "P0", title: "Deliver traceability and baselines", stream: "Product", effort: "4w", status: "Phase 3" },
-];
-
-const REQUIREMENTS = [
-  {
-    id: "SYS-184",
-    title: "The controller shall maintain attitude during failover",
-    type: "System requirement",
-    status: "Approved",
-    owner: "M. Chen",
-    coverage: 100,
-    revision: "r12",
-    changed: "2h ago",
-    statement:
-      "The flight controller shall maintain commanded vehicle attitude within ±2° during a primary compute failover event.",
-    rationale:
-      "Preserves controlled flight while the redundant compute lane assumes command authority.",
-  },
-  {
-    id: "SYS-203",
-    title: "The system shall record all command transitions",
-    type: "System requirement",
-    status: "In review",
-    owner: "A. Patel",
-    coverage: 75,
-    revision: "r8",
-    changed: "4h ago",
-    statement:
-      "The system shall record command source transitions with a monotonic timestamp and actor identity.",
-    rationale: "Enables deterministic reconstruction of operational events and audit evidence.",
-  },
-  {
-    id: "SFT-041",
-    title: "Failover shall complete within 150 milliseconds",
-    type: "Software requirement",
-    status: "Suspect",
-    owner: "R. Okafor",
-    coverage: 50,
-    revision: "r6",
-    changed: "Yesterday",
-    statement:
-      "Software command authority shall transition to the secondary lane within 150 ms of fault confirmation.",
-    rationale: "Limits the open-loop interval during compute-lane failover.",
-  },
-  {
-    id: "SFT-052",
-    title: "Audit records shall be integrity protected",
-    type: "Software requirement",
-    status: "Approved",
-    owner: "J. Rivera",
-    coverage: 100,
-    revision: "r4",
-    changed: "Oct 31",
-    statement:
-      "Each audit record shall include an integrity hash chained to the preceding record.",
-    rationale: "Makes modification or deletion of controlled evidence detectable.",
-  },
-  {
-    id: "VER-019",
-    title: "Verify compute-lane failover timing",
-    type: "Verification",
-    status: "Planned",
-    owner: "S. Brooks",
-    coverage: 80,
-    revision: "r3",
-    changed: "Oct 30",
-    statement:
-      "Inject a primary compute fault and measure elapsed time until the secondary lane asserts command authority.",
-    rationale: "Directly verifies the 150 ms failover performance requirement.",
-  },
+  { id: "REQ-103", horizon: "now", priority: "P0", title: "Enforce concurrency, idempotency, tenancy, and audit", stream: "Security", effort: "3d", status: "Complete" },
+  { id: "REQ-104", horizon: "now", priority: "P0", title: "Connect the authoring UI to the API", stream: "Web", effort: "4d", status: "Complete" },
+  { id: "REQ-105", horizon: "now", priority: "P1", title: "Add folders, tags, attributes, and saved views", stream: "Product", effort: "5d", status: "Complete" },
+  { id: "REQ-106", horizon: "now", priority: "P1", title: "Add import, export, comparison, accessibility, and E2E", stream: "Quality", effort: "4d", status: "Complete" },
+  { id: "REQ-001", horizon: "now", priority: "P0", title: "Complete requirements vertical slice", stream: "Product", effort: "4w", status: "Complete" },
+  { id: "TRC-001", horizon: "next", priority: "P0", title: "Deliver traceability and baselines", stream: "Product", effort: "4w", status: "Ready" },
 ];
 
 const COMMITS = [
@@ -384,7 +305,6 @@ const TOUR_STEPS = [
 
 function App() {
   const [page, setPage] = useState("overview");
-  const [selectedRequirement, setSelectedRequirement] = useState(REQUIREMENTS[0]);
   const [selectedTrace, setSelectedTrace] = useState(TRACE_NODES[2]);
   const [tourOpen, setTourOpen] = useState(false);
   const [tourStep, setTourStep] = useState(0);
@@ -411,8 +331,6 @@ function App() {
   const pageProps = {
     navigate,
     notify,
-    selectedRequirement,
-    setSelectedRequirement,
     selectedTrace,
     setSelectedTrace,
     reviewApproved,
@@ -439,7 +357,7 @@ function App() {
             <strong>{currentLabel}</strong>
           </div>
           <div className="topbar-actions">
-            <span className="illustrative-chip"><CircleDot size={12} /> {page === "development" ? "Planning baseline" : "Illustrative data"}</span>
+            <span className="illustrative-chip"><CircleDot size={12} /> {page === "development" ? "Repository evidence" : "Illustrative data"}</span>
             <button className="ghost-button project-button">
               {page === "development" ? "PROGRAM" : "AURORA-2"} <ChevronDown size={14} />
             </button>
@@ -453,7 +371,7 @@ function App() {
         <section className="page-stage" key={page}>
           {page === "development" && <DevelopmentDashboard {...pageProps} />}
           {page === "overview" && <Overview {...pageProps} />}
-          {page === "requirements" && <Requirements {...pageProps} />}
+          {page === "requirements" && <RequirementsWorkspace notify={notify} />}
           {page === "traceability" && <Traceability {...pageProps} />}
           {page === "baselines" && <Baselines {...pageProps} />}
           {page === "reviews" && <Reviews {...pageProps} />}
@@ -565,7 +483,7 @@ function DevelopmentDashboard({ notify }) {
       .join("\n");
 
     try {
-      await navigator.clipboard.writeText(`OpenRM Phase 2 — current sprint\n${brief}`);
+      await navigator.clipboard.writeText(`OpenRM Phase 2 completion — current evidence\n${brief}`);
       notify("Current sprint brief copied");
     } catch {
       notify("Sprint brief is listed in IMPLEMENTATION_PLAN.md");
@@ -597,45 +515,45 @@ function DevelopmentDashboard({ notify }) {
       <section className="development-command panel">
         <div className="development-command-copy">
           <div className="phase-status-row">
-            <span className="phase-chip active"><span /> Phase 2 active</span>
+            <span className="phase-chip complete"><span /> Phase 2 complete</span>
             <span className="baseline-date">17-week beta path</span>
           </div>
           <p className="panel-kicker">Current delivery objective</p>
-          <h2>Turn controlled requirements into a durable product workflow.</h2>
+          <h2>Carry controlled requirements into traceable change.</h2>
           <p>
-            The first Phase 2 increment now persists tenant-scoped requirements and immutable revisions, rejects stale
-            edits, replays create commands safely, searches current content, and records audit evidence. The next step
-            is to connect these typed operations to the authoring screen and extend project organization controls.
+            Phase 2 now provides live authoring, isolated project roles, folders, tags, typed attributes, saved views,
+            immutable revisions, comparison, import and export, and append-only audit evidence. Protected API,
+            PostgreSQL, browser, and accessibility checks passed; Phase 3 traceability is ready to begin.
           </p>
           <div className="command-meta">
-            <span><GitBranch size={14} /> Stage: Requirements vertical slice</span>
-            <span><BadgeCheck size={14} /> Next gate: API-backed authoring workflow</span>
+            <span><GitBranch size={14} /> Stage: Phase 2 exit gate passed</span>
+            <span><BadgeCheck size={14} /> Next gate: Traceability and controlled change</span>
           </div>
         </div>
         <div className="gate-card">
           <div className="gate-card-head">
             <div>
-              <span>First Phase 2 increment</span>
-              <strong>6 / 7 evidence checks</strong>
+              <span>Phase 2 exit evidence</span>
+              <strong>7 / 7 evidence checks</strong>
             </div>
-            <div className="gate-score active">86%</div>
+            <div className="gate-score complete">100%</div>
           </div>
           <div className="gate-checks">
             <span className="complete"><CheckCircle2 size={13} /> Tenant-scoped project discovery</span>
             <span className="complete"><CheckCircle2 size={13} /> Durable current state and revisions</span>
             <span className="complete"><CheckCircle2 size={13} /> Idempotent creation and stale-edit rejection</span>
-            <span className="complete"><CheckCircle2 size={13} /> Search and bounded pagination</span>
-            <span className="complete"><CheckCircle2 size={13} /> Transactional audit evidence</span>
-            <span className="complete"><CheckCircle2 size={13} /> Typed OpenAPI web contract</span>
-            <span><CircleDot size={13} /> API-backed authoring screen</span>
+            <span className="complete"><CheckCircle2 size={13} /> Project roles, organization, and search</span>
+            <span className="complete"><CheckCircle2 size={13} /> Append-only audit and revision evidence</span>
+            <span className="complete"><CheckCircle2 size={13} /> Comparison, import, and export</span>
+            <span className="complete"><CheckCircle2 size={13} /> Browser authoring and WCAG A/AA</span>
           </div>
         </div>
       </section>
 
       <div className="development-metrics">
         <DeliveryMetric icon={Columns3} value="10 / 10" label="Prototype surfaces" detail="Interaction model represented" tone="mint" />
-        <DeliveryMetric icon={ServerCog} value="6" label="Requirement operations" detail="List, create, read, revise, search, history" tone="blue" />
-        <DeliveryMetric icon={TestTube2} value="11 + 4" label="Unit tests" detail="Rust plus web client" tone="mint" />
+        <DeliveryMetric icon={ServerCog} value="9" label="Controlled capabilities" detail="Author, organize, compare, import, and export" tone="blue" />
+        <DeliveryMetric icon={TestTube2} value="15 + 6" label="Automated tests" detail="Rust, web unit, browser, and WCAG" tone="mint" />
         <DeliveryMetric icon={AlertTriangle} value="4" label="Program risks" detail="Decisions accepted; controls remain" tone="red" />
       </div>
 
@@ -745,7 +663,7 @@ function DevelopmentDashboard({ notify }) {
 
       <div className="dashboard-source-note">
         <FileCheck2 size={16} />
-        <p><strong>Source of truth:</strong> Phase 2 started on 8 November 2026. The first requirements API/data increment passed protected CI; UI integration and the remaining Phase 2 exit evidence are still open.</p>
+        <p><strong>Source of truth:</strong> Phase 2 completed on 8 November 2026. OpenRM CI run 42492278928 passed the web, API, PostgreSQL, browser, accessibility, isolation, and append-only history gates; Phase 3 is ready.</p>
       </div>
     </>
   );
@@ -891,90 +809,6 @@ function AttentionItem({ tone, icon: Icon, title, body, action, onClick }) {
 
 function TechPill({ icon: Icon, label, detail }) {
   return <div className="tech-pill"><Icon size={18} /><span><strong>{label}</strong><small>{detail}</small></span></div>;
-}
-
-function Requirements({ selectedRequirement, setSelectedRequirement, notify }) {
-  return (
-    <>
-      <PageHeader
-        eyebrow="Controlled content • 1,248 artifacts"
-        title="Requirements workspace"
-        description="Author, relate, review, and version every requirement from one controlled workspace."
-        actions={<button className="primary-button" onClick={() => notify("New requirement draft opened")}><Plus size={16} /> New requirement</button>}
-      />
-      <div className="workspace-toolbar">
-        <div className="search-box"><Search size={16} /><input aria-label="Search requirements" placeholder="Search ID, title, or text…" /></div>
-        <button className="filter-button"><Filter size={15} /> Type: All <ChevronDown size={13} /></button>
-        <button className="filter-button">Status: Active <ChevronDown size={13} /></button>
-        <button className="filter-button">Owner: Anyone <ChevronDown size={13} /></button>
-        <span className="toolbar-spacer" />
-        <button className="icon-button"><Columns3 size={17} /></button>
-        <button className="icon-button"><MoreHorizontal size={17} /></button>
-      </div>
-
-      <div className="requirements-shell">
-        <aside className="requirements-tree panel">
-          <div className="tree-header"><span>Project structure</span><Plus size={15} /></div>
-          <TreeRow label="Aurora Flight Computer" count="1,248" depth={0} open strong />
-          <TreeRow label="01 • Stakeholder needs" count="48" depth={1} />
-          <TreeRow label="02 • System requirements" count="312" depth={1} open active />
-          <TreeRow label="Flight controls" count="86" depth={2} />
-          <TreeRow label="Navigation" count="74" depth={2} />
-          <TreeRow label="Telemetry" count="56" depth={2} />
-          <TreeRow label="03 • Software requirements" count="624" depth={1} />
-          <TreeRow label="04 • Verification" count="264" depth={1} />
-          <div className="saved-view-label">SAVED VIEWS</div>
-          <TreeRow label="My assigned items" count="18" depth={0} icon={UserRoundCheck} />
-          <TreeRow label="Suspect relationships" count="7" depth={0} icon={AlertTriangle} tone="amber" />
-        </aside>
-
-        <section className="requirements-table panel">
-          <div className="table-head"><span>ID</span><span>Requirement</span><span>Status</span><span>Coverage</span><span>Owner</span></div>
-          {REQUIREMENTS.map((req) => (
-            <button
-              key={req.id}
-              className={`requirement-row ${selectedRequirement.id === req.id ? "selected" : ""}`}
-              onClick={() => setSelectedRequirement(req)}
-            >
-              <code>{req.id}</code>
-              <span className="requirement-title"><strong>{req.title}</strong><small>{req.type} • {req.revision} • {req.changed}</small></span>
-              <StatusPill status={req.status} />
-              <span className="coverage-cell"><span><i style={{ width: `${req.coverage}%` }} /></span><small>{req.coverage}%</small></span>
-              <span className="owner-cell"><i>{req.owner.split(" ").map((n) => n[0]).join("")}</i>{req.owner}</span>
-            </button>
-          ))}
-        </section>
-
-        <aside className="requirement-inspector panel">
-          <div className="inspector-header"><div><code>{selectedRequirement.id}</code><StatusPill status={selectedRequirement.status} /></div><button className="icon-button"><MoreHorizontal size={17} /></button></div>
-          <h2>{selectedRequirement.title}</h2>
-          <div className="inspector-section"><label>Statement</label><p>{selectedRequirement.statement}</p></div>
-          <div className="inspector-section"><label>Rationale</label><p>{selectedRequirement.rationale}</p></div>
-          <div className="inspector-grid">
-            <div><label>Owner</label><strong>{selectedRequirement.owner}</strong></div>
-            <div><label>Revision</label><strong>{selectedRequirement.revision}</strong></div>
-            <div><label>Verification</label><strong>{selectedRequirement.coverage}%</strong></div>
-            <div><label>Priority</label><strong>Critical</strong></div>
-          </div>
-          <div className="relationship-summary">
-            <div><Link2 size={15} /><span><strong>3</strong> upstream</span></div>
-            <div><ArrowRight size={15} /><span><strong>5</strong> downstream</span></div>
-          </div>
-          <div className="revision-note"><GitCommitHorizontal size={15} /><span><strong>Last change</strong> in <code>c8a71f2</code><small>Clarified tolerance • Maya Chen</small></span></div>
-          <button className="secondary-button full-width" onClick={() => notify(`${selectedRequirement.id} opened in editor`)}>Open controlled editor <ArrowRight size={15} /></button>
-        </aside>
-      </div>
-    </>
-  );
-}
-
-function TreeRow({ label, count, depth, open = false, active = false, strong = false, icon: CustomIcon, tone = "" }: TreeRowProps) {
-  const Icon = CustomIcon || (open ? ChevronDown : ChevronRight);
-  return (
-    <button className={`tree-row ${active ? "active" : ""} ${strong ? "strong" : ""} ${tone || ""}`} style={{ paddingLeft: `${14 + depth * 16}px` }}>
-      <Icon size={14} /><span>{label}</span><small>{count}</small>
-    </button>
-  );
 }
 
 function StatusPill({ status }) {

@@ -79,4 +79,17 @@ mod tests {
         assert!(PolicyEngine.allows(&author, Action::Write, organization_id));
         assert!(!PolicyEngine.allows(&author, Action::Review, organization_id));
     }
+
+    #[test]
+    fn reviewer_and_viewer_permissions_are_read_only_for_authoring() {
+        let organization_id = Uuid::new_v4();
+        let reviewer = principal("reviewer", organization_id);
+        let viewer = principal("viewer", organization_id);
+        assert!(PolicyEngine.allows(&reviewer, Action::Read, organization_id));
+        assert!(PolicyEngine.allows(&reviewer, Action::Review, organization_id));
+        assert!(!PolicyEngine.allows(&reviewer, Action::Write, organization_id));
+        assert!(PolicyEngine.allows(&viewer, Action::Read, organization_id));
+        assert!(!PolicyEngine.allows(&viewer, Action::Review, organization_id));
+        assert!(!PolicyEngine.allows(&viewer, Action::Write, organization_id));
+    }
 }

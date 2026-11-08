@@ -1,19 +1,20 @@
 # OpenRM
 
-OpenRM is an open, self-hostable configuration and requirements management platform. The repository currently contains the interactive product preview and the Phase 1 platform foundation.
+OpenRM is an open, self-hostable configuration and requirements management platform. The repository contains the interactive product preview, platform foundation, and completed requirements vertical slice.
 
-[![Foundation CI](https://github.com/TJ-Engineer/OpenRM/actions/workflows/ci.yml/badge.svg)](https://github.com/TJ-Engineer/OpenRM/actions/workflows/ci.yml)
+[![OpenRM CI](https://github.com/TJ-Engineer/OpenRM/actions/workflows/ci.yml/badge.svg)](https://github.com/TJ-Engineer/OpenRM/actions/workflows/ci.yml)
 
 ## Development status
 
-**Current stage:** 🟡 Phase 2 requirements vertical slice active (updated 8 November 2026).
+**Current stage:** 🟢 Phase 2 requirements vertical slice complete; Phase 3 is ready (updated 8 November 2026).
 
 - 🟢 Phase 0, the interactive prototype and static delivery preview, is complete.
 - 🟢 Phase 1 is complete: all foundation deliverables and local evidence checks are implemented.
-- 🟢 The first hosted Foundation CI run passed all web, API, security-audit, migration, and authenticated database-path checks.
+- 🟢 Hosted OpenRM CI passes web, API, security-audit, migration, browser, accessibility, and authenticated PostgreSQL checks.
 - 🟢 The protected `main` branch requires the `web`, `api`, and `database-path` GitHub Actions checks and disallows force-pushes and deletion.
-- 🟡 Phase 2 is active. Its first protected-CI-verified increment adds tenant-scoped project discovery; durable requirement creation, search, reads, and revisions; optimistic concurrency; idempotent creation; and transactional audit evidence.
-- ⚪ The Phase 2 authoring UI, folders, tags, saved views, import/export, and broader accessibility/end-to-end coverage remain planned.
+- 🟢 Phase 2 is complete. Teams can create isolated projects, assign scoped roles, create and revise requirements, organize with folders and tags, validate typed attributes, save filtered views, compare history, and import/export JSON.
+- 🟢 Controlled revisions and audit events are append-only, create/revise commands are idempotent, stale edits are rejected, and the primary browser workflow passes automated WCAG A/AA checks.
+- ⚪ Phase 3 is ready: typed relationships, suspect-link impact, changesets, immutable baselines, and deterministic evidence export are next.
 
 See the [development dashboard](DEVELOPMENT_DASHBOARD.md) for current evidence, priorities, gaps, and per-phase time/token accounting, and the [implementation plan](IMPLEMENTATION_PLAN.md) for the full roadmap and exit criteria.
 
@@ -76,6 +77,20 @@ curl \
 ```
 
 Development tokens are rejected when `APP_ENV=production`. Deployed environments must use `AUTH_MODE=oidc` with an issuer and audience.
+
+Role-scoped development tokens use `dev:<subject>:<role>`, where the role is `administrator`, `author`, `reviewer`, or `viewer`.
+
+## Verify the requirements slice
+
+```bash
+npm run check
+npm run test:e2e
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-targets
+```
+
+The protected `database-path` job applies all migrations to PostgreSQL 17 and exercises project isolation, roles, organization resources, controlled authoring, idempotency, concurrency, search, comparison, import/export, and append-only audit evidence.
 
 ## Contract workflow
 
