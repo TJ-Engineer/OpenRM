@@ -63,6 +63,10 @@ Optional environment variables:
 
 The loader is idempotent for the immutable `v1` requirement catalog and each evidence hash. Requirement changes must use OpenRM's governed revision workflow and a new controlled baseline; they must not overwrite this catalog release in place. If linked evidence changes, the loader automatically records a new verification execution while preserving earlier signed results.
 
+## Hosted evidence
+
+[OpenRM CI run 42512977538](https://github.com/TJ-Engineer/OpenRM/actions/runs/42512977538) reconstructed this project from a clean PostgreSQL 17 database and passed the complete protected `database-path` gate. The same run passed the API, web, recovery-rehearsal, and hardened production-artifact jobs.
+
 ## Independence and integrity
 
 - The author identity creates the project, requirements, trace, changeset, baseline, and review package.
