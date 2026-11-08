@@ -1,6 +1,6 @@
 # OpenRM development dashboard
 
-**Last verified:** 8 November 2026, 12:16 CST<br>
+**Last verified:** 8 November 2026, 13:05 CST<br>
 **Foundation evidence commit:** `fc6687f`<br>
 **Phase 2 evidence commit:** `f498031`<br>
 **Phase 3 implementation evidence commit:** `4f50618`<br>
@@ -25,6 +25,7 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | Phase 3 — Traceability and controlled change | 🟢 Complete | The complete trace, impact, changeset, baseline, comparison, and signed-export slice passed locally and in protected CI. |
 | Phase 4 — Reviews and verification | 🟢 Complete | The complete review-to-verification signed-evidence exit path passes locally and in protected hosted CI. |
 | Phase 5 — Integration and beta hardening | 🟢 Complete | Jira operations, telemetry, recovery, security, load, three-browser accessibility, deployment artifacts, and operator procedures pass locally and in protected hosted CI. |
+| OpenRM self-verification project | 🟢 Protected CI verified | The isolated `OPENRM` project contains 12 system and 48 derived requirements, 48 decomposition links, four independently executed evidence cases, 100% trace and verification coverage, and a ready gate with no blockers; clean reconstruction passed in [OpenRM CI run 42512977538](https://github.com/TJ-Engineer/OpenRM/actions/runs/42512977538). |
 | Production API and database | ⚪ Not commissioned | Hardened deployment assets are verified, but the pilot environment, OIDC tenant, PITR, secret manager, and alert receivers remain operator-specific work. |
 
 ## Phase progress
@@ -49,7 +50,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 2. Requirements vertical slice | Complete; partial usage telemetry | 8 Nov 2026 | 8 Nov 2026 | 1.1 h tracked | `N/R` |
 | 3. Traceability and controlled change | Complete | 8 Nov 2026 | 8 Nov 2026 | 0.7 h | `N/R` |
 | 4. Reviews and verification | Complete | 8 Nov 2026 | 8 Nov 2026 | 0.9 h | `N/R` |
-| 5. Integration and beta hardening | Complete | 8 Nov 2026 | 8 Nov 2026 | 0.9 h | `N/R` |
+| 5. Integration and beta hardening | Complete | 8 Nov 2026 | 8 Nov 2026 | 1.6 h | `N/R` |
 
 ### Usage change log
 
@@ -70,6 +71,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 8 November 2026, 11:54 CST | 5 | 0.6 h | `N/R` | Implemented Jira delivery/replay, operational telemetry, recovery/deployment assets, security hardening, multi-browser/WCAG tests, load evidence, and pilot operating procedures; local candidate matrix passed. |
 | 8 November 2026, 12:08 CST | 5 | 0.2 h | `N/R` | Hardened production OIDC/JWKS and queue-health boundaries, reran Rust and web gates, and verified the final image as non-root with a read-only filesystem and all capabilities dropped. |
 | 8 November 2026, 12:16 CST | 5 | 0.1 h | `N/R` | Corrected the hosted recovery harness, passed all five Phase 5 CI jobs, and expanded protected `main` to require recovery and production-artifact validation. |
+| 8 November 2026, 12:58 CST | 5 | 0.7 h | `N/R` | Created the OpenRM self-verification catalog and idempotent API loader; loaded 12 system and 48 derived requirements with complete trace, independent review, linked signed evidence, and 100% ready verification coverage. |
 
 ### Usage accounting rules
 
@@ -168,6 +170,7 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 | Browser and accessibility | 🟢 Locally verified | All 33 workflows and WCAG 2 A/AA scans pass in Chromium, Firefox, and WebKit. |
 | Recovery and upgrades | 🟢 Locally verified | PostgreSQL 17 restored 55 controlled rows across nine migrations with all six critical evidence tables; two migration applications were idempotent. |
 | Pilot procedures | 🟢 Documented | Deployment, administration, SLO/alert, recovery, runbook, onboarding, threat-model, and security-review documents define the operating boundary. |
+| Product requirements in OpenRM | 🟢 Protected CI verified | The `OPENRM` dogfood project stores 60 controlled requirements, 48 `DECOMPOSES_TO` links, 62 linked test/document attachments across four evidence cases, 100% trace coverage, and 100% passed exact-revision verification coverage; [OpenRM CI run 42512977538](https://github.com/TJ-Engineer/OpenRM/actions/runs/42512977538) reconstructed the complete gate from a clean database. |
 | Protected hosted evidence | 🟢 CI verified | `web`, `api`, `database-path`, `recovery-rehearsal`, and `production-artifact` passed in [OpenRM CI run 42508760769](https://github.com/TJ-Engineer/OpenRM/actions/runs/42508760769); protected `main` requires all five. |
 
 ## Known delivery gaps

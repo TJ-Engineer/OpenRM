@@ -96,6 +96,24 @@ The protected `database-path` job applies all migrations to PostgreSQL 17 and ex
 
 Phase 5 operating procedures are under [`docs/operations`](docs/operations), with the threat model and security review under [`docs/security`](docs/security).
 
+## OpenRM product requirements in OpenRM
+
+The repository includes a reproducible self-verification project containing 12 system requirements, 48 derived requirements, complete decomposition traceability, an independent review, and signed test, analysis, and observation evidence.
+
+Validate the catalog and linked evidence files:
+
+```bash
+npm run check:self-project
+```
+
+Load or replay the controlled `OPENRM` project against a migrated local API:
+
+```bash
+npm run bootstrap:self-project
+```
+
+See the [OpenRM self-verification guide](docs/verification/OPENRM_SELF_VERIFICATION.md) for the requirement structure, evidence methods, integrity controls, and environment options.
+
 ## Contract workflow
 
 Edit `contracts/openapi.yaml`, then regenerate the web types:

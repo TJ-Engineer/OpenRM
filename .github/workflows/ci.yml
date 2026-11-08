@@ -25,6 +25,7 @@ jobs:
       - run: npm run generate:api
       - name: Verify generated API types
         run: git diff --exit-code -- src/api/generated.ts
+      - run: npm run check:self-project
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test
@@ -766,6 +767,7 @@ jobs:
             exit 1
           fi
           test "$(psql "${DATABASE_URL}" -tAc "SELECT count(*) FROM audit_events WHERE project_id = '${project_id}'")" -ge 10
+          node scripts/bootstrap-openrm-self-project.mjs --json
 
   recovery-rehearsal:
     runs-on: ubuntu-latest
