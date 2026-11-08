@@ -240,6 +240,7 @@ Completion evidence:
 - Protected `main` now requires all five Phase 5 checks with strict up-to-date validation and administrator enforcement.
 - Live pilot commissioning remains an environment-specific operational gate, not an unresolved repository implementation gate.
 - The `OPENRM` self-verification project reaches 100% trace coverage and 100% passed exact-revision verification coverage with no orphans, suspect links, or readiness blockers; [OpenRM CI run 42512977538](https://github.com/TJ-Engineer/OpenRM/actions/runs/42512977538) reconstructed the complete gate from a clean database in the protected `database-path` workflow.
+- [OpenRM CI run 42518730569](https://github.com/TJ-Engineer/OpenRM/actions/runs/42518730569) built the complete portable container distribution and reconstructed its PostgreSQL, migrations, API, 60-requirement bootstrap, and same-origin web gateway from a clean volume with non-root, read-only, capability-dropped application containers.
 
 ## 5. Phase 1 execution backlog
 

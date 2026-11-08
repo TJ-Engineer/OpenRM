@@ -68,6 +68,8 @@ The loader is idempotent for the immutable `v1` requirement catalog and each evi
 
 [OpenRM CI run 42512977538](https://github.com/TJ-Engineer/OpenRM/actions/runs/42512977538) reconstructed this project from a clean PostgreSQL 17 database and passed the complete protected `database-path` gate. The same run passed the API, web, recovery-rehearsal, and hardened production-artifact jobs.
 
+[OpenRM CI run 42518730569](https://github.com/TJ-Engineer/OpenRM/actions/runs/42518730569) additionally built the complete portable container distribution and reconstructed the project through its migration and bootstrap containers on a clean volume. The hosted smoke gate verified same-origin web/API readiness, all 60 requirements, non-root users, read-only root filesystems, and dropped Linux capabilities.
+
 ## Independence and integrity
 
 - The author identity creates the project, requirements, trace, changeset, baseline, and review package.
