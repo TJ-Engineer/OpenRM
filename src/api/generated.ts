@@ -259,6 +259,99 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/relationship-types": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** List directed relationship rules configured for a project */
+        get: operations["listRelationshipTypes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/relationships": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** List directed relationships, optionally around one artifact */
+        get: operations["listRelationships"];
+        put?: never;
+        /** Create a directed relationship at the endpoints' current revisions */
+        post: operations["createRelationship"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/relationships/{relationship_id}/resolve": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                relationship_id: components["parameters"]["RelationshipId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a reviewer disposition against exact endpoint revisions */
+        post: operations["resolveSuspectRelationship"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/relationships/{relationship_id}/revisions": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                relationship_id: components["parameters"]["RelationshipId"];
+            };
+            cookie?: never;
+        };
+        /** List immutable relationship versions newest first */
+        get: operations["listRelationshipRevisions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -434,6 +527,83 @@ export interface components {
             items: components["schemas"]["Requirement"][];
             imported: number;
         };
+        RelationshipType: {
+            /** Format: uuid */
+            id: string;
+            key: string;
+            name: string;
+            source_artifact_type: string;
+            target_artifact_type: string;
+            max_targets_per_source: number | null;
+            max_sources_per_target: number | null;
+            propagates_suspect: boolean;
+        };
+        RelationshipTypeListResponse: {
+            items: components["schemas"]["RelationshipType"][];
+        };
+        CreateRelationshipRequest: {
+            /** Format: uuid */
+            relationship_type_id: string;
+            /** Format: uuid */
+            source_artifact_id: string;
+            /** Format: uuid */
+            target_artifact_id: string;
+        };
+        ResolveRelationshipRequest: {
+            expected_version: number;
+            disposition: string;
+        };
+        Relationship: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            project_id: string;
+            /** Format: uuid */
+            relationship_type_id: string;
+            relationship_type_key: string;
+            relationship_type_name: string;
+            /** Format: uuid */
+            source_artifact_id: string;
+            source_key: string;
+            source_title: string;
+            source_revision: number;
+            /** Format: uuid */
+            target_artifact_id: string;
+            target_key: string;
+            target_title: string;
+            target_revision: number;
+            version: number;
+            suspect: boolean;
+            suspect_reason: string | null;
+            disposition: string | null;
+            created_by: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            version_created_by?: string;
+            /** Format: date-time */
+            version_created_at?: string;
+        };
+        RelationshipListResponse: {
+            items: components["schemas"]["Relationship"][];
+        };
+        RelationshipRevision: {
+            /** Format: uuid */
+            id: string;
+            version: number;
+            source_revision: number;
+            target_revision: number;
+            suspect: boolean;
+            suspect_reason: string | null;
+            disposition: string | null;
+            created_by: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        RelationshipRevisionListResponse: {
+            items: components["schemas"]["RelationshipRevision"][];
+        };
         ErrorEnvelope: {
             error: components["schemas"]["ErrorBody"];
         };
@@ -506,6 +676,7 @@ export interface components {
         OrganizationHeader: string;
         ProjectId: string;
         RequirementId: string;
+        RelationshipId: string;
         WorkspaceResource: "folders" | "tags" | "attribute-definitions" | "saved-views";
         /** @description Stable client command identifier scoped to tenant, actor, and operation. */
         IdempotencyHeader: string;
@@ -1053,6 +1224,183 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RequirementListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listRelationshipTypes: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Project-scoped relationship types and cardinality rules. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RelationshipTypeListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listRelationships: {
+        parameters: {
+            query?: {
+                artifact_id?: string;
+                /** @description Source means outgoing; target means incoming. */
+                direction?: "both" | "source" | "target";
+            };
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current typed relationships bound to exact endpoint revisions. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RelationshipListResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    createRelationship: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRelationshipRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of an existing successful command. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Relationship"];
+                };
+            };
+            /** @description Directed relationship created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Relationship"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    resolveSuspectRelationship: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                relationship_id: components["parameters"]["RelationshipId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveRelationshipRequest"];
+            };
+        };
+        responses: {
+            /** @description Suspect impact resolved, or an idempotent replay returned. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Relationship"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listRelationshipRevisions: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                relationship_id: components["parameters"]["RelationshipId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Attributable relationship version history. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RelationshipRevisionListResponse"];
                 };
             };
             401: components["responses"]["Unauthorized"];

@@ -26,6 +26,7 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
         migrate(&db).await?;
     }
     let auth = AuthVerifier::from_config(&config).await?;
+    let outbox_worker = tokio::spawn(openrm_api::outbox::run(db.clone()));
     let app = router(AppState {
         db,
         auth,
@@ -34,9 +35,11 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
     });
     let listener = tokio::net::TcpListener::bind(config.bind_address).await?;
     tracing::info!(address = %config.bind_address, environment = %config.app_env, "OpenRM API listening");
-    axum::serve(listener, app)
+    let serve_result = axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
-        .await?;
+        .await;
+    outbox_worker.abort();
+    serve_result?;
     Ok(())
 }
 

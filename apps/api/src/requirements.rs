@@ -638,6 +638,23 @@ pub async fn revise_requirement(
     )
     .await?;
 
+    sqlx::query(
+        r#"
+        INSERT INTO outbox_messages (organization_id, topic, payload)
+        VALUES ($1, 'relationship.source-revised', $2)
+        "#,
+    )
+    .bind(principal.organization_id)
+    .bind(json!({
+        "project_id": project_id,
+        "source_artifact_id": requirement_id,
+        "source_revision_id": revision_id,
+        "source_revision": next_revision
+    }))
+    .execute(&mut *transaction)
+    .await
+    .map_err(database_error)?;
+
     let updated = sqlx::query_as::<_, RequirementRecord>(
         r#"
         SELECT id, project_id, key, title, statement, attributes, folder_id,

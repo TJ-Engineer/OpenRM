@@ -76,7 +76,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo run -p openrm-api --bin migrate
-      - name: Exercise the Phase 2 requirements vertical slice
+      - name: Exercise requirements and typed traceability paths
         run: |
           set -euo pipefail
           cargo run -p openrm-api > /tmp/openrm-api.log 2>&1 &
@@ -128,8 +128,10 @@ jobs:
             '{"subject":"ci-author","role":"author"}' > /tmp/author.json
           request POST 'dev:ci-admin' "${base_url}/projects/${project_id}/members" \
             '{"subject":"ci-viewer","role":"viewer"}' > /tmp/viewer.json
+          request POST 'dev:ci-admin' "${base_url}/projects/${project_id}/members" \
+            '{"subject":"ci-reviewer","role":"reviewer"}' > /tmp/reviewer.json
           request GET 'dev:ci-admin' "${base_url}/projects/${project_id}/members" > /tmp/members.json
-          test "$(jq -r '.items | length' /tmp/members.json)" -eq 3
+          test "$(jq -r '.items | length' /tmp/members.json)" -eq 4
 
           request POST 'dev:ci-admin' "${base_url}/projects/${project_id}/workspace/folders" \
             '{"name":"System requirements"}' > /tmp/folder.json
@@ -174,6 +176,75 @@ jobs:
             '{"items":[{"key":"CI-IMP-1","title":"Imported requirement","statement":"The workspace shall import controlled requirements.","attributes":{"priority":"medium","mass":1},"folder_id":"'"${folder_id}"'","tag_ids":["'"${tag_id}"'"]}]}' \
             'ci-requirement-import-001' > /tmp/import.json
           test "$(jq -r '.imported' /tmp/import.json)" -eq 1
+          imported_requirement_id="$(jq -r '.items[0].id' /tmp/import.json)"
+
+          target_body='{"key":"CI-REQ-2","title":"Trace target","statement":"The target requirement shall retain exact trace revision evidence.","attributes":{"priority":"high","mass":2},"folder_id":"'"${folder_id}"'","tag_ids":["'"${tag_id}"'"]}'
+          request POST 'dev:ci-author:author' "${api_url}" "${target_body}" \
+            'ci-requirement-create-002' > /tmp/trace-target.json
+          target_requirement_id="$(jq -r '.id' /tmp/trace-target.json)"
+          relationships_url="${base_url}/projects/${project_id}/relationships"
+          request GET 'dev:ci-author:author' \
+            "${base_url}/projects/${project_id}/relationship-types" > /tmp/relationship-types.json
+          decomposition_type_id="$(jq -r '.items[] | select(.key == "DECOMPOSES_TO") | .id' /tmp/relationship-types.json)"
+          test -n "${decomposition_type_id}"
+          relationship_body='{"relationship_type_id":"'"${decomposition_type_id}"'","source_artifact_id":"'"${requirement_id}"'","target_artifact_id":"'"${target_requirement_id}"'"}'
+          request POST 'dev:ci-author:author' "${relationships_url}" "${relationship_body}" \
+            'ci-relationship-create-001' > /tmp/relationship.json
+          relationship_id="$(jq -r '.id' /tmp/relationship.json)"
+          test "$(jq -r '.source_revision' /tmp/relationship.json)" -eq 2
+          test "$(jq -r '.target_revision' /tmp/relationship.json)" -eq 1
+          request POST 'dev:ci-author:author' "${relationships_url}" "${relationship_body}" \
+            'ci-relationship-create-001' > /tmp/relationship-replay.json
+          test "$(jq -r '.id' /tmp/relationship-replay.json)" = "${relationship_id}"
+          request GET 'dev:ci-author:author' \
+            "${relationships_url}?artifact_id=${requirement_id}&direction=source" > /tmp/outgoing-relationships.json
+          test "$(jq -r '.items | length' /tmp/outgoing-relationships.json)" -eq 1
+          test "$(jq -r '.items[0].relationship_type_key' /tmp/outgoing-relationships.json)" = 'DECOMPOSES_TO'
+
+          cardinality_status="$(curl --silent --output /tmp/cardinality.json --write-out '%{http_code}' \
+            -X POST -H 'Authorization: Bearer dev:ci-author:author' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            -H 'X-Idempotency-Key: ci-relationship-cardinality' -H 'Content-Type: application/json' \
+            --data '{"relationship_type_id":"'"${decomposition_type_id}"'","source_artifact_id":"'"${imported_requirement_id}"'","target_artifact_id":"'"${target_requirement_id}"'"}' \
+            "${relationships_url}")"
+          test "${cardinality_status}" = '409'
+
+          impact_revision_body='{"expected_revision":2,"title":"CI requirement impact change","statement":"The CI path shall propagate suspect relationship impact asynchronously.","attributes":{"priority":"critical","mass":12.8},"folder_id":"'"${folder_id}"'","tag_ids":["'"${tag_id}"'"]}'
+          request PUT 'dev:ci-author:author' "${api_url}/${requirement_id}" "${impact_revision_body}" \
+            'ci-requirement-impact-001' > /tmp/requirement-impact.json
+          for attempt in {1..30}; do
+            request GET 'dev:ci-author:author' \
+              "${relationships_url}?artifact_id=${requirement_id}&direction=source" > /tmp/suspect-relationships.json
+            if [[ "$(jq -r '.items[0].suspect' /tmp/suspect-relationships.json)" = 'true' ]]; then
+              break
+            fi
+            if [[ "${attempt}" -eq 30 ]]; then
+              echo 'Relationship did not become suspect' >&2
+              exit 1
+            fi
+            sleep 1
+          done
+          test "$(jq -r '.items[0].version' /tmp/suspect-relationships.json)" -eq 2
+          test "$(jq -r '.items[0].source_revision' /tmp/suspect-relationships.json)" -eq 3
+          request POST 'dev:ci-reviewer:reviewer' \
+            "${relationships_url}/${relationship_id}/resolve" \
+            '{"expected_version":2,"disposition":"Downstream intent remains valid after impact review."}' \
+            'ci-relationship-resolve-001' > /tmp/resolved-relationship.json
+          test "$(jq -r '.suspect' /tmp/resolved-relationship.json)" = 'false'
+          test "$(jq -r '.version' /tmp/resolved-relationship.json)" -eq 3
+          test "$(jq -r '.disposition' /tmp/resolved-relationship.json)" = \
+            'Downstream intent remains valid after impact review.'
+          request POST 'dev:ci-reviewer:reviewer' \
+            "${relationships_url}/${relationship_id}/resolve" \
+            '{"expected_version":2,"disposition":"Downstream intent remains valid after impact review."}' \
+            'ci-relationship-resolve-001' > /tmp/resolved-relationship-replay.json
+          test "$(jq -r '.version' /tmp/resolved-relationship-replay.json)" -eq 3
+          request GET 'dev:ci-reviewer:reviewer' \
+            "${relationships_url}/${relationship_id}/revisions" > /tmp/relationship-revisions.json
+          test "$(jq -r '.items | length' /tmp/relationship-revisions.json)" -eq 3
+          test "$(jq -r '.items[0].created_by' /tmp/relationship-revisions.json)" = 'ci-reviewer'
+          test "$(jq -r '.items[1].created_by' /tmp/relationship-revisions.json)" = \
+            'system:relationship-impact'
 
           request GET 'dev:ci-viewer:viewer' "${api_url}" > /tmp/viewer-list.json
           viewer_status="$(curl --silent --output /tmp/viewer-write.json --write-out '%{http_code}' \
@@ -183,6 +254,19 @@ jobs:
             --data '{"key":"DENIED-1","title":"Denied","statement":"Viewer writes shall be denied.","attributes":{"priority":"low"},"folder_id":null,"tag_ids":[]}' \
             "${api_url}")"
           test "${viewer_status}" = '403'
+          relationship_viewer_status="$(curl --silent --output /tmp/relationship-viewer-write.json --write-out '%{http_code}' \
+            -X POST -H 'Authorization: Bearer dev:ci-viewer:viewer' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            -H 'X-Idempotency-Key: ci-relationship-viewer-denied' -H 'Content-Type: application/json' \
+            --data "${relationship_body}" "${relationships_url}")"
+          test "${relationship_viewer_status}" = '403'
+          author_resolution_status="$(curl --silent --output /tmp/relationship-author-resolution.json --write-out '%{http_code}' \
+            -X POST -H 'Authorization: Bearer dev:ci-author:author' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            -H 'X-Idempotency-Key: ci-relationship-author-resolution' -H 'Content-Type: application/json' \
+            --data '{"expected_version":3,"disposition":"Authors cannot resolve impact."}' \
+            "${relationships_url}/${relationship_id}/resolve")"
+          test "${author_resolution_status}" = '403'
           isolation_status="$(curl --silent --output /tmp/project-isolation.json --write-out '%{http_code}' \
             -H 'Authorization: Bearer dev:ci-author:author' \
             -H "X-OpenRM-Organization: ${organization_id}" \
@@ -199,6 +283,11 @@ jobs:
           if psql "${DATABASE_URL}" -c \
             "UPDATE artifact_revisions SET title = 'tampered' WHERE artifact_id = '${requirement_id}'"; then
             echo 'Revision history accepted an update' >&2
+            exit 1
+          fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE relationship_revisions SET suspect = true WHERE relationship_id = '${relationship_id}'"; then
+            echo 'Relationship history accepted an update' >&2
             exit 1
           fi
           test "$(psql "${DATABASE_URL}" -tAc "SELECT count(*) FROM audit_events WHERE project_id = '${project_id}'")" -ge 10

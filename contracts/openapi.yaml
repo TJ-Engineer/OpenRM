@@ -13,6 +13,7 @@ tags:
   - name: Identity
   - name: Projects
   - name: Requirements
+  - name: Traceability
 paths:
   /health:
     get:
@@ -511,6 +512,173 @@ paths:
           $ref: "#/components/responses/NotFound"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/relationship-types:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: listRelationshipTypes
+      tags: [Traceability]
+      summary: List directed relationship rules configured for a project
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Project-scoped relationship types and cardinality rules.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RelationshipTypeListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/relationships:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: listRelationships
+      tags: [Traceability]
+      summary: List directed relationships, optionally around one artifact
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: artifact_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: direction
+          in: query
+          description: Source means outgoing; target means incoming.
+          schema:
+            type: string
+            enum: [both, source, target]
+            default: both
+      responses:
+        "200":
+          description: Current typed relationships bound to exact endpoint revisions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RelationshipListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    post:
+      operationId: createRelationship
+      tags: [Traceability]
+      summary: Create a directed relationship at the endpoints' current revisions
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRelationshipRequest"
+      responses:
+        "200":
+          description: Idempotent replay of an existing successful command.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Relationship"
+        "201":
+          description: Directed relationship created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Relationship"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/relationships/{relationship_id}/resolve:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/RelationshipId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+      - $ref: "#/components/parameters/IdempotencyHeader"
+    post:
+      operationId: resolveSuspectRelationship
+      tags: [Traceability]
+      summary: Record a reviewer disposition against exact endpoint revisions
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveRelationshipRequest"
+      responses:
+        "200":
+          description: Suspect impact resolved, or an idempotent replay returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Relationship"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/relationships/{relationship_id}/revisions:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/RelationshipId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: listRelationshipRevisions
+      tags: [Traceability]
+      summary: List immutable relationship versions newest first
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Attributable relationship version history.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RelationshipRevisionListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
 components:
   securitySchemes:
     bearerAuth:
@@ -536,6 +704,13 @@ components:
         format: uuid
     RequirementId:
       name: requirement_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RelationshipId:
+      name: relationship_id
       in: path
       required: true
       schema:
@@ -781,6 +956,8 @@ components:
         - created_by
         - created_at
         - updated_at
+        - version_created_by
+        - version_created_at
       properties:
         id:
           type: string
@@ -972,6 +1149,208 @@ components:
         imported:
           type: integer
           minimum: 1
+    RelationshipType:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - key
+        - name
+        - source_artifact_type
+        - target_artifact_type
+        - max_targets_per_source
+        - max_sources_per_target
+        - propagates_suspect
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+        name:
+          type: string
+        source_artifact_type:
+          type: string
+        target_artifact_type:
+          type: string
+        max_targets_per_source:
+          type: [integer, "null"]
+          minimum: 1
+        max_sources_per_target:
+          type: [integer, "null"]
+          minimum: 1
+        propagates_suspect:
+          type: boolean
+    RelationshipTypeListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RelationshipType"
+    CreateRelationshipRequest:
+      type: object
+      additionalProperties: false
+      required: [relationship_type_id, source_artifact_id, target_artifact_id]
+      properties:
+        relationship_type_id:
+          type: string
+          format: uuid
+        source_artifact_id:
+          type: string
+          format: uuid
+        target_artifact_id:
+          type: string
+          format: uuid
+    ResolveRelationshipRequest:
+      type: object
+      additionalProperties: false
+      required: [expected_version, disposition]
+      properties:
+        expected_version:
+          type: integer
+          minimum: 1
+        disposition:
+          type: string
+          minLength: 1
+          maxLength: 2000
+    Relationship:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - project_id
+        - relationship_type_id
+        - relationship_type_key
+        - relationship_type_name
+        - source_artifact_id
+        - source_key
+        - source_title
+        - source_revision
+        - target_artifact_id
+        - target_key
+        - target_title
+        - target_revision
+        - version
+        - suspect
+        - suspect_reason
+        - disposition
+        - created_by
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        relationship_type_id:
+          type: string
+          format: uuid
+        relationship_type_key:
+          type: string
+        relationship_type_name:
+          type: string
+        source_artifact_id:
+          type: string
+          format: uuid
+        source_key:
+          type: string
+        source_title:
+          type: string
+        source_revision:
+          type: integer
+          minimum: 1
+        target_artifact_id:
+          type: string
+          format: uuid
+        target_key:
+          type: string
+        target_title:
+          type: string
+        target_revision:
+          type: integer
+          minimum: 1
+        version:
+          type: integer
+          minimum: 1
+        suspect:
+          type: boolean
+        suspect_reason:
+          type: [string, "null"]
+        disposition:
+          type: [string, "null"]
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        version_created_by:
+          type: string
+        version_created_at:
+          type: string
+          format: date-time
+    RelationshipListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Relationship"
+    RelationshipRevision:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - version
+        - source_revision
+        - target_revision
+        - suspect
+        - suspect_reason
+        - disposition
+        - created_by
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          minimum: 1
+        source_revision:
+          type: integer
+          minimum: 1
+        target_revision:
+          type: integer
+          minimum: 1
+        suspect:
+          type: boolean
+        suspect_reason:
+          type: [string, "null"]
+        disposition:
+          type: [string, "null"]
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    RelationshipRevisionListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RelationshipRevision"
     ErrorEnvelope:
       type: object
       additionalProperties: false

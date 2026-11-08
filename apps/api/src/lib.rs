@@ -1,8 +1,10 @@
 pub mod auth;
 pub mod config;
 pub mod error;
+pub mod outbox;
 pub mod policy;
 pub mod projects;
+pub mod relationships;
 pub mod requirements;
 
 use std::time::Duration;
@@ -145,6 +147,22 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/projects/{project_id}/requirements/{requirement_id}/compare",
             get(requirements::compare_requirement_revisions),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/relationship-types",
+            get(relationships::list_relationship_types),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/relationships",
+            get(relationships::list_relationships).post(relationships::create_relationship),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/relationships/{relationship_id}/resolve",
+            axum::routing::post(relationships::resolve_relationship),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/relationships/{relationship_id}/revisions",
+            get(relationships::list_relationship_revisions),
         )
         .fallback(not_found)
         .with_state(state)
