@@ -110,9 +110,9 @@ const DEVELOPMENT_PHASES = [
     id: "phase-4",
     number: "04",
     name: "Evidence",
-    window: "Hosted gate pending",
-    status: "active",
-    outcome: "Review-to-verification signed gate implemented",
+    window: "Complete",
+    status: "complete",
+    outcome: "Protected review-to-verification gate passed",
   },
   {
     id: "phase-5",
@@ -131,7 +131,7 @@ const DEVELOPMENT_WORKSTREAMS = [
     progress: 100,
     status: "Review and verification live",
     tone: "mint",
-    now: "Pass the protected Phase 4 browser and database gates",
+    now: "Begin the Phase 5 integration and operations slice",
   },
   {
     name: "Platform & API",
@@ -161,9 +161,9 @@ const DEVELOPMENT_WORKSTREAMS = [
     name: "Quality & delivery",
     icon: TestTube2,
     progress: 100,
-    status: "Phase 4 local gate green",
+    status: "Phase 4 protected gate green",
     tone: "mint",
-    now: "Record protected hosted evidence and close Phase 4",
+    now: "Extend the protected matrix through Phase 5",
   },
   {
     name: "Operations",
@@ -193,9 +193,9 @@ const DEVELOPMENT_BACKLOG = [
   { id: "REQ-105", horizon: "now", priority: "P1", title: "Add folders, tags, attributes, and saved views", stream: "Product", effort: "5d", status: "Complete" },
   { id: "REQ-106", horizon: "now", priority: "P1", title: "Add import, export, comparison, accessibility, and E2E", stream: "Quality", effort: "4d", status: "Complete" },
   { id: "REQ-001", horizon: "now", priority: "P0", title: "Complete requirements vertical slice", stream: "Product", effort: "4w", status: "Complete" },
-  { id: "TRC-001", horizon: "next", priority: "P0", title: "Deliver traceability and baselines", stream: "Product", effort: "4w", status: "Local gate passed" },
+  { id: "TRC-001", horizon: "next", priority: "P0", title: "Deliver traceability and baselines", stream: "Product", effort: "4w", status: "Complete" },
   { id: "REV-101", horizon: "next", priority: "P0", title: "Deliver controlled reviews and signed approvals", stream: "Product", effort: "2w", status: "Complete" },
-  { id: "VER-101", horizon: "next", priority: "P0", title: "Deliver verification execution and gate readiness", stream: "Product", effort: "2w", status: "Local gate passed" },
+  { id: "VER-101", horizon: "next", priority: "P0", title: "Deliver verification execution and gate readiness", stream: "Product", effort: "2w", status: "Complete" },
 ];
 
 const COMMITS = [
@@ -430,7 +430,7 @@ function DevelopmentDashboard({ notify }) {
       .join("\n");
 
     try {
-      await navigator.clipboard.writeText(`OpenRM Phase 4 completion — protected gate pending\n${brief}`);
+      await navigator.clipboard.writeText(`OpenRM Phase 5 kickoff — Phase 4 protected gate passed\n${brief}`);
       notify("Current sprint brief copied");
     } catch {
       notify("Sprint brief is listed in IMPLEMENTATION_PLAN.md");
@@ -462,28 +462,28 @@ function DevelopmentDashboard({ notify }) {
       <section className="development-command panel">
         <div className="development-command-copy">
           <div className="phase-status-row">
-            <span className="phase-chip"><span /> Phase 4 hosted gate pending</span>
+            <span className="phase-chip"><span /> Phase 4 complete</span>
             <span className="baseline-date">17-week beta path</span>
           </div>
           <p className="panel-kicker">Current delivery objective</p>
-          <h2>Protect the complete review-to-verification gate.</h2>
+          <h2>Begin integration and beta hardening from a protected baseline.</h2>
           <p>
             Phase 4 now provides controlled review packages, independent approvals, immutable verification
             procedures, signed results and attachments, exact-revision coverage, explainable readiness, due events,
-            and deterministic complete gate export. Local PostgreSQL, browser, and accessibility gates pass.
+            and deterministic complete gate export. Local and protected hosted gates pass.
           </p>
           <div className="command-meta">
-            <span><GitBranch size={14} /> Stage: Phase 4 implementation complete</span>
-            <span><BadgeCheck size={14} /> Next gate: Protected hosted evidence</span>
+            <span><GitBranch size={14} /> Stage: Phase 4 complete</span>
+            <span><BadgeCheck size={14} /> Next: Phase 5 integration and operations</span>
           </div>
         </div>
         <div className="gate-card">
           <div className="gate-card-head">
             <div>
               <span>Phase 4 exit evidence</span>
-              <strong>7 / 8 evidence checks</strong>
+              <strong>8 / 8 evidence checks</strong>
             </div>
-            <div className="gate-score active">88%</div>
+            <div className="gate-score complete">100%</div>
           </div>
           <div className="gate-checks">
             <span className="complete"><CheckCircle2 size={13} /> Baseline-bound review packages</span>
@@ -493,7 +493,7 @@ function DevelopmentDashboard({ notify }) {
             <span className="complete"><CheckCircle2 size={13} /> Exact coverage and readiness</span>
             <span className="complete"><CheckCircle2 size={13} /> Due events and deterministic export</span>
             <span className="complete"><CheckCircle2 size={13} /> Browser workflows and WCAG A/AA</span>
-            <span><CircleDot size={13} /> Protected hosted checks pending</span>
+            <span className="complete"><CheckCircle2 size={13} /> Protected hosted checks passed</span>
           </div>
         </div>
       </section>
@@ -611,7 +611,7 @@ function DevelopmentDashboard({ notify }) {
 
       <div className="dashboard-source-note">
         <FileCheck2 size={16} />
-        <p><strong>Source of truth:</strong> Phase 4 review-to-verification implementation passes clean PostgreSQL, API, browser, accessibility, deterministic-export, isolation, and append-only history gates locally. Protected hosted evidence is pending.</p>
+        <p><strong>Source of truth:</strong> Phase 4 review-to-verification evidence passed clean PostgreSQL, API, browser, accessibility, deterministic-export, isolation, and append-only history gates locally and in protected OpenRM CI run 42504423145.</p>
       </div>
     </>
   );

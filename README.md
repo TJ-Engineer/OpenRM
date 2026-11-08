@@ -6,7 +6,7 @@ OpenRM is an open, self-hostable configuration and requirements management platf
 
 ## Development status
 
-**Current stage:** 🟡 Phase 4 implementation is complete locally; protected hosted evidence is pending (updated 8 November 2026).
+**Current stage:** 🟢 Phase 4 is complete; Phase 5 integration and beta hardening is next (updated 8 November 2026).
 
 - 🟢 Phase 0, the interactive prototype and static delivery preview, is complete.
 - 🟢 Phase 1 is complete: all foundation deliverables and local evidence checks are implemented.
@@ -15,7 +15,7 @@ OpenRM is an open, self-hostable configuration and requirements management platf
 - 🟢 Phase 2 is complete. Teams can create isolated projects, assign scoped roles, create and revise requirements, organize with folders and tags, validate typed attributes, save filtered views, compare history, and import/export JSON.
 - 🟢 Controlled revisions and audit events are append-only, create/revise commands are idempotent, stale edits are rejected, and the primary browser workflow passes automated WCAG A/AA checks.
 - 🟢 Phase 3 is complete: live graph/matrix/coverage queries, gap reporting, directed relationship controls, asynchronous suspect propagation, reviewer dispositions, attributable changesets, immutable baseline comparison, and deterministic signed evidence export pass locally and in [protected OpenRM CI run 42499758656](https://github.com/TJ-Engineer/OpenRM/actions/runs/42499758656).
-- 🟡 Phase 4 implementation is complete locally: baseline-bound reviews, segregation-of-duty approvals, immutable verification procedures, independent runs, signed results, content-addressed attachments, exact-revision coverage, explainable readiness, due events, and deterministic complete gate export pass clean PostgreSQL and Chromium gates. Protected hosted evidence is pending for this branch.
+- 🟢 Phase 4 is complete: baseline-bound reviews, segregation-of-duty approvals, immutable verification procedures, independent runs, signed results, content-addressed attachments, exact-revision coverage, explainable readiness, due events, and deterministic complete gate export pass locally and in [protected OpenRM CI run 42504423145](https://github.com/TJ-Engineer/OpenRM/actions/runs/42504423145).
 
 See the [development dashboard](DEVELOPMENT_DASHBOARD.md) for current evidence, priorities, gaps, and per-phase time/token accounting, and the [implementation plan](IMPLEMENTATION_PLAN.md) for the full roadmap and exit criteria.
 

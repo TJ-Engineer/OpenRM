@@ -1,11 +1,11 @@
 # OpenRM development dashboard
 
-**Last verified:** 8 November 2026, 11:13 CST<br>
+**Last verified:** 8 November 2026, 11:22 CST<br>
 **Foundation evidence commit:** `fc6687f`<br>
 **Phase 2 evidence commit:** `f498031`<br>
 **Phase 3 implementation evidence commit:** `4f50618`<br>
-**Phase 4 implementation evidence:** local branch validation complete; protected CI pending<br>
-**Overall status:** 🟡 Phase 4 implementation complete; protected hosted gate pending
+**Phase 4 protected evidence:** [OpenRM CI run 42504423145](https://github.com/TJ-Engineer/OpenRM/actions/runs/42504423145)<br>
+**Overall status:** 🟢 Phase 4 complete; Phase 5 integration and beta hardening is next
 
 This file is the repository-level status dashboard. It summarizes delivery evidence and immediate priorities; [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) remains the source for scope, architecture, phase definitions, and exit gates.
 
@@ -17,12 +17,12 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | --- | --- | --- |
 | Phase 0 — Prototype and delivery preview | 🟢 Complete | Interactive React preview and restricted static AWS delivery path are implemented. |
 | Phase 1 — Foundation | 🟢 Complete | All foundation deliverables, local checks, hosted CI jobs, and protected-branch controls are complete. |
-| Hosted CI | 🟢 Passed | `web`, `api`, and `database-path` passed the complete Phase 3 matrix in [OpenRM CI run 42499758656](https://github.com/TJ-Engineer/OpenRM/actions/runs/42499758656). |
+| Hosted CI | 🟢 Passed | `web`, `api`, and `database-path` passed the complete Phase 4 matrix in [OpenRM CI run 42504423145](https://github.com/TJ-Engineer/OpenRM/actions/runs/42504423145). |
 | `main` branch protection | 🟢 Enforced | Requires `web`, `api`, and `database-path`; applies to administrators; disallows force-pushes and deletion. |
 | Phase 2 — Requirements vertical slice | 🟢 Complete | The API-backed authoring workflow, organization controls, isolated roles, controlled history, import/export, browser E2E, and WCAG A/AA evidence passed the exit gate. |
 | Requirements runtime path | 🟢 Protected CI passed | The complete two-project authoring and isolation path passed against PostgreSQL 17 in [OpenRM CI run 42492278928](https://github.com/TJ-Engineer/OpenRM/actions/runs/42492278928). |
 | Phase 3 — Traceability and controlled change | 🟢 Complete | The complete trace, impact, changeset, baseline, comparison, and signed-export slice passed locally and in protected CI. |
-| Phase 4 — Reviews and verification | 🟡 Hosted gate pending | The complete review-to-verification signed-evidence exit path passes locally; protected hosted evidence remains open. |
+| Phase 4 — Reviews and verification | 🟢 Complete | The complete review-to-verification signed-evidence exit path passes locally and in protected hosted CI. |
 | Production API and database | ⚪ Not deployed | Deployment environments, production OIDC, observability, and recovery controls remain future work. |
 
 ## Phase progress
@@ -33,7 +33,7 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | 🟢 | 1. Foundation | Complete | Web, Rust API, PostgreSQL migrations, OpenAPI generation, OIDC/policy harness, ADRs, bootstrap, hosted CI, and branch protection are verified. |
 | 🟢 | 2. Requirements vertical slice | Complete | Live authoring, project roles, organization, validation, immutable history, comparison, import/export, audit, E2E, and accessibility evidence are verified. |
 | 🟢 | 3. Traceability and controlled change | Complete | Directed relationships, trace queries, asynchronous impact, attributable changesets, immutable baselines, comparison, and signed export are protected-CI verified. |
-| 🟡 | 4. Reviews and verification | Implementation complete | Reviews, independent verification, exact coverage, readiness, due events, and complete signed export are locally verified; hosted CI is pending. |
+| 🟢 | 4. Reviews and verification | Complete | Reviews, independent verification, exact coverage, readiness, due events, and complete signed export are protected-CI verified. |
 | ⚪ | 5. Integration and beta hardening | Planned | Jira connector, observability, recovery, security hardening, performance, and pilot operations. |
 
 ## Phase time and token usage
@@ -46,7 +46,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 1. Foundation | Complete; partial usage history | `N/R` | 8 Nov 2026 | `N/R` historical + 0.1 h tracked | `N/R` |
 | 2. Requirements vertical slice | Complete; partial usage telemetry | 8 Nov 2026 | 8 Nov 2026 | 1.1 h tracked | `N/R` |
 | 3. Traceability and controlled change | Complete | 8 Nov 2026 | 8 Nov 2026 | 0.7 h | `N/R` |
-| 4. Reviews and verification | Implementation complete; hosted gate pending | 8 Nov 2026 | — | 0.8 h | `N/R` |
+| 4. Reviews and verification | Complete | 8 Nov 2026 | 8 Nov 2026 | 0.9 h | `N/R` |
 | 5. Integration and beta hardening | Not started | — | — | 0 h | 0 |
 
 ### Usage change log
@@ -64,6 +64,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 8 November 2026, 10:43 CST | 4 | 0.3 h | `N/R` | Implemented baseline-bound reviews, policy-controlled signed decisions, live Review Room, Chromium/WCAG coverage, and a clean PostgreSQL runtime and immutability matrix. |
 | 8 November 2026, 11:09 CST | 4 | 0.4 h | `N/R` | Completed immutable verification planning/execution, signed results and attachments, exact coverage, explainable readiness, due events, complete deterministic export, live browser workflow, and a second clean PostgreSQL exit matrix. |
 | 8 November 2026, 11:13 CST | 4 | 0.1 h | `N/R` | Replayed the complete signed export with review discussion and lifecycle evidence, passed the full nine-test Chromium suite, and completed the final contract, CI-definition, and diff audit. |
+| 8 November 2026, 11:22 CST | 4 | 0.1 h | `N/R` | Protected `web`, `api`, and `database-path` checks passed in OpenRM CI run 42504423145; Phase 4 closure evidence recorded. |
 
 ### Usage accounting rules
 
@@ -102,9 +103,9 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 
 ## Current priorities
 
-1. Record protected hosted Phase 4 evidence and close the phase.
-2. Merge the completed Phase 4 branch through protected `main`.
-3. Begin Phase 5 API deployment, production OIDC, observability, recovery, and integration work.
+1. Begin Phase 5 API deployment and production OIDC integration.
+2. Add service observability, backup/restore validation, and recovery rehearsals.
+3. Deliver the first live connector with replay and failure handling.
 
 ## Phase 3 completion evidence
 
@@ -125,7 +126,7 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 | Append-only controlled history | 🟢 Locally verified | PostgreSQL rejected updates to audit events, artifact revisions, relationship revisions, changesets, and baselines. |
 | Protected hosted evidence | 🟢 CI verified | `web`, `api`, and `database-path` passed in [OpenRM CI run 42499758656](https://github.com/TJ-Engineer/OpenRM/actions/runs/42499758656) for the final Phase 3 branch state. |
 
-## Phase 4 completion evidence (hosted gate pending)
+## Phase 4 completion evidence
 
 | Capability | State | Evidence |
 | --- | --- | --- |
@@ -147,7 +148,7 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 | Verification immutability | 🟢 Locally verified | PostgreSQL rejected updates to cases, exact targets, run events, results, attachment manifests, and due events. |
 | Live Verification workspace | 🟢 Browser verified | Chromium plans and executes a case, records signed attachment evidence, observes 100% coverage/readiness, and exports the gate package. |
 | Verification accessibility | 🟢 Browser verified | The live Verification workspace has no automatically detectable WCAG 2 A/AA violations. |
-| Protected hosted evidence | 🟡 Pending | CI contains the extended browser and PostgreSQL matrix; a protected branch run has not yet been recorded. |
+| Protected hosted evidence | 🟢 CI verified | `web`, `api`, and `database-path` passed in [OpenRM CI run 42504423145](https://github.com/TJ-Engineer/OpenRM/actions/runs/42504423145) for the complete Phase 4 branch state. |
 
 ## Known delivery gaps
 

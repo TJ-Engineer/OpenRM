@@ -1,7 +1,7 @@
 # OpenRM implementation plan
 
 **Planning baseline:** 7 November 2026  
-**Current stage:** Phase 4 implementation complete; protected hosted gate pending
+**Current stage:** Phase 4 complete; Phase 5 integration and beta hardening is next
 
 **Primary outcome:** Deliver a self-hostable configuration and requirements management platform with controlled change, end-to-end traceability, review evidence, and verification records.
 
@@ -35,7 +35,7 @@ What does not exist yet:
 - Release automation, full observability, or recovery validation.
 - Live Jira or other connector implementations.
 
-The next engineering gate must record the completed Phase 4 browser and PostgreSQL evidence in protected hosted CI before the branch is merged to `main`.
+The next engineering gate is the first Phase 5 integration-and-operations slice: deployed identity, observable service health, and a rehearsed recovery path.
 
 ## 2. Delivery principles
 
@@ -184,7 +184,7 @@ Exit evidence:
 
 **Outcome:** Gate decisions can be made from attributable review and verification evidence.
 
-**Status:** Implementation complete and locally verified on 8 November 2026. The protected hosted CI gate remains open before formal phase closure.
+**Status:** Complete on 8 November 2026. The complete review-to-verification path passed local gates and protected hosted CI.
 
 Deliverables:
 
@@ -208,6 +208,7 @@ Completion evidence:
 - Repeated complete gate exports were byte-for-byte identical and returned a valid HMAC-SHA256 signature over review decisions, verification cases, runs, results, attachments, coverage, readiness, and due events.
 - Direct changes to cases, targets, run events, results, attachment manifests, and due events were rejected by PostgreSQL append-only triggers.
 - Chromium passes planning, execution, result capture, coverage/readiness, signed export, and automated WCAG 2 A/AA verification workflows.
+- [OpenRM CI run 42504423145](https://github.com/TJ-Engineer/OpenRM/actions/runs/42504423145) passed `web`, `api`, and `database-path` for the complete Phase 4 branch state.
 
 ### Phase 5 — Integration and beta hardening (Weeks 15–17)
 
@@ -239,7 +240,7 @@ Exit gate:
 | WEB-001 | P1 | Migrate the client to TypeScript and API client | Typecheck + build | 3 days |
 | QLT-001 | P0 | Add CI quality and security gates | Protected CI run | 2 days |
 
-FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1, Phase 2, and Phase 3 are closed; Phase 4 implementation is complete with protected hosted evidence pending.
+FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1, Phase 2, Phase 3, and Phase 4 are closed.
 
 ## 5.1 Phase 2 execution backlog
 
@@ -271,7 +272,7 @@ FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-
 | REV-101 | P0 | Persist baseline-bound packages, participants, comments, resolutions, and decisions | Complete | Migration plus clean PostgreSQL workflow |
 | REV-102 | P0 | Enforce approval threshold, segregation of duties, replay, tenancy, and audit | Complete | Policy denial and signed-decision runtime matrix |
 | REV-103 | P0 | Connect the Review Room to live review evidence | Complete | Chromium workflow and WCAG A/AA scan |
-| REV-104 | P0 | Protect the complete Phase 4 matrix in hosted CI | Ready | Extended `web`, `api`, and `database-path`; hosted run pending |
+| REV-104 | P0 | Protect the complete Phase 4 matrix in hosted CI | Complete | `web`, `api`, and `database-path` passed in run `42504423145` |
 | VER-101 | P0 | Persist verification cases, procedures, runs, results, and attachments | Complete | Migration, API, clean PostgreSQL workflow, and immutable evidence matrix |
 | VER-102 | P0 | Roll verification evidence into requirement coverage and gate readiness | Complete | Exact-revision coverage, explainable readiness, and browser evidence |
 | NTF-101 | P1 | Emit review and verification due-date notifications | Complete | Idempotent due-soon, overdue, and completion events |
