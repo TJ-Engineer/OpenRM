@@ -1,8 +1,8 @@
 # OpenRM development dashboard
 
-**Last verified:** 8 November 2026, 08:00 CST  
-**Foundation evidence commit:** `fc6687f`  
-**Overall status:** 🟢 Phase 1 complete; Phase 2 is ready for decomposition
+**Last verified:** 8 November 2026, 08:12 CST<br>
+**Foundation evidence commit:** `fc6687f`<br>
+**Overall status:** 🟡 Phase 2 active; first requirements API/data increment verified locally
 
 This file is the repository-level status dashboard. It summarizes delivery evidence and immediate priorities; [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) remains the source for scope, architecture, phase definitions, and exit gates.
 
@@ -16,7 +16,8 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | Phase 1 — Foundation | 🟢 Complete | All foundation deliverables, local checks, hosted CI jobs, and protected-branch controls are complete. |
 | Hosted CI | 🟢 Passed | `web`, `api`, and `database-path` passed in [Foundation CI run 42486750287](https://github.com/TJ-Engineer/OpenRM/actions/runs/42486750287). |
 | `main` branch protection | 🟢 Enforced | Requires `web`, `api`, and `database-path`; applies to administrators; disallows force-pushes and deletion. |
-| Phase 2 — Requirements vertical slice | ⚪ Ready | Decompose the first durable requirements-management vertical slice. |
+| Phase 2 — Requirements vertical slice | 🟡 Active | First API/data increment is implemented; authoring UI and remaining product capabilities are next. |
+| Requirements runtime path | 🟢 Verified locally | Create/replay/revise/search/history/audit behavior passed against PostgreSQL 17. |
 | Production API and database | ⚪ Not deployed | Deployment environments, production OIDC, observability, and recovery controls remain future work. |
 
 ## Phase progress
@@ -25,7 +26,7 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | --- | --- | --- | --- |
 | 🟢 | 0. Prototype and preview | Complete | Product surfaces, guided preview, and static hosting path are available. |
 | 🟢 | 1. Foundation | Complete | Web, Rust API, PostgreSQL migrations, OpenAPI generation, OIDC/policy harness, ADRs, bootstrap, hosted CI, and branch protection are verified. |
-| ⚪ | 2. Requirements vertical slice | Planned | Durable projects, artifacts, revision history, roles, search, import/export, and audit events. |
+| 🟡 | 2. Requirements vertical slice | Active | Project discovery, durable requirements, revision history, concurrency, idempotent creation, search, and audit are implemented; UI and remaining capabilities are pending. |
 | ⚪ | 3. Traceability and controlled change | Planned | Typed relationships, impact analysis, changesets, baselines, and deterministic evidence export. |
 | ⚪ | 4. Reviews and verification | Planned | Review packages, approvals, verification runs, coverage, and gate readiness. |
 | ⚪ | 5. Integration and beta hardening | Planned | Jira connector, observability, recovery, security hardening, performance, and pilot operations. |
@@ -38,7 +39,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | --- | --- | --- | --- | ---: | ---: |
 | 0. Prototype and preview | Historical usage unavailable | `N/R` | Before tracking baseline | `N/R` | `N/R` |
 | 1. Foundation | Complete; partial usage history | `N/R` | 8 Nov 2026 | `N/R` historical + 0.1 h tracked | `N/R` |
-| 2. Requirements vertical slice | Not started | — | — | 0 h | 0 |
+| 2. Requirements vertical slice | Active; partial usage telemetry | 8 Nov 2026 | — | 0.2 h tracked | `N/R` |
 | 3. Traceability and controlled change | Not started | — | — | 0 h | 0 |
 | 4. Reviews and verification | Not started | — | — | 0 h | 0 |
 | 5. Integration and beta hardening | Not started | — | — | 0 h | 0 |
@@ -49,6 +50,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | --- | --- | ---: | ---: | --- |
 | 8 November 2026, 07:56 CST | 0–1 | `N/R` | `N/R` | Tracking baseline created; earlier session telemetry is unavailable. |
 | 8 November 2026, 08:00 CST | 1 | 0.1 h | `N/R` | Branch protection, closure status updates, and local validation. Token telemetry is unavailable. |
+| 8 November 2026, 08:12 CST | 2 | 0.2 h | `N/R` | First requirements API/data increment, contract, migration, CI path, and PostgreSQL runtime validation. |
 
 ### Usage accounting rules
 
@@ -71,11 +73,23 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 
 Local foundation evidence passed on 7 November 2026: clean install, generated types, lint, typecheck, three web tests, production build, eight Rust tests, clippy, two database migrations, authenticated runtime requests, and dependency audits with no known vulnerabilities.
 
+## Phase 2 increment evidence
+
+| Capability | State | Evidence |
+| --- | --- | --- |
+| Project discovery | 🟢 Implemented | Tenant-scoped project list endpoint and typed contract. |
+| Requirement persistence | 🟢 Implemented | Materialized artifacts with immutable revision rows and composite tenant foreign keys. |
+| Authoring commands | 🟢 API verified | Create and revise paths validated against PostgreSQL 17. |
+| Concurrency and replay | 🟢 API verified | Stale revision rejected with `409`; repeated create key returned the original artifact. |
+| Search and pagination | 🟢 API verified | PostgreSQL full-text query plus bounded limit/offset response. |
+| Audit evidence | 🟢 API verified | Create and revise committed two tenant/project-scoped audit events transactionally. |
+| Web authoring workflow | ⚪ Ready | Generated TypeScript contract and command headers exist; screen integration remains. |
+
 ## Current priorities
 
-1. Decompose Phase 2 into the first requirements-management vertical slice.
-2. Define acceptance criteria for projects, artifacts, revisions, roles, and audit events.
-3. Implement the first contract-led vertical path through web, API, policy, and PostgreSQL.
+1. Connect the requirements authoring screen to the generated API client.
+2. Expand policy coverage for project roles and cross-project isolation.
+3. Add folders, tags, typed attributes, saved views, comparison, and import/export in thin increments.
 
 ## Known delivery gaps
 

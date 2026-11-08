@@ -1,7 +1,7 @@
 # OpenRM implementation plan
 
 **Planning baseline:** 7 November 2026  
-**Current stage:** Phase 1 foundation complete → Phase 2 requirements vertical slice ready
+**Current stage:** Phase 2 requirements vertical slice in progress
 **Primary outcome:** Deliver a self-hostable configuration and requirements management platform with controlled change, end-to-end traceability, review evidence, and verification records.
 
 ## 1. Current state
@@ -21,6 +21,7 @@ What exists now:
 - PostgreSQL migrations, deterministic development seed, Docker Compose, and a one-command bootstrap.
 - GitHub Actions workflow for web, Rust, dependency audits, migrations, and an authenticated database-backed request.
 - Protected `main` branch requiring the `web`, `api`, and `database-path` GitHub Actions checks.
+- First requirements increment with tenant-scoped project discovery, materialized artifacts, immutable revisions, idempotent creation, optimistic concurrency, search, and audit events.
 
 What does not exist yet:
 
@@ -112,6 +113,24 @@ Local evidence:
 
 **Outcome:** A team can create, revise, organize, search, and inspect requirements with durable history.
 
+**Status:** In progress from 8 November 2026. The first API/data increment is implemented and locally verified; the authoring UI and remaining Phase 2 capabilities are next.
+
+Implemented increment:
+
+- [x] Tenant-scoped project discovery and requirement list/read operations.
+- [x] Materialized current artifacts with immutable revision history.
+- [x] Idempotent requirement creation and optimistic revision concurrency.
+- [x] PostgreSQL full-text requirement search with offset pagination.
+- [x] Transactional create/revise audit evidence.
+- [x] OpenAPI contract and generated TypeScript types for the new endpoints.
+- [x] Database-path CI coverage for create, replay, revise, history, search, and audit evidence.
+
+Next increment:
+
+- [ ] Connect the requirements authoring UI to the typed API.
+- [ ] Add project-scoped roles, folders, tags, typed custom attributes, and saved views.
+- [ ] Add comparison, import/export, accessibility, and browser end-to-end evidence.
+
 Deliverables:
 
 - [ ] Projects, artifact types, artifacts, folders, tags, and custom attributes.
@@ -190,7 +209,19 @@ Exit gate:
 | WEB-001 | P1 | Migrate the client to TypeScript and API client | Typecheck + build | 3 days |
 | QLT-001 | P0 | Add CI quality and security gates | Protected CI run | 2 days |
 
-FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1 is closed; REQ-000 decomposition is the next work item.
+FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1 is closed; REQ-000, REQ-101, and REQ-102 now establish the first Phase 2 increment.
+
+## 5.1 Phase 2 execution backlog
+
+| ID | Priority | Work item | Status | Primary evidence |
+| --- | --- | --- | --- | --- |
+| REQ-000 | P1 | Decompose the requirements vertical slice | Complete | Contract-led increment defined |
+| REQ-101 | P0 | Persist requirements and immutable revisions | Complete | Migration and database-path test |
+| REQ-102 | P0 | Create, list, read, revise, search, and inspect history | Complete | API contract and runtime checks |
+| REQ-103 | P0 | Enforce concurrency, idempotency, tenancy, and audit | In progress | Create/revise evidence complete; broader policy suite pending |
+| REQ-104 | P0 | Connect the authoring UI to the API | Ready | Browser workflow |
+| REQ-105 | P1 | Add folders, tags, typed attributes, and saved views | Planned | API and UI acceptance tests |
+| REQ-106 | P1 | Add import/export, comparison, accessibility, and E2E | Planned | Evidence suite |
 
 ## 6. Quality gates
 

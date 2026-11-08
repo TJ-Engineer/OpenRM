@@ -107,8 +107,8 @@ const DEVELOPMENT_PHASES = [
     number: "02",
     name: "Requirements",
     window: "Weeks 3–6",
-    status: "queued",
-    outcome: "Durable authoring and revision history",
+    status: "active",
+    outcome: "First API/data increment verified locally",
   },
   {
     id: "phase-3",
@@ -148,18 +148,18 @@ const DEVELOPMENT_WORKSTREAMS = [
   {
     name: "Platform & API",
     icon: ServerCog,
-    progress: 40,
-    status: "Hosted foundation verified",
+    progress: 52,
+    status: "Requirements API implemented",
     tone: "blue",
-    now: "Extend the contract through the Phase 2 requirements slice",
+    now: "Connect the authoring screen to the typed requirements contract",
   },
   {
     name: "Data & versioning",
     icon: Database,
-    progress: 28,
-    status: "Migrations verified",
+    progress: 42,
+    status: "Immutable revisions verified",
     tone: "mint",
-    now: "Extend the accepted revision model in the Phase 2 vertical slice",
+    now: "Add folders, tags, and typed project attributes",
   },
   {
     name: "Security & identity",
@@ -197,8 +197,13 @@ const DEVELOPMENT_BACKLOG = [
   { id: "SEC-001", horizon: "now", priority: "P0", title: "Prove OIDC identity and policy harness", stream: "Security", effort: "3d", status: "Complete" },
   { id: "WEB-001", horizon: "now", priority: "P1", title: "Migrate client to TypeScript API client", stream: "Web", effort: "3d", status: "Complete" },
   { id: "QLT-002", horizon: "now", priority: "P0", title: "Run hosted CI and protect the main branch", stream: "Quality", effort: "1d", status: "Complete" },
-  { id: "REQ-000", horizon: "now", priority: "P1", title: "Decompose the requirements vertical slice", stream: "Product", effort: "2d", status: "Ready" },
-  { id: "REQ-001", horizon: "later", priority: "P0", title: "Deliver requirements vertical slice", stream: "Product", effort: "4w", status: "Phase 2" },
+  { id: "REQ-000", horizon: "now", priority: "P1", title: "Decompose the requirements vertical slice", stream: "Product", effort: "2d", status: "Complete" },
+  { id: "REQ-101", horizon: "now", priority: "P0", title: "Persist requirements and immutable revisions", stream: "Data", effort: "3d", status: "Complete" },
+  { id: "REQ-102", horizon: "now", priority: "P0", title: "Create, search, read, revise, and inspect history", stream: "API", effort: "4d", status: "Complete" },
+  { id: "REQ-103", horizon: "now", priority: "P0", title: "Enforce concurrency, idempotency, tenancy, and audit", stream: "Security", effort: "3d", status: "In progress" },
+  { id: "REQ-104", horizon: "next", priority: "P0", title: "Connect the authoring UI to the API", stream: "Web", effort: "4d", status: "Ready" },
+  { id: "REQ-105", horizon: "next", priority: "P1", title: "Add folders, tags, attributes, and saved views", stream: "Product", effort: "5d", status: "Planned" },
+  { id: "REQ-001", horizon: "later", priority: "P0", title: "Complete requirements vertical slice", stream: "Product", effort: "4w", status: "Phase 2" },
   { id: "TRC-001", horizon: "later", priority: "P0", title: "Deliver traceability and baselines", stream: "Product", effort: "4w", status: "Phase 3" },
 ];
 
@@ -592,45 +597,45 @@ function DevelopmentDashboard({ notify }) {
       <section className="development-command panel">
         <div className="development-command-copy">
           <div className="phase-status-row">
-            <span className="phase-chip complete"><span /> Phase 1 complete</span>
+            <span className="phase-chip active"><span /> Phase 2 active</span>
             <span className="baseline-date">17-week beta path</span>
           </div>
           <p className="panel-kicker">Current delivery objective</p>
-          <h2>Build the requirements vertical slice on a protected foundation.</h2>
+          <h2>Turn controlled requirements into a durable product workflow.</h2>
           <p>
-            The TypeScript client, Rust service, PostgreSQL migrations, generated contract, authentication policy,
-            and dependency audits pass in hosted CI. Main is protected by the web, API, and database checks, closing
-            Phase 1 and making the durable requirements workflow the next delivery gate.
+            The first Phase 2 increment now persists tenant-scoped requirements and immutable revisions, rejects stale
+            edits, replays create commands safely, searches current content, and records audit evidence. The next step
+            is to connect these typed operations to the authoring screen and extend project organization controls.
           </p>
           <div className="command-meta">
-            <span><GitBranch size={14} /> Stage: Foundation complete</span>
-            <span><BadgeCheck size={14} /> Next gate: requirements vertical slice</span>
+            <span><GitBranch size={14} /> Stage: Requirements vertical slice</span>
+            <span><BadgeCheck size={14} /> Next gate: API-backed authoring workflow</span>
           </div>
         </div>
         <div className="gate-card">
           <div className="gate-card-head">
             <div>
-              <span>Phase 1 foundation gate</span>
-              <strong>7 / 7 evidence checks</strong>
+              <span>First Phase 2 increment</span>
+              <strong>6 / 7 evidence checks</strong>
             </div>
-            <div className="gate-score complete">100%</div>
+            <div className="gate-score active">86%</div>
           </div>
           <div className="gate-checks">
-            <span className="complete"><CheckCircle2 size={13} /> Clean workspace bootstraps</span>
-            <span className="complete"><CheckCircle2 size={13} /> Migrations and seed verified</span>
-            <span className="complete"><CheckCircle2 size={13} /> Authenticated API reaches data</span>
-            <span className="complete"><CheckCircle2 size={13} /> Contract generates web client</span>
-            <span className="complete"><CheckCircle2 size={13} /> Local quality and audits pass</span>
-            <span className="complete"><CheckCircle2 size={13} /> Hosted CI passes all jobs</span>
-            <span className="complete"><CheckCircle2 size={13} /> Main requires green checks</span>
+            <span className="complete"><CheckCircle2 size={13} /> Tenant-scoped project discovery</span>
+            <span className="complete"><CheckCircle2 size={13} /> Durable current state and revisions</span>
+            <span className="complete"><CheckCircle2 size={13} /> Idempotent creation and stale-edit rejection</span>
+            <span className="complete"><CheckCircle2 size={13} /> Search and bounded pagination</span>
+            <span className="complete"><CheckCircle2 size={13} /> Transactional audit evidence</span>
+            <span className="complete"><CheckCircle2 size={13} /> Typed OpenAPI web contract</span>
+            <span><CircleDot size={13} /> API-backed authoring screen</span>
           </div>
         </div>
       </section>
 
       <div className="development-metrics">
         <DeliveryMetric icon={Columns3} value="10 / 10" label="Prototype surfaces" detail="Interaction model represented" tone="mint" />
-        <DeliveryMetric icon={ServerCog} value="1 / 6" label="Production services" detail="API foundation verified in hosted CI" tone="blue" />
-        <DeliveryMetric icon={TestTube2} value="3 / 3" label="Required CI jobs" detail="Web, API, and database-path" tone="mint" />
+        <DeliveryMetric icon={ServerCog} value="6" label="Requirement operations" detail="List, create, read, revise, search, history" tone="blue" />
+        <DeliveryMetric icon={TestTube2} value="11 + 4" label="Unit tests" detail="Rust plus web client" tone="mint" />
         <DeliveryMetric icon={AlertTriangle} value="4" label="Program risks" detail="Decisions accepted; controls remain" tone="red" />
       </div>
 
@@ -740,7 +745,7 @@ function DevelopmentDashboard({ notify }) {
 
       <div className="dashboard-source-note">
         <FileCheck2 size={16} />
-        <p><strong>Source of truth:</strong> Phase 1 closed on 8 November 2026 with green hosted CI and protected-main enforcement. Phase 2 is ready for decomposition; replace static constants with delivery APIs as implementation proceeds.</p>
+        <p><strong>Source of truth:</strong> Phase 2 started on 8 November 2026. The first requirements API/data increment is locally verified; UI integration and the remaining Phase 2 exit evidence are still open.</p>
       </div>
     </>
   );

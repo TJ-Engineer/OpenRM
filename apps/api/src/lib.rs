@@ -2,6 +2,7 @@ pub mod auth;
 pub mod config;
 pub mod error;
 pub mod policy;
+pub mod requirements;
 
 use std::time::Duration;
 
@@ -100,13 +101,27 @@ pub fn router(state: AppState) -> Router {
             http::header::AUTHORIZATION,
             http::header::CONTENT_TYPE,
             HeaderName::from_static("x-openrm-organization"),
+            HeaderName::from_static("x-idempotency-key"),
         ])
-        .allow_methods([Method::GET]);
+        .allow_methods([Method::GET, Method::POST, Method::PUT]);
 
     Router::new()
         .route("/health", get(health))
         .route("/ready", get(ready))
         .route("/api/v1/session", get(session))
+        .route("/api/v1/projects", get(requirements::list_projects))
+        .route(
+            "/api/v1/projects/{project_id}/requirements",
+            get(requirements::list_requirements).post(requirements::create_requirement),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/requirements/{requirement_id}",
+            get(requirements::get_requirement).put(requirements::revise_requirement),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/requirements/{requirement_id}/revisions",
+            get(requirements::list_requirement_revisions),
+        )
         .fallback(not_found)
         .with_state(state)
         .layer(PropagateRequestIdLayer::new(request_id_header.clone()))
@@ -148,11 +163,15 @@ async fn session(
 }
 
 fn authorize_read(state: &AppState, principal: &Principal) -> Result<(), ApiError> {
+    authorize(state, principal, Action::Read)
+}
+
+fn authorize(state: &AppState, principal: &Principal, action: Action) -> Result<(), ApiError> {
     state
         .policy
-        .allows(principal, Action::Read, principal.organization_id)
+        .allows(principal, action, principal.organization_id)
         .then_some(())
-        .ok_or_else(|| ApiError::forbidden("Principal does not have read access"))
+        .ok_or_else(|| ApiError::forbidden("Principal is not authorized for this action"))
 }
 
 async fn database_check(pool: &PgPool) -> Result<(), ApiError> {

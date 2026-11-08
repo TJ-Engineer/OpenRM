@@ -16,6 +16,18 @@ export function sessionHeaders(token: string, organizationId: string): Record<st
   };
 }
 
+export function idempotentCommandHeaders(
+  token: string,
+  organizationId: string,
+  idempotencyKey: string,
+): Record<string, string> {
+  return {
+    ...sessionHeaders(token, organizationId),
+    "Content-Type": "application/json",
+    "X-Idempotency-Key": idempotencyKey,
+  };
+}
+
 export const apiClient = createClient<paths>({
   baseUrl: resolveApiBaseUrl(import.meta.env.VITE_API_BASE_URL),
 });

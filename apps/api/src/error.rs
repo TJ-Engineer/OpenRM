@@ -47,6 +47,28 @@ impl ApiError {
         Self::new(StatusCode::FORBIDDEN, "forbidden", message)
     }
 
+    pub fn bad_request(message: impl Into<String>) -> Self {
+        Self::new(StatusCode::BAD_REQUEST, "invalid_request", message)
+    }
+
+    pub fn not_found(message: impl Into<String>) -> Self {
+        Self::new(StatusCode::NOT_FOUND, "not_found", message)
+    }
+
+    pub fn conflict(message: impl Into<String>) -> Self {
+        Self::new(StatusCode::CONFLICT, "conflict", message)
+    }
+
+    pub fn conflict_with_details(message: impl Into<String>, details: Value) -> Self {
+        let mut error = Self::conflict(message);
+        error.details = Some(details);
+        error
+    }
+
+    pub fn internal(message: impl Into<String>) -> Self {
+        Self::new(StatusCode::INTERNAL_SERVER_ERROR, "internal_error", message)
+    }
+
     pub fn unavailable(message: impl Into<String>) -> Self {
         Self::new(
             StatusCode::SERVICE_UNAVAILABLE,

@@ -94,4 +94,54 @@ jobs:
             -H 'X-OpenRM-Organization: 00000000-0000-4000-8000-000000000001' \
             http://127.0.0.1:8080/api/v1/session | tee /tmp/session.json
           grep -q '"database":"available"' /tmp/session.json
+          organization_id='00000000-0000-4000-8000-000000000001'
+          project_id='00000000-0000-4000-8000-000000000101'
+          api_url="http://127.0.0.1:8080/api/v1/projects/${project_id}/requirements"
+          curl --fail --silent \
+            -X POST \
+            -H 'Authorization: Bearer dev:ci-user' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            -H 'X-Idempotency-Key: ci-requirement-create-001' \
+            -H 'Content-Type: application/json' \
+            --data '{"key":"CI-REQ-1","title":"CI requirement","statement":"The CI path shall persist controlled requirements.","attributes":{"priority":"high"}}' \
+            "${api_url}" | tee /tmp/requirement.json
+          requirement_id="$(jq -r '.id' /tmp/requirement.json)"
+          test "$(jq -r '.revision' /tmp/requirement.json)" -eq 1
+          curl --fail --silent \
+            -X POST \
+            -H 'Authorization: Bearer dev:ci-user' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            -H 'X-Idempotency-Key: ci-requirement-create-001' \
+            -H 'Content-Type: application/json' \
+            --data '{"key":"CI-REQ-1","title":"CI requirement","statement":"The CI path shall persist controlled requirements.","attributes":{"priority":"high"}}' \
+            "${api_url}" | tee /tmp/requirement-replay.json
+          test "$(jq -r '.id' /tmp/requirement-replay.json)" = "${requirement_id}"
+          curl --fail --silent \
+            -X PUT \
+            -H 'Authorization: Bearer dev:ci-user' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            -H 'Content-Type: application/json' \
+            --data '{"expected_revision":1,"title":"CI requirement revised","statement":"The CI path shall persist immutable requirement revisions.","attributes":{"priority":"high"}}' \
+            "${api_url}/${requirement_id}" | tee /tmp/requirement-revised.json
+          test "$(jq -r '.revision' /tmp/requirement-revised.json)" -eq 2
+          curl --fail --silent \
+            -X POST \
+            -H 'Authorization: Bearer dev:ci-user' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            -H 'X-Idempotency-Key: ci-requirement-create-001' \
+            -H 'Content-Type: application/json' \
+            --data '{"key":"CI-REQ-1","title":"CI requirement","statement":"The CI path shall persist controlled requirements.","attributes":{"priority":"high"}}' \
+            "${api_url}" | tee /tmp/requirement-late-replay.json
+          test "$(jq -r '.revision' /tmp/requirement-late-replay.json)" -eq 1
+          curl --fail --silent \
+            -H 'Authorization: Bearer dev:ci-user' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            "${api_url}/${requirement_id}/revisions" | tee /tmp/revisions.json
+          test "$(jq -r '.items | length' /tmp/revisions.json)" -eq 2
+          curl --fail --silent \
+            -H 'Authorization: Bearer dev:ci-user' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            "${api_url}?search=immutable" | tee /tmp/requirements.json
+          test "$(jq -r '.total' /tmp/requirements.json)" -eq 1
+          test "$(psql "${DATABASE_URL}" -tAc "SELECT count(*) FROM audit_events WHERE aggregate_id = '${requirement_id}'")" -eq 2
 
