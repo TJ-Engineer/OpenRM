@@ -30,6 +30,7 @@ What exists now:
 - Governed Jira delivery with external secret references, idempotent queueing, bounded retry/rate-limit handling, append-only attempts, dead letters, and attributable replay.
 - Prometheus SLIs, administrator operations status, structured logs, optional OTLP/HTTP traces, provisioned dashboards/alerts, and a hardened production container topology.
 - PostgreSQL backup/restore and forward-only upgrade rehearsals, multi-browser and accessibility coverage, load validation, security smoke tests, and pilot operations documentation.
+- A reproducible `OPENRM` dogfood project with 12 system requirements, 48 derived requirements, complete decomposition trace, independent review, and repository-linked signed test, analysis, and observation evidence.
 
 What does not exist yet:
 
@@ -237,6 +238,7 @@ Completion evidence:
 - `web`, `api`, `database-path`, `recovery-rehearsal`, and `production-artifact` passed in [OpenRM CI run 42508760769](https://github.com/TJ-Engineer/OpenRM/actions/runs/42508760769).
 - Protected `main` now requires all five Phase 5 checks with strict up-to-date validation and administrator enforcement.
 - Live pilot commissioning remains an environment-specific operational gate, not an unresolved repository implementation gate.
+- The local `OPENRM` self-verification project reaches 100% trace coverage and 100% passed exact-revision verification coverage with no orphans, suspect links, or readiness blockers; its loader is exercised by the protected database-path workflow.
 
 ## 5. Phase 1 execution backlog
 
