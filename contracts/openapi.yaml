@@ -1,0 +1,178 @@
+openapi: 3.1.0
+info:
+  title: OpenCM API
+  version: 0.1.0
+  description: >-
+    Versioned foundation contract for OpenCM. All controlled product endpoints
+    live under /api/v1; health and readiness endpoints remain operational.
+servers:
+  - url: http://127.0.0.1:8080
+    description: Local development
+tags:
+  - name: Operations
+  - name: Identity
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      tags: [Operations]
+      summary: Report process liveness and build metadata
+      responses:
+        "200":
+          description: The process is alive.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /ready:
+    get:
+      operationId: getReadiness
+      tags: [Operations]
+      summary: Verify that required dependencies are available
+      responses:
+        "200":
+          description: The service and database are ready.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessResponse"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/session:
+    get:
+      operationId: getSession
+      tags: [Identity]
+      summary: Verify authentication, tenant scope, policy, and database access
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationHeader"
+      responses:
+        "200":
+          description: Authenticated principal and database status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: OIDC access token. Development mode accepts only dev:<subject> outside production.
+  parameters:
+    OrganizationHeader:
+      name: X-OpenCM-Organization
+      in: header
+      required: true
+      description: Organization UUID selected for the request.
+      schema:
+        type: string
+        format: uuid
+  responses:
+    Unauthorized:
+      description: Authentication is missing or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    Forbidden:
+      description: The principal is not authorized for the selected tenant or action.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    ServiceUnavailable:
+      description: A required dependency is unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+  schemas:
+    BuildInfo:
+      type: object
+      additionalProperties: false
+      required: [service, version, git_sha, profile]
+      properties:
+        service:
+          type: string
+          const: opencm-api
+        version:
+          type: string
+        git_sha:
+          type: string
+        profile:
+          type: string
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [status, build, timestamp]
+      properties:
+        status:
+          type: string
+          const: ok
+        build:
+          $ref: "#/components/schemas/BuildInfo"
+        timestamp:
+          type: string
+          format: date-time
+    ReadinessResponse:
+      type: object
+      additionalProperties: false
+      required: [status, database, timestamp]
+      properties:
+        status:
+          type: string
+          const: ready
+        database:
+          type: string
+          const: available
+        timestamp:
+          type: string
+          format: date-time
+    SessionResponse:
+      type: object
+      additionalProperties: false
+      required: [subject, organization_id, roles, database]
+      properties:
+        subject:
+          type: string
+        organization_id:
+          type: string
+          format: uuid
+        roles:
+          type: array
+          items:
+            type: string
+            enum: [administrator, author, reviewer, viewer]
+        database:
+          type: string
+          const: available
+    ErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          $ref: "#/components/schemas/ErrorBody"
+    ErrorBody:
+      type: object
+      additionalProperties: false
+      required: [code, message, request_id]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        request_id:
+          type: string
+          format: uuid
+        details: {}
+

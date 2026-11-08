@@ -1,0 +1,97 @@
+name: Foundation CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: foundation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run generate:api
+      - name: Verify generated API types
+        run: git diff --exit-code -- src/api/generated.ts
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run build
+      - run: npm audit --audit-level=high
+
+  api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy,rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - run: cargo test --workspace --all-targets
+      - name: Audit Rust dependencies
+        run: |
+          cargo install cargo-audit --locked
+          cargo audit
+
+  database-path:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: opencm
+          POSTGRES_USER: opencm
+          POSTGRES_PASSWORD: opencm
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U opencm -d opencm"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      APP_ENV: test
+      AUTH_MODE: dev
+      API_BIND_ADDRESS: 127.0.0.1:8080
+      DATABASE_URL: postgres://opencm:opencm@127.0.0.1:5432/opencm
+      RUN_MIGRATIONS: "false"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo run -p opencm-api --bin migrate
+      - name: Exercise authenticated health-to-database path
+        run: |
+          cargo run -p opencm-api > /tmp/opencm-api.log 2>&1 &
+          api_pid=$!
+          trap 'kill ${api_pid}' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8080/ready > /tmp/ready.json; then
+              break
+            fi
+            if [[ "${attempt}" -eq 30 ]]; then
+              cat /tmp/opencm-api.log
+              exit 1
+            fi
+            sleep 1
+          done
+          curl --fail --silent \
+            -H 'Authorization: Bearer dev:ci-user' \
+            -H 'X-OpenCM-Organization: 00000000-0000-4000-8000-000000000001' \
+            http://127.0.0.1:8080/api/v1/session | tee /tmp/session.json
+          grep -q '"database":"available"' /tmp/session.json
+

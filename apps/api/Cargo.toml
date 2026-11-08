@@ -1,0 +1,30 @@
+[package]
+name = "opencm-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "OpenCM versioned REST API foundation"
+default-run = "opencm-api"
+
+[dependencies]
+axum.workspace = true
+chrono.workspace = true
+dotenvy.workspace = true
+http.workspace = true
+jsonwebtoken.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tower-http.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+http-body-util.workspace = true
+tower.workspace = true
+
