@@ -8,6 +8,7 @@ pub mod policy;
 pub mod projects;
 pub mod relationships;
 pub mod requirements;
+pub mod reviews;
 
 use std::time::Duration;
 
@@ -199,6 +200,34 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/projects/{project_id}/baselines/{baseline_id}/evidence",
             get(controlled_change::export_evidence),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/reviews",
+            get(reviews::list_reviews).post(reviews::create_review),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/reviews/{review_id}",
+            get(reviews::get_review),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/reviews/{review_id}/participants",
+            axum::routing::post(reviews::add_participant),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/reviews/{review_id}/start",
+            axum::routing::post(reviews::start_review),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/reviews/{review_id}/comments",
+            axum::routing::post(reviews::add_comment),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/reviews/{review_id}/comments/{comment_id}/resolve",
+            axum::routing::post(reviews::resolve_comment),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/reviews/{review_id}/decisions",
+            axum::routing::post(reviews::record_decision),
         )
         .fallback(not_found)
         .with_state(state)

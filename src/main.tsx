@@ -43,6 +43,7 @@ import {
 import "./styles.css";
 import { BaselinesWorkspace } from "./baselines/BaselinesWorkspace";
 import { RequirementsWorkspace } from "./requirements/RequirementsWorkspace";
+import { ReviewsWorkspace } from "./reviews/ReviewsWorkspace";
 import { TraceabilityWorkspace } from "./traceability/TraceabilityWorkspace";
 
 type PageHeaderProps = {
@@ -57,7 +58,7 @@ const NAV_ITEMS = [
   { id: "requirements", label: "Requirements", icon: FileText, count: "Live" },
   { id: "traceability", label: "Traceability", icon: Link2, count: "Live" },
   { id: "baselines", label: "Baselines", icon: GitBranch },
-  { id: "reviews", label: "Reviews", icon: ClipboardCheck, count: "2" },
+  { id: "reviews", label: "Reviews", icon: ClipboardCheck, count: "Live" },
   { id: "verification", label: "Verification", icon: TestTube2 },
 ];
 
@@ -109,9 +110,9 @@ const DEVELOPMENT_PHASES = [
     id: "phase-4",
     number: "04",
     name: "Evidence",
-    window: "Weeks 11–14",
-    status: "queued",
-    outcome: "Reviews, approvals, and verification",
+    window: "Active",
+    status: "active",
+    outcome: "Baseline-bound reviews and signed approvals live",
   },
   {
     id: "phase-5",
@@ -128,25 +129,25 @@ const DEVELOPMENT_WORKSTREAMS = [
     name: "Product experience",
     icon: Columns3,
     progress: 100,
-    status: "Phase 3 workflows live",
+    status: "Review Room live",
     tone: "mint",
-    now: "Decompose review packages and verification interactions",
+    now: "Extend signed review evidence into verification execution",
   },
   {
     name: "Platform & API",
     icon: ServerCog,
     progress: 100,
-    status: "Phase 3 API protected",
+    status: "Review API implemented",
     tone: "blue",
-    now: "Define review and verification contracts",
+    now: "Implement verification plans, runs, and results",
   },
   {
     name: "Data & versioning",
     icon: Database,
     progress: 100,
-    status: "Signed baselines verified",
+    status: "Signed decisions verified",
     tone: "mint",
-    now: "Preserve append-only and deterministic export controls",
+    now: "Preserve append-only review and verification evidence",
   },
   {
     name: "Security & identity",
@@ -259,7 +260,6 @@ function App() {
   const [tourStep, setTourStep] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toast, setToast] = useState("");
-  const [reviewApproved, setReviewApproved] = useState(false);
 
   const currentLabel = useMemo(
     () => [...DELIVERY_ITEMS, ...NAV_ITEMS, ...PLATFORM_ITEMS].find((item) => item.id === page)?.label || "Overview",
@@ -280,8 +280,6 @@ function App() {
   const pageProps = {
     navigate,
     notify,
-    reviewApproved,
-    setReviewApproved,
   };
 
   return (
@@ -321,7 +319,7 @@ function App() {
           {page === "requirements" && <RequirementsWorkspace notify={notify} />}
           {page === "traceability" && <TraceabilityWorkspace notify={notify} />}
           {page === "baselines" && <BaselinesWorkspace notify={notify} />}
-          {page === "reviews" && <Reviews {...pageProps} />}
+          {page === "reviews" && <ReviewsWorkspace notify={notify} />}
           {page === "verification" && <Verification {...pageProps} />}
           {page === "storage" && <Storage {...pageProps} />}
           {page === "api" && <RestApi {...pageProps} />}
@@ -766,74 +764,6 @@ function StatusPill({ status }) {
 
 function MiniStat({ icon: Icon, value, label, warning = false }) {
   return <div className={`mini-stat panel ${warning ? "warning" : ""}`}><Icon size={18} /><strong>{value}</strong><span>{label}</span></div>;
-}
-
-function Reviews({ notify, reviewApproved, setReviewApproved }) {
-  const participants = [
-    ["Maya Chen", "Systems engineering", "Approved", "MC"],
-    ["Arun Patel", "Software lead", "Approved", "AP"],
-    ["Renee Okafor", "Safety engineering", reviewApproved ? "Approved" : "Pending", "RO"],
-    ["Sam Brooks", "Verification lead", "In progress", "SB"],
-  ];
-  const complete = reviewApproved ? 10 : 9;
-  return (
-    <>
-      <PageHeader
-        eyebrow="Decision workflow • Commit c8a71f2"
-        title="Review room"
-        description="Collect structured feedback and approvals against an exact, immutable content state."
-        actions={<button className="secondary-button"><MessageSquareText size={15} /> 3 open comments</button>}
-      />
-      <div className="review-layout">
-        <section className="panel review-main">
-          <div className="review-title-row">
-            <div><span className="status-pill in-review">IN REVIEW</span><h2>SRR-04 • Flight control requirements</h2><p>System requirements review for the Aurora-2 flight control baseline.</p></div>
-            <div className="due-card"><span>Due</span><strong>Nov 13</strong><small>7 days remaining</small></div>
-          </div>
-          <div className="review-stat-row">
-            <div><strong>{complete}<span>/12</span></strong><small>Participants complete</small></div>
-            <div><strong>1,248</strong><small>Artifacts in scope</small></div>
-            <div><strong>3</strong><small>Open comments</small></div>
-            <div><strong>2</strong><small>Changes requested</small></div>
-          </div>
-          <div className="large-progress"><span style={{ width: `${(complete / 12) * 100}%` }} /></div>
-          <div className="participant-header"><span>Participants</span><span>Role</span><span>Decision</span></div>
-          {participants.map(([name, role, decision, initials]) => (
-            <div className="participant-row" key={name}>
-              <span className="person"><i>{initials}</i><strong>{name}</strong></span>
-              <span>{role}</span>
-              <StatusPill status={decision} />
-            </div>
-          ))}
-        </section>
-
-        <aside className="panel approval-panel">
-          <div className="approval-icon"><ShieldCheck size={28} /></div>
-          <span className="panel-kicker">Your decision</span>
-          <h2>{reviewApproved ? "Approval recorded" : "Ready for your approval?"}</h2>
-          <p>{reviewApproved ? "This illustrative approval is bound to changeset c8a71f2." : "Your decision will be cryptographically bound to the reviewed changeset and recorded in the audit trail."}</p>
-          <div className="commit-bound"><GitCommitHorizontal size={16} /><span>Bound changeset<code>c8a71f2</code></span><LockKeyhole size={14} /></div>
-          {!reviewApproved ? (
-            <>
-              <button className="primary-button full-width" onClick={() => { setReviewApproved(true); notify("Illustrative approval recorded"); }}><CheckCircle2 size={16} /> Record demo approval</button>
-              <button className="secondary-button full-width">Request changes</button>
-            </>
-          ) : <div className="approval-success"><BadgeCheck size={20} /> Signed by GJ • just now</div>}
-          <small className="demo-disclaimer">Demo only — no real electronic signature is created.</small>
-        </aside>
-      </div>
-
-      <section className="panel comment-panel">
-        <div className="panel-heading compact"><div><span className="panel-kicker">Discussion</span><h2>Open review comments</h2></div><button className="filter-button">All comments <ChevronDown size={13} /></button></div>
-        <Comment author="Renee Okafor" initials="RO" id="SFT-041" text="Please provide the analysis supporting the 150 ms allocation before approval." time="38 min ago" replies={2} />
-        <Comment author="Sam Brooks" initials="SB" id="VER-019" text="HIL procedure is drafted. I need the final fault-injection trigger definition." time="1h ago" replies={1} />
-      </section>
-    </>
-  );
-}
-
-function Comment({ author, initials, id, text, time, replies }) {
-  return <div className="comment"><span className="comment-avatar">{initials}</span><div><div className="comment-meta"><strong>{author}</strong><code>{id}</code><span>{time}</span></div><p>{text}</p><button className="text-button"><MessageSquareText size={13} /> {replies} replies</button></div><button className="icon-button"><MoreHorizontal size={16} /></button></div>;
 }
 
 function Verification({ notify }) {

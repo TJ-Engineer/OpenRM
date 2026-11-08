@@ -16,6 +16,7 @@ tags:
   - name: Traceability
   - name: Controlled Change
   - name: Baselines
+  - name: Reviews
 paths:
   /health:
     get:
@@ -976,6 +977,306 @@ paths:
           $ref: "#/components/responses/NotFound"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/reviews:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: listReviews
+      tags: [Reviews]
+      summary: List baseline-bound controlled review packages
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Review packages newest first.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewPackageListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    post:
+      operationId: createReview
+      tags: [Reviews]
+      summary: Assemble a draft review package from an immutable baseline
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReviewRequest"
+      responses:
+        "200":
+          description: Idempotent replay of a successful create command.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewCommandResponse"
+        "201":
+          description: Draft review package created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewCommandResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/reviews/{review_id}:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/ReviewId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: getReview
+      tags: [Reviews]
+      summary: Read a review package with participants, comments, and signed decisions
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current review state backed by append-only evidence.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewPackage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/reviews/{review_id}/participants:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/ReviewId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+      - $ref: "#/components/parameters/IdempotencyHeader"
+    post:
+      operationId: addReviewParticipant
+      tags: [Reviews]
+      summary: Assign a project reviewer before review start
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddReviewParticipantRequest"
+      responses:
+        "200":
+          description: Idempotent replay of an assignment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewParticipant"
+        "201":
+          description: Participant assigned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewParticipant"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/reviews/{review_id}/start:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/ReviewId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+      - $ref: "#/components/parameters/IdempotencyHeader"
+    post:
+      operationId: startReview
+      tags: [Reviews]
+      summary: Start a review round after approval-policy validation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartReviewRequest"
+      responses:
+        "200":
+          description: Review round started or replayed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewCommandResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/reviews/{review_id}/comments:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/ReviewId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+      - $ref: "#/components/parameters/IdempotencyHeader"
+    post:
+      operationId: addReviewComment
+      tags: [Reviews]
+      summary: Add an append-only comment bound to an exact baseline revision
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddReviewCommentRequest"
+      responses:
+        "200":
+          description: Idempotent replay of a comment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewComment"
+        "201":
+          description: Review comment recorded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewComment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/reviews/{review_id}/comments/{comment_id}/resolve:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/ReviewId"
+      - $ref: "#/components/parameters/CommentId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+      - $ref: "#/components/parameters/IdempotencyHeader"
+    post:
+      operationId: resolveReviewComment
+      tags: [Reviews]
+      summary: Append an attributable review-comment resolution
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveReviewCommentRequest"
+      responses:
+        "200":
+          description: Idempotent replay of a resolution.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewCommentResolution"
+        "201":
+          description: Comment resolution recorded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewCommentResolution"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/reviews/{review_id}/decisions:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/ReviewId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+      - $ref: "#/components/parameters/IdempotencyHeader"
+    post:
+      operationId: recordReviewDecision
+      tags: [Reviews]
+      summary: Record a signed participant decision under segregation-of-duty policy
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordReviewDecisionRequest"
+      responses:
+        "200":
+          description: Idempotent replay of a signed decision.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewDecision"
+        "201":
+          description: Signed decision recorded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewDecision"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
 components:
   securitySchemes:
     bearerAuth:
@@ -1022,6 +1323,20 @@ components:
         format: uuid
     BaselineId:
       name: baseline_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ReviewId:
+      name: review_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    CommentId:
+      name: comment_id
       in: path
       required: true
       schema:
@@ -1958,6 +2273,310 @@ components:
           type: string
         signature_valid:
           type: boolean
+    CreateReviewRequest:
+      type: object
+      additionalProperties: false
+      required: [baseline_id, title, required_approvals]
+      properties:
+        baseline_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 4000
+          default: ""
+        due_at:
+          type: [string, "null"]
+          format: date-time
+        required_approvals:
+          type: integer
+          minimum: 1
+          maximum: 50
+    AddReviewParticipantRequest:
+      type: object
+      additionalProperties: false
+      required: [subject, role_label]
+      properties:
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 200
+        role_label:
+          type: string
+          minLength: 1
+          maxLength: 120
+        required:
+          type: boolean
+          default: true
+    StartReviewRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        rationale:
+          type: string
+          maxLength: 2000
+          default: ""
+    AddReviewCommentRequest:
+      type: object
+      additionalProperties: false
+      required: [body]
+      properties:
+        target_artifact_id:
+          type: [string, "null"]
+          format: uuid
+        body:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        blocking:
+          type: boolean
+          default: false
+    ResolveReviewCommentRequest:
+      type: object
+      additionalProperties: false
+      required: [resolution]
+      properties:
+        resolution:
+          type: string
+          minLength: 1
+          maxLength: 4000
+    RecordReviewDecisionRequest:
+      type: object
+      additionalProperties: false
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [approved, changes_requested]
+        comment:
+          type: string
+          maxLength: 4000
+          default: ""
+    ReviewCommandResponse:
+      type: object
+      additionalProperties: false
+      required: [review_id, status, current_round]
+      properties:
+        review_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [draft, in_review, changes_requested, approved, closed]
+        current_round:
+          type: integer
+          minimum: 0
+    ReviewParticipant:
+      type: object
+      additionalProperties: false
+      required: [id, subject, role_label, required, assigned_by, created_at, current_decision, decision_comment, decided_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        subject:
+          type: string
+        role_label:
+          type: string
+        required:
+          type: boolean
+        assigned_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        current_decision:
+          type: [string, "null"]
+          enum: [approved, changes_requested, null]
+        decision_comment:
+          type: [string, "null"]
+        decided_at:
+          type: [string, "null"]
+          format: date-time
+    ReviewComment:
+      type: object
+      additionalProperties: false
+      required: [id, target_artifact_id, target_revision_id, target_key, body, blocking, created_by, created_at, resolved, resolution, resolved_by, resolved_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        target_artifact_id:
+          type: [string, "null"]
+          format: uuid
+        target_revision_id:
+          type: [string, "null"]
+          format: uuid
+        target_key:
+          type: [string, "null"]
+        body:
+          type: string
+        blocking:
+          type: boolean
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        resolved:
+          type: boolean
+        resolution:
+          type: [string, "null"]
+        resolved_by:
+          type: [string, "null"]
+        resolved_at:
+          type: [string, "null"]
+          format: date-time
+    ReviewCommentResolution:
+      type: object
+      additionalProperties: false
+      required: [id, review_id, comment_id, resolution, resolved_by, resolved_at, package_status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        review_id:
+          type: string
+          format: uuid
+        comment_id:
+          type: string
+          format: uuid
+        resolution:
+          type: string
+        resolved_by:
+          type: string
+        resolved_at:
+          type: string
+          format: date-time
+        package_status:
+          type: string
+          enum: [draft, in_review, changes_requested, approved, closed]
+    ReviewDecision:
+      type: object
+      additionalProperties: false
+      required: [id, participant_id, subject, round, decision, comment, evidence_hash, signature, signing_algorithm, signing_key_id, decided_by, decided_at, signature_valid, package_status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        participant_id:
+          type: string
+          format: uuid
+        subject:
+          type: string
+        round:
+          type: integer
+          minimum: 1
+        decision:
+          type: string
+          enum: [approved, changes_requested]
+        comment:
+          type: string
+        evidence_hash:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        signature:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        signing_algorithm:
+          type: string
+          const: HMAC-SHA256
+        signing_key_id:
+          type: string
+        decided_by:
+          type: string
+        decided_at:
+          type: string
+          format: date-time
+        signature_valid:
+          type: boolean
+        package_status:
+          type: string
+          enum: [draft, in_review, changes_requested, approved, closed]
+    ReviewPackage:
+      type: object
+      additionalProperties: false
+      required: [id, project_id, sequence, baseline_id, baseline_sequence, title, description, status, due_at, required_approvals, current_round, artifact_count, participant_count, approval_count, open_comment_count, blocking_comment_count, created_by, created_at, updated_at, participants, comments, decisions]
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        sequence:
+          type: integer
+          minimum: 1
+        baseline_id:
+          type: string
+          format: uuid
+        baseline_sequence:
+          type: integer
+          minimum: 1
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [draft, in_review, changes_requested, approved, closed]
+        due_at:
+          type: [string, "null"]
+          format: date-time
+        required_approvals:
+          type: integer
+          minimum: 1
+        current_round:
+          type: integer
+          minimum: 0
+        artifact_count:
+          type: integer
+          minimum: 0
+        participant_count:
+          type: integer
+          minimum: 0
+        approval_count:
+          type: integer
+          minimum: 0
+        open_comment_count:
+          type: integer
+          minimum: 0
+        blocking_comment_count:
+          type: integer
+          minimum: 0
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        participants:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReviewParticipant"
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReviewComment"
+        decisions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReviewDecision"
+    ReviewPackageListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReviewPackage"
     ErrorEnvelope:
       type: object
       additionalProperties: false

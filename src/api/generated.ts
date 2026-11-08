@@ -532,6 +532,178 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/reviews": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** List baseline-bound controlled review packages */
+        get: operations["listReviews"];
+        put?: never;
+        /** Assemble a draft review package from an immutable baseline */
+        post: operations["createReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/reviews/{review_id}": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        /** Read a review package with participants, comments, and signed decisions */
+        get: operations["getReview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/reviews/{review_id}/participants": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Assign a project reviewer before review start */
+        post: operations["addReviewParticipant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/reviews/{review_id}/start": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start a review round after approval-policy validation */
+        post: operations["startReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/reviews/{review_id}/comments": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add an append-only comment bound to an exact baseline revision */
+        post: operations["addReviewComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/reviews/{review_id}/comments/{comment_id}/resolve": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+                comment_id: components["parameters"]["CommentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Append an attributable review-comment resolution */
+        post: operations["resolveReviewComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/reviews/{review_id}/decisions": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a signed participant decision under segregation-of-duty policy */
+        post: operations["recordReviewDecision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -915,6 +1087,153 @@ export interface components {
             signing_key_id: string;
             signature_valid: boolean;
         };
+        CreateReviewRequest: {
+            /** Format: uuid */
+            baseline_id: string;
+            title: string;
+            /** @default  */
+            description: string;
+            /** Format: date-time */
+            due_at?: string | null;
+            required_approvals: number;
+        };
+        AddReviewParticipantRequest: {
+            subject: string;
+            role_label: string;
+            /** @default true */
+            required: boolean;
+        };
+        StartReviewRequest: {
+            /** @default  */
+            rationale: string;
+        };
+        AddReviewCommentRequest: {
+            /** Format: uuid */
+            target_artifact_id?: string | null;
+            body: string;
+            /** @default false */
+            blocking: boolean;
+        };
+        ResolveReviewCommentRequest: {
+            resolution: string;
+        };
+        RecordReviewDecisionRequest: {
+            /** @enum {string} */
+            decision: "approved" | "changes_requested";
+            /** @default  */
+            comment: string;
+        };
+        ReviewCommandResponse: {
+            /** Format: uuid */
+            review_id: string;
+            /** @enum {string} */
+            status: "draft" | "in_review" | "changes_requested" | "approved" | "closed";
+            current_round: number;
+        };
+        ReviewParticipant: {
+            /** Format: uuid */
+            id: string;
+            subject: string;
+            role_label: string;
+            required: boolean;
+            assigned_by: string;
+            /** Format: date-time */
+            created_at: string;
+            /** @enum {string|null} */
+            current_decision: "approved" | "changes_requested" | null;
+            decision_comment: string | null;
+            /** Format: date-time */
+            decided_at: string | null;
+        };
+        ReviewComment: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            target_artifact_id: string | null;
+            /** Format: uuid */
+            target_revision_id: string | null;
+            target_key: string | null;
+            body: string;
+            blocking: boolean;
+            created_by: string;
+            /** Format: date-time */
+            created_at: string;
+            resolved: boolean;
+            resolution: string | null;
+            resolved_by: string | null;
+            /** Format: date-time */
+            resolved_at: string | null;
+        };
+        ReviewCommentResolution: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            review_id: string;
+            /** Format: uuid */
+            comment_id: string;
+            resolution: string;
+            resolved_by: string;
+            /** Format: date-time */
+            resolved_at: string;
+            /** @enum {string} */
+            package_status: "draft" | "in_review" | "changes_requested" | "approved" | "closed";
+        };
+        ReviewDecision: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            participant_id: string;
+            subject: string;
+            round: number;
+            /** @enum {string} */
+            decision: "approved" | "changes_requested";
+            comment: string;
+            evidence_hash: string;
+            signature: string;
+            /** @constant */
+            signing_algorithm: "HMAC-SHA256";
+            signing_key_id: string;
+            decided_by: string;
+            /** Format: date-time */
+            decided_at: string;
+            signature_valid: boolean;
+            /** @enum {string} */
+            package_status: "draft" | "in_review" | "changes_requested" | "approved" | "closed";
+        };
+        ReviewPackage: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            project_id: string;
+            sequence: number;
+            /** Format: uuid */
+            baseline_id: string;
+            baseline_sequence: number;
+            title: string;
+            description: string;
+            /** @enum {string} */
+            status: "draft" | "in_review" | "changes_requested" | "approved" | "closed";
+            /** Format: date-time */
+            due_at: string | null;
+            required_approvals: number;
+            current_round: number;
+            artifact_count: number;
+            participant_count: number;
+            approval_count: number;
+            open_comment_count: number;
+            blocking_comment_count: number;
+            created_by: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            participants: components["schemas"]["ReviewParticipant"][];
+            comments: components["schemas"]["ReviewComment"][];
+            decisions: components["schemas"]["ReviewDecision"][];
+        };
+        ReviewPackageListResponse: {
+            items: components["schemas"]["ReviewPackage"][];
+        };
         ErrorEnvelope: {
             error: components["schemas"]["ErrorBody"];
         };
@@ -990,6 +1309,8 @@ export interface components {
         RelationshipId: string;
         ChangesetId: string;
         BaselineId: string;
+        ReviewId: string;
+        CommentId: string;
         WorkspaceResource: "folders" | "tags" | "attribute-definitions" | "saved-views";
         /** @description Stable client command identifier scoped to tenant, actor, and operation. */
         IdempotencyHeader: string;
@@ -2049,6 +2370,338 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listReviews: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Review packages newest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPackageListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    createReview: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of a successful create command. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewCommandResponse"];
+                };
+            };
+            /** @description Draft review package created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewCommandResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getReview: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current review state backed by append-only evidence. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPackage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    addReviewParticipant: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddReviewParticipantRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of an assignment. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewParticipant"];
+                };
+            };
+            /** @description Participant assigned. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewParticipant"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    startReview: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Review round started or replayed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewCommandResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    addReviewComment: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddReviewCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of a comment. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewComment"];
+                };
+            };
+            /** @description Review comment recorded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewComment"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    resolveReviewComment: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+                comment_id: components["parameters"]["CommentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveReviewCommentRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of a resolution. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewCommentResolution"];
+                };
+            };
+            /** @description Comment resolution recorded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewCommentResolution"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    recordReviewDecision: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                review_id: components["parameters"]["ReviewId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordReviewDecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of a signed decision. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewDecision"];
+                };
+            };
+            /** @description Signed decision recorded. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewDecision"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             503: components["responses"]["ServiceUnavailable"];
         };
     };
