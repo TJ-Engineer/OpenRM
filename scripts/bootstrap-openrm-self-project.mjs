@@ -324,26 +324,28 @@ async function createControlledGate(projectId, requirementsByKey, attachmentsByC
     body: { decision: "approved", comment: "Requirement hierarchy and verification allocation are complete and independently reviewable." },
   });
 
+  const existingCases = await request(`/api/v1/projects/${projectId}/verification/cases?review_id=${review.review_id}`);
   const cases = [];
   for (const definition of catalog.verification_cases) {
     const targetArtifactIds = catalog.requirements
       .filter((requirement) => requirement.evidence_group === definition.evidence_group)
       .map((requirement) => requirementsByKey.get(requirement.key).id);
-    const verificationCase = await request(`/api/v1/projects/${projectId}/verification/cases`, {
-      method: "POST",
-      idempotencyKey: commandKey("case", definition.key),
-      body: {
-        review_id: review.review_id,
-        key: definition.key,
-        title: definition.title,
-        method: definition.method,
-        procedure: definition.procedure,
-        acceptance_criteria: definition.acceptance_criteria,
-        owner_subject: verifierSubject,
-        due_at: null,
-        target_artifact_ids: targetArtifactIds,
-      },
-    });
+    const verificationCase = existingCases.items.find((item) => item.key === definition.key)
+      ?? await request(`/api/v1/projects/${projectId}/verification/cases`, {
+        method: "POST",
+        idempotencyKey: commandKey("case", definition.key),
+        body: {
+          review_id: review.review_id,
+          key: definition.key,
+          title: definition.title,
+          method: definition.method,
+          procedure: definition.procedure,
+          acceptance_criteria: definition.acceptance_criteria,
+          owner_subject: verifierSubject,
+          due_at: null,
+          target_artifact_ids: targetArtifactIds,
+        },
+      });
     const run = await request(`/api/v1/projects/${projectId}/verification/cases/${verificationCase.id}/runs`, {
       method: "POST",
       token: verifierToken,

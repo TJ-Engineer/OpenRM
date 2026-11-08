@@ -19,6 +19,7 @@ pub struct Config {
     pub oidc_audience: Option<String>,
     pub evidence_signing_key: String,
     pub evidence_signing_key_id: String,
+    pub evidence_verification_keys: Vec<(String, String)>,
     pub jira_api_token: Option<String>,
 }
 
@@ -100,6 +101,22 @@ impl Config {
             }
             _ => "development".to_owned(),
         };
+        let evidence_verification_keys = match env::var("EVIDENCE_VERIFICATION_KEYS") {
+            Ok(value) if !value.trim().is_empty() => {
+                parse_verification_keys(&value, app_env.eq_ignore_ascii_case("production"))?
+            }
+            _ => Vec::new(),
+        };
+        if evidence_verification_keys
+            .iter()
+            .any(|(key_id, _)| key_id == &evidence_signing_key_id)
+        {
+            return Err(ConfigError::Invalid {
+                name: "EVIDENCE_VERIFICATION_KEYS",
+                message: "historical key identifiers must differ from EVIDENCE_SIGNING_KEY_ID"
+                    .to_owned(),
+            });
+        }
         let jira_api_token = env::var("JIRA_API_TOKEN")
             .ok()
             .filter(|value| !value.trim().is_empty());
@@ -114,9 +131,32 @@ impl Config {
             oidc_audience,
             evidence_signing_key,
             evidence_signing_key_id,
+            evidence_verification_keys,
             jira_api_token,
         })
     }
+}
+
+fn parse_verification_keys(
+    value: &str,
+    production: bool,
+) -> Result<Vec<(String, String)>, ConfigError> {
+    let keys = serde_json::from_str::<std::collections::BTreeMap<String, String>>(value).map_err(
+        |error| ConfigError::Invalid {
+            name: "EVIDENCE_VERIFICATION_KEYS",
+            message: format!("expected a JSON object of key identifiers to keys: {error}"),
+        },
+    )?;
+    if keys.iter().any(|(key_id, key)| {
+        key_id.trim().is_empty() || key.trim().is_empty() || (production && key.len() < 32)
+    }) {
+        return Err(ConfigError::Invalid {
+            name: "EVIDENCE_VERIFICATION_KEYS",
+            message: "key identifiers and keys must be non-empty, and production keys must contain at least 32 bytes"
+                .to_owned(),
+        });
+    }
+    Ok(keys.into_iter().collect())
 }
 
 fn required(name: &'static str) -> Result<String, ConfigError> {
@@ -150,11 +190,25 @@ fn valid_https_issuer(value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{AuthMode, valid_https_issuer};
+    use super::{AuthMode, parse_verification_keys, valid_https_issuer};
 
     #[test]
     fn auth_mode_values_are_distinct() {
         assert_ne!(AuthMode::Dev, AuthMode::Oidc);
+    }
+
+    #[test]
+    fn parses_historical_evidence_keys() {
+        let keys =
+            parse_verification_keys(r#"{"v1":"historical-evidence-key-32-bytes-minimum"}"#, true)
+                .expect("valid historical key map");
+        assert_eq!(
+            keys,
+            vec![(
+                "v1".to_owned(),
+                "historical-evidence-key-32-bytes-minimum".to_owned()
+            )]
+        );
     }
 
     #[test]
