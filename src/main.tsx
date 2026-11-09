@@ -219,6 +219,7 @@ const DEVELOPMENT_BACKLOG = [
   { id: "ARC-201", horizon: "next", priority: "P0", title: "Generate the code-aligned maintainer SDD", stream: "Architecture", effort: "4d", status: "Ready" },
   { id: "ARC-202", horizon: "next", priority: "P1", title: "Validate the SDD through a maintainer walkthrough", stream: "Architecture", effort: "2d", status: "Ready" },
   { id: "GOV-201", horizon: "next", priority: "P1", title: "Add documentation ownership and freshness controls", stream: "Governance", effort: "2d", status: "Ready" },
+  { id: "DOC-203", horizon: "later", priority: "P1", title: "Add a schema-aware JSON Help editor and preview workflow", stream: "Documentation", effort: "3d", status: "Planned" },
 ];
 
 const COMMITS = [
@@ -637,7 +638,7 @@ function DevelopmentDashboard({ notify }) {
 
       <div className="dashboard-source-note">
         <FileCheck2 size={16} />
-        <p><strong>Source of truth:</strong> Phase 6 Help structure, routing, search, stable anchors, responsive rendering, and WCAG A/AA checks pass locally and in protected OpenRM CI run 42545427886, including the complete 42-test browser matrix and production artifact.</p>
+        <p><strong>Source of truth:</strong> Phase 6 JSON Help structure, routing, search, stable anchors, responsive rendering, and WCAG A/AA checks pass locally and in protected OpenRM CI run 42547019573, including the complete 42-test browser matrix and production artifact.</p>
       </div>
     </>
   );

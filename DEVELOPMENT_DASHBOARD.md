@@ -1,12 +1,12 @@
 # OpenRM development dashboard
 
-**Last verified:** 8 November 2026, 19:42 CST<br>
+**Last verified:** 8 November 2026, 19:46 CST<br>
 **Foundation evidence commit:** `fc6687f`<br>
 **Phase 2 evidence commit:** `f498031`<br>
 **Phase 3 implementation evidence commit:** `4f50618`<br>
 **Phase 4 protected evidence:** [OpenRM CI run 42504423145](https://github.com/TJ-Engineer/OpenRM/actions/runs/42504423145)<br>
 **Phase 5 protected evidence:** [OpenRM CI run 42508760769](https://github.com/TJ-Engineer/OpenRM/actions/runs/42508760769)<br>
-**Phase 6 Help protected evidence:** [OpenRM CI run 42545427886](https://github.com/TJ-Engineer/OpenRM/actions/runs/42545427886)<br>
+**Phase 6 Help protected evidence:** [OpenRM CI run 42547019573](https://github.com/TJ-Engineer/OpenRM/actions/runs/42547019573)<br>
 **Portable stack protected evidence:** [OpenRM CI run 42518730569](https://github.com/TJ-Engineer/OpenRM/actions/runs/42518730569)<br>
 **Overall status:** 🟡 Phase 6 active; the first in-product Help increment is protected-CI verified, with contextual guidance, external-link validation, governance, and the maintainer SDD next
 
@@ -86,6 +86,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 8 November 2026, 19:16 CST | 6 | `N/R` | `N/R` | Implemented the authoritative first-edition manual, persistent in-product Help, search, stable anchors, responsive layout, parser coverage, and Chromium/Firefox/WebKit WCAG validation. Session usage telemetry was unavailable. |
 | 8 November 2026, 19:27 CST | 6 | `N/R` | `N/R` | Corrected the container build context and passed all five protected jobs in OpenRM CI run 42545427886, including the 42-test web matrix and hardened production artifact. Session usage telemetry was unavailable. |
 | 8 November 2026, 19:42 CST | 6 | `N/R` | `N/R` | Converted the authoritative manual to schema-backed structured JSON, added runtime structure and anchor validation, preserved generated navigation, and passed the full local repository, browser/WCAG, and container gates. Session usage telemetry was unavailable. |
+| 8 November 2026, 19:46 CST | 6 | `N/R` | `N/R` | Deferred the optional schema-aware JSON Help editor and preview workflow as later backlog item `DOC-203`. Session usage telemetry was unavailable. |
 
 ### Usage accounting rules
 
@@ -132,6 +133,8 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 6. Complete environment-specific recovery, SLO, and Jira dry-run acceptance evidence.
 7. Obtain independent external assurance before broader regulated production use.
 
+**Later backlog:** `DOC-203` — add a maintainer-friendly, schema-aware JSON Help editor and preview workflow after the current Phase 6 documentation and SDD gates.
+
 ## Phase 6 active evidence
 
 | Capability | State | Evidence |
@@ -140,8 +143,8 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 | Persistent Help access | 🟢 Browser verified | Help is available from both the application sidebar and persistent topbar without leaving the product shell. |
 | Search and navigation | 🟢 Browser verified | Generated contents links reach stable section anchors, and search filters the manual to matching task and error guidance. |
 | Responsive behavior | 🟢 Browser verified | The Help layout collapses without horizontal page overflow at a 390-by-844 viewport. |
-| Manual structure | 🟢 Unit verified | Parser tests detect missing or duplicate anchors and confirm every authored contents link resolves to a generated section. |
-| Accessibility | 🟢 Protected CI verified | All nine Help navigation, mobile, and WCAG checks pass in Chromium, Firefox, and WebKit; the complete 42-test browser matrix and production artifact pass in [OpenRM CI run 42545427886](https://github.com/TJ-Engineer/OpenRM/actions/runs/42545427886). |
+| Manual structure | 🟢 Unit verified | Runtime schema checks detect invalid versions, dates, block types, IDs, and duplicate anchors; each JSON section generates one contents target. |
+| Accessibility | 🟢 Protected CI verified | All nine Help navigation, mobile, and WCAG checks pass in Chromium, Firefox, and WebKit; the JSON-backed 42-test browser matrix and production artifact pass in [OpenRM CI run 42547019573](https://github.com/TJ-Engineer/OpenRM/actions/runs/42547019573). |
 | Remaining gate | 🟡 Active | Representative-role review, contextual links, SDD delivery/walkthrough, governance, and external-link validation remain. |
 
 ## Phase 3 completion evidence

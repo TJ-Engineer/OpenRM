@@ -249,7 +249,7 @@ Completion evidence:
 
 **Outcome:** End users can obtain complete, task-oriented help from inside OpenRM, and maintainers have a code-aligned design reference for safely evolving and operating the application.
 
-**Status:** Active. The first edition manual, persistent Help route, generated contents, search, stable anchors, responsive rendering, parser/browser/WCAG checks, and production artifact pass in [OpenRM CI run 42545427886](https://github.com/TJ-Engineer/OpenRM/actions/runs/42545427886). Pilot review, contextual workspace links, external-link validation, ownership controls, and the maintainer SDD remain open.
+**Status:** Active. The structured JSON first-edition manual, persistent Help route, generated contents, search, stable anchors, responsive rendering, schema/browser/WCAG checks, and production artifact pass in [OpenRM CI run 42547019573](https://github.com/TJ-Engineer/OpenRM/actions/runs/42547019573). Pilot review, contextual workspace links, external-link validation, ownership controls, and the maintainer SDD remain open.
 
 Deliverables:
 
@@ -339,10 +339,11 @@ FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-
 | --- | --- | --- | --- | --- |
 | DOC-201 | P0 | Define the manual information architecture, audience map, document metadata, ownership, and linked table of contents | Complete | `docs/user/USER_MANUAL.json` metadata and schema-validated contents cover every primary user role and product workflow |
 | DOC-202 | P0 | Author the comprehensive OpenRM user manual, including procedures, troubleshooting, FAQ, glossary, and accessible visual guidance | In progress | First edition is complete; representative-role review and visual guidance remain |
+| DOC-203 | P1 | Add a maintainer-friendly, schema-aware JSON Help editor and preview workflow | Planned — later | A maintainer can edit, validate, preview, and review manual changes without modifying renderer code |
 | WEB-201 | P0 | Add persistent dashboard Help navigation, responsive rendering, stable anchors, and contextual deep links | In progress | Persistent navigation, rendering, search, and anchors pass browser tests; contextual links remain |
 | ARC-201 | P0 | Generate the code-aligned Software Design Description for application maintenance | Planned | Reviewed `docs/design/SOFTWARE_DESIGN_DESCRIPTION.md` with source and ADR traceability |
 | ARC-202 | P1 | Validate SDD architecture, security, data, deployment, recovery, and maintenance guidance against the running system | Planned | Maintainer walkthrough and documented discrepancy closure |
-| QLT-301 | P0 | Enforce documentation links, anchors, table-of-contents coverage, Help routing, keyboard access, and WCAG checks in CI | In progress | The complete matrix and production artifact pass in OpenRM CI run `42545427886`; external-link validation remains |
+| QLT-301 | P0 | Enforce documentation links, anchors, table-of-contents coverage, Help routing, keyboard access, and WCAG checks in CI | In progress | The JSON-backed complete matrix and production artifact pass in OpenRM CI run `42547019573`; external-link validation remains |
 | GOV-201 | P1 | Add pull-request and release criteria that keep the manual and SDD synchronized with relevant changes | Planned | Contribution checklist, document owners, release review, and freshness evidence |
 
 ## 6. Quality gates
