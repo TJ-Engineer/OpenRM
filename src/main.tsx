@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   ArrowRight,
   BadgeCheck,
+  BookOpen,
   Boxes,
   Check,
   CheckCircle2,
@@ -40,6 +41,7 @@ import {
 } from "lucide-react";
 import "./styles.css";
 import { BaselinesWorkspace } from "./baselines/BaselinesWorkspace";
+import { HelpWorkspace } from "./help/HelpWorkspace";
 import { IntegrationWorkspace } from "./integrations/IntegrationWorkspace";
 import { RequirementsWorkspace } from "./requirements/RequirementsWorkspace";
 import { ReviewsWorkspace } from "./reviews/ReviewsWorkspace";
@@ -67,6 +69,7 @@ const DELIVERY_ITEMS = [
 ];
 
 const PLATFORM_ITEMS = [
+  { id: "help", label: "Help", icon: BookOpen, count: "New" },
   { id: "storage", label: "Object storage", icon: Cloud },
   { id: "api", label: "API & SDK", icon: Code2, count: "v1" },
   { id: "integrations", label: "Integrations", icon: Zap, count: "1" },
@@ -122,16 +125,24 @@ const DEVELOPMENT_PHASES = [
     status: "complete",
     outcome: "Connector, operations, recovery, and hardening gates passed",
   },
+  {
+    id: "phase-6",
+    number: "06",
+    name: "Documentation",
+    window: "Active",
+    status: "active",
+    outcome: "In-product manual live; contextual Help and maintainer SDD next",
+  },
 ];
 
 const DEVELOPMENT_WORKSTREAMS = [
   {
     name: "Product experience",
     icon: Columns3,
-    progress: 100,
-    status: "Pilot workflows live",
-    tone: "mint",
-    now: "Prepare the bounded pilot deployment decision",
+    progress: 92,
+    status: "In-product Help active",
+    tone: "amber",
+    now: "Review the manual and add contextual workspace links",
   },
   {
     name: "Platform & API",
@@ -160,10 +171,10 @@ const DEVELOPMENT_WORKSTREAMS = [
   {
     name: "Quality & delivery",
     icon: TestTube2,
-    progress: 100,
-    status: "Phase 5 protected gate green",
-    tone: "mint",
-    now: "Retain multi-browser, security, recovery, and artifact gates",
+    progress: 96,
+    status: "Help checks green locally",
+    tone: "amber",
+    now: "Protect documentation and Help checks in hosted CI",
   },
   {
     name: "Operations",
@@ -201,6 +212,13 @@ const DEVELOPMENT_BACKLOG = [
   { id: "OPS-102", horizon: "next", priority: "P0", title: "Rehearse backup, restore, and upgrades", stream: "Operations", effort: "3d", status: "Complete" },
   { id: "QLT-201", horizon: "next", priority: "P0", title: "Complete security, load, browser, and accessibility gates", stream: "Quality", effort: "1w", status: "Complete" },
   { id: "PIL-101", horizon: "next", priority: "P1", title: "Publish administration, operations, and pilot guides", stream: "Product", effort: "3d", status: "Complete" },
+  { id: "DOC-201", horizon: "now", priority: "P0", title: "Define manual structure, metadata, and linked contents", stream: "Documentation", effort: "1d", status: "Complete" },
+  { id: "DOC-202", horizon: "now", priority: "P0", title: "Review and complete the comprehensive user manual", stream: "Documentation", effort: "3d", status: "In progress" },
+  { id: "WEB-201", horizon: "now", priority: "P0", title: "Add Help navigation, rendering, anchors, and contextual links", stream: "Web", effort: "3d", status: "In progress" },
+  { id: "QLT-301", horizon: "now", priority: "P0", title: "Protect manual structure, routing, browser, and WCAG checks", stream: "Quality", effort: "2d", status: "In progress" },
+  { id: "ARC-201", horizon: "next", priority: "P0", title: "Generate the code-aligned maintainer SDD", stream: "Architecture", effort: "4d", status: "Ready" },
+  { id: "ARC-202", horizon: "next", priority: "P1", title: "Validate the SDD through a maintainer walkthrough", stream: "Architecture", effort: "2d", status: "Ready" },
+  { id: "GOV-201", horizon: "next", priority: "P1", title: "Add documentation ownership and freshness controls", stream: "Governance", effort: "2d", status: "Ready" },
 ];
 
 const COMMITS = [
@@ -304,14 +322,17 @@ function App() {
             <Menu size={19} />
           </button>
           <div className="breadcrumb">
-            <span>{page === "development" ? "OpenRM program" : "Aurora Flight Computer"}</span>
+            <span>{page === "development" ? "OpenRM program" : page === "help" ? "OpenRM" : "Aurora Flight Computer"}</span>
             <ChevronRight size={14} />
             <strong>{currentLabel}</strong>
           </div>
           <div className="topbar-actions">
-            <span className="illustrative-chip"><CircleDot size={12} /> {page === "development" ? "Repository evidence" : "Illustrative data"}</span>
+            <span className="illustrative-chip"><CircleDot size={12} /> {page === "development" ? "Repository evidence" : page === "help" ? "Product guide" : "Illustrative data"}</span>
             <button className="ghost-button project-button">
               {page === "development" ? "PROGRAM" : "AURORA-2"} <ChevronDown size={14} />
+            </button>
+            <button className="help-button" onClick={() => navigate("help")} aria-current={page === "help" ? "page" : undefined}>
+              <BookOpen size={15} /> Help
             </button>
             <button className="tour-button" onClick={() => { setTourStep(0); setTourOpen(true); }}>
               <Sparkles size={15} /> Guided demo
@@ -332,6 +353,7 @@ function App() {
           {page === "api" && <RestApi {...pageProps} />}
           {page === "integrations" && <IntegrationWorkspace notify={notify} />}
           {page === "architecture" && <Architecture />}
+          {page === "help" && <HelpWorkspace />}
         </section>
       </main>
 
@@ -435,7 +457,7 @@ function DevelopmentDashboard({ notify }) {
       .join("\n");
 
     try {
-      await navigator.clipboard.writeText(`OpenRM Phase 5 complete — bounded pilot commissioning next\n${brief}`);
+      await navigator.clipboard.writeText(`OpenRM Phase 6 active — in-product Help review and maintainer SDD next\n${brief}`);
       notify("Current sprint brief copied");
     } catch {
       notify("Sprint brief is listed in IMPLEMENTATION_PLAN.md");
@@ -467,46 +489,45 @@ function DevelopmentDashboard({ notify }) {
       <section className="development-command panel">
         <div className="development-command-copy">
           <div className="phase-status-row">
-            <span className="phase-chip"><span /> Phase 5 complete</span>
-            <span className="baseline-date">17-week beta path</span>
+            <span className="phase-chip"><span /> Phase 6 active</span>
+            <span className="baseline-date">Documentation and maintainability</span>
           </div>
           <p className="panel-kicker">Current delivery objective</p>
-          <h2>Commission the bounded pilot from a protected beta baseline.</h2>
+          <h2>Make OpenRM understandable inside the product and maintainable from the repository.</h2>
           <p>
-            Phase 5 adds governed Jira delivery and replay, operational telemetry, hardened deployment assets,
-            recovery and upgrade rehearsals, security and load gates, and three-browser accessibility evidence.
-            All five protected hosted jobs pass.
+            The first in-product Help increment publishes the authoritative manual through persistent dashboard
+            navigation, searchable contents, stable anchors, responsive rendering, and three-browser WCAG checks.
+            Contextual workspace links, documentation governance, and the maintainer SDD remain in progress.
           </p>
           <div className="command-meta">
-            <span><GitBranch size={14} /> Stage: Phase 5 complete</span>
-            <span><BadgeCheck size={14} /> Next: bounded pilot commissioning</span>
+            <span><GitBranch size={14} /> Stage: Phase 6 active</span>
+            <span><BadgeCheck size={14} /> Next: contextual Help and maintainer SDD</span>
           </div>
         </div>
         <div className="gate-card">
           <div className="gate-card-head">
             <div>
-              <span>Phase 5 exit evidence</span>
-              <strong>8 / 8 evidence checks</strong>
+              <span>First Help increment</span>
+              <strong>4 / 7 work items started</strong>
             </div>
-            <div className="gate-score complete">100%</div>
+            <div className="gate-score active">Active</div>
           </div>
           <div className="gate-checks">
-            <span className="complete"><CheckCircle2 size={13} /> Governed Jira delivery and replay</span>
-            <span className="complete"><CheckCircle2 size={13} /> Metrics, traces, dashboards, and alerts</span>
-            <span className="complete"><CheckCircle2 size={13} /> Recovery and upgrade rehearsals</span>
-            <span className="complete"><CheckCircle2 size={13} /> Hardened production artifact</span>
-            <span className="complete"><CheckCircle2 size={13} /> Security, load, and soak gates</span>
+            <span className="complete"><CheckCircle2 size={13} /> Authoritative manual with linked contents</span>
+            <span className="complete"><CheckCircle2 size={13} /> Persistent topbar and sidebar Help access</span>
+            <span className="complete"><CheckCircle2 size={13} /> Search, stable anchors, and responsive layout</span>
             <span className="complete"><CheckCircle2 size={13} /> Three-browser workflows and WCAG A/AA</span>
-            <span className="complete"><CheckCircle2 size={13} /> Pilot operations procedures</span>
-            <span className="complete"><CheckCircle2 size={13} /> Protected hosted checks passed</span>
+            <span><CircleDot size={13} /> Contextual workspace links</span>
+            <span><CircleDot size={13} /> Maintainer SDD and walkthrough</span>
+            <span><CircleDot size={13} /> Ownership and freshness controls</span>
           </div>
         </div>
       </section>
 
       <div className="development-metrics">
-        <DeliveryMetric icon={Columns3} value="10 / 10" label="Prototype surfaces" detail="Interaction model represented" tone="mint" />
+        <DeliveryMetric icon={Columns3} value="11 / 11" label="Product surfaces" detail="Core workspaces plus in-product Help" tone="mint" />
         <DeliveryMetric icon={ServerCog} value="24" label="Controlled capabilities" detail="Authoring through signed gate evidence" tone="blue" />
-        <DeliveryMetric icon={TestTube2} value="36 + 33" label="Automated tests" detail="Rust and web unit + browser/WCAG" tone="mint" />
+        <DeliveryMetric icon={TestTube2} value="36 + 42" label="Automated tests" detail="Rust and browser/WCAG matrix" tone="mint" />
         <DeliveryMetric icon={AlertTriangle} value="4" label="Program risks" detail="Decisions accepted; controls remain" tone="red" />
       </div>
 
@@ -514,7 +535,7 @@ function DevelopmentDashboard({ notify }) {
         <div className="panel-heading development-heading">
           <div>
             <span className="panel-kicker">Release path</span>
-            <h2>Six evidence gates to pilot beta</h2>
+            <h2>Seven evidence gates through maintainability</h2>
           </div>
           <span className="repository-badge"><GitCommitHorizontal size={14} /> Versioned with the plan</span>
         </div>
@@ -616,7 +637,7 @@ function DevelopmentDashboard({ notify }) {
 
       <div className="dashboard-source-note">
         <FileCheck2 size={16} />
-        <p><strong>Source of truth:</strong> Phase 4 review-to-verification evidence passed clean PostgreSQL, API, browser, accessibility, deterministic-export, isolation, and append-only history gates locally and in protected OpenRM CI run 42504423145.</p>
+        <p><strong>Source of truth:</strong> Phase 6 Help structure, routing, search, stable anchors, responsive rendering, and WCAG A/AA checks pass locally; the complete 42-test Chromium, Firefox, and WebKit matrix is green, with protected hosted evidence pending.</p>
       </div>
     </>
   );
