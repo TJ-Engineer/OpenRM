@@ -3,6 +3,7 @@ WORKDIR /build
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY index.html tsconfig.json vite.config.ts ./
+COPY docs/user ./docs/user
 COPY src ./src
 ARG VITE_API_BASE_URL=/
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
