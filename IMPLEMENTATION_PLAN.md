@@ -32,7 +32,7 @@ What exists now:
 - PostgreSQL backup/restore and forward-only upgrade rehearsals, multi-browser and accessibility coverage, load validation, security smoke tests, and pilot operations documentation.
 - A reproducible `OPENRM` dogfood project with 12 system requirements, 48 derived requirements, complete decomposition trace, independent review, and repository-linked signed test, analysis, and observation evidence.
 - A one-command portable container distribution for PostgreSQL, forward-only migrations, the hardened API, the complete self-verification project, and the same-origin web application.
-- An authoritative Markdown user manual exposed through persistent dashboard Help, with a linked table of contents, full-text section search, stable anchors, responsive rendering, parser/anchor tests, three-browser WCAG 2 A/AA coverage, and protected container-build evidence.
+- An authoritative structured JSON user manual exposed through persistent dashboard Help, with generated contents, full-text section search, stable anchors, responsive rendering, schema/anchor tests, three-browser WCAG 2 A/AA coverage, and protected container-build evidence.
 
 What does not exist yet:
 
@@ -253,7 +253,7 @@ Completion evidence:
 
 Deliverables:
 
-- [x] Publish `docs/user/USER_MANUAL.md` as the authoritative user manual, with a linked table of contents, document version, applicable OpenRM release, owner, and last-verified date.
+- [x] Publish `docs/user/USER_MANUAL.json` as the authoritative user manual, with a versioned schema, generated linked table of contents, document version, applicable OpenRM release, owner, and last-verified date.
 - [x] Add a persistent **Help** entry to the OpenRM dashboard that opens a responsive, keyboard-accessible manual route without losing the user's application context.
 - [x] Cover getting started, authentication, dashboard navigation, projects and roles, requirement authoring, folders/tags/attributes/saved views, revision comparison, traceability, suspect links, changesets, baselines, reviews, verification, search, import/export, Jira operations, notifications, accessibility/keyboard use, troubleshooting, FAQ, glossary, and support escalation.
 - [x] Provide stable section anchors and an in-product linked table of contents.
@@ -337,7 +337,7 @@ FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-
 
 | ID | Priority | Work item | Status | Primary evidence |
 | --- | --- | --- | --- | --- |
-| DOC-201 | P0 | Define the manual information architecture, audience map, document metadata, ownership, and linked table of contents | Complete | `docs/user/USER_MANUAL.md` metadata and parser-verified contents cover every primary user role and product workflow |
+| DOC-201 | P0 | Define the manual information architecture, audience map, document metadata, ownership, and linked table of contents | Complete | `docs/user/USER_MANUAL.json` metadata and schema-validated contents cover every primary user role and product workflow |
 | DOC-202 | P0 | Author the comprehensive OpenRM user manual, including procedures, troubleshooting, FAQ, glossary, and accessible visual guidance | In progress | First edition is complete; representative-role review and visual guidance remain |
 | WEB-201 | P0 | Add persistent dashboard Help navigation, responsive rendering, stable anchors, and contextual deep links | In progress | Persistent navigation, rendering, search, and anchors pass browser tests; contextual links remain |
 | ARC-201 | P0 | Generate the code-aligned Software Design Description for application maintenance | Planned | Reviewed `docs/design/SOFTWARE_DESIGN_DESCRIPTION.md` with source and ADR traceability |

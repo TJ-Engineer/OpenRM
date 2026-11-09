@@ -1,6 +1,6 @@
 # OpenRM development dashboard
 
-**Last verified:** 8 November 2026, 19:27 CST<br>
+**Last verified:** 8 November 2026, 19:42 CST<br>
 **Foundation evidence commit:** `fc6687f`<br>
 **Phase 2 evidence commit:** `f498031`<br>
 **Phase 3 implementation evidence commit:** `4f50618`<br>
@@ -85,6 +85,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 8 November 2026, 19:07 CST | 6 | `N/R` | `N/R` | Added the planned dashboard Help, comprehensive user manual, maintainer SDD, documentation governance, and automated documentation quality workstreams. Session usage telemetry was unavailable. |
 | 8 November 2026, 19:16 CST | 6 | `N/R` | `N/R` | Implemented the authoritative first-edition manual, persistent in-product Help, search, stable anchors, responsive layout, parser coverage, and Chromium/Firefox/WebKit WCAG validation. Session usage telemetry was unavailable. |
 | 8 November 2026, 19:27 CST | 6 | `N/R` | `N/R` | Corrected the container build context and passed all five protected jobs in OpenRM CI run 42545427886, including the 42-test web matrix and hardened production artifact. Session usage telemetry was unavailable. |
+| 8 November 2026, 19:42 CST | 6 | `N/R` | `N/R` | Converted the authoritative manual to schema-backed structured JSON, added runtime structure and anchor validation, preserved generated navigation, and passed the full local repository, browser/WCAG, and container gates. Session usage telemetry was unavailable. |
 
 ### Usage accounting rules
 
@@ -135,7 +136,7 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 
 | Capability | State | Evidence |
 | --- | --- | --- |
-| Authoritative manual | 🟢 Locally verified | `docs/user/USER_MANUAL.md` includes release metadata, a linked contents list, primary role/workflow procedures, troubleshooting, FAQ, glossary, and escalation guidance. |
+| Authoritative manual | 🟢 Locally verified | `docs/user/USER_MANUAL.json` provides schema-versioned metadata and structured blocks for primary role/workflow procedures, generated contents, troubleshooting, FAQ, glossary, and escalation guidance. |
 | Persistent Help access | 🟢 Browser verified | Help is available from both the application sidebar and persistent topbar without leaving the product shell. |
 | Search and navigation | 🟢 Browser verified | Generated contents links reach stable section anchors, and search filters the manual to matching task and error guidance. |
 | Responsive behavior | 🟢 Browser verified | The Help layout collapses without horizontal page overflow at a 390-by-844 viewport. |

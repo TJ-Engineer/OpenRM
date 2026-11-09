@@ -12,132 +12,153 @@ export type ManualSection = {
   blocks: ManualBlock[];
 };
 
+export type ManualMetadata = {
+  documentVersion: string;
+  appliesTo: string;
+  owner: string;
+  lastVerified: string;
+  status: string;
+};
+
 export type ManualDocument = {
+  $schema: "./USER_MANUAL.schema.json";
+  schemaVersion: 1;
   title: string;
+  summary: string;
+  metadata: ManualMetadata;
   intro: ManualBlock[];
   sections: ManualSection[];
 };
 
-export function slugifyHeading(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
+type UnknownRecord = Record<string, unknown>;
+
+const STABLE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const TEXT_BLOCK_TYPES = new Set(["paragraph", "note", "code"]);
+
+function fail(path: string, message: string): never {
+  throw new Error(`Invalid user manual at ${path}: ${message}`);
 }
 
-function isBlockStart(line: string) {
-  return /^###\s+/.test(line)
-    || /^```/.test(line)
-    || /^-\s+/.test(line)
-    || /^\d+\.\s+/.test(line)
-    || /^>\s?/.test(line);
+function asRecord(value: unknown, path: string): UnknownRecord {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    fail(path, "expected an object");
+  }
+  return value as UnknownRecord;
 }
 
-function parseBlocks(lines: string[], sectionId: string): ManualBlock[] {
-  const blocks: ManualBlock[] = [];
-  let index = 0;
+function asString(value: unknown, path: string) {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    fail(path, "expected a non-empty string");
+  }
+  return value;
+}
 
-  while (index < lines.length) {
-    const line = lines[index].trim();
-    if (!line || line === "---") {
-      index += 1;
-      continue;
-    }
+function asStableId(value: unknown, path: string) {
+  const id = asString(value, path);
+  if (!STABLE_ID.test(id)) {
+    fail(path, "expected a lowercase, hyphen-separated stable identifier");
+  }
+  return id;
+}
 
-    if (line.startsWith("### ")) {
-      const title = line.slice(4).trim();
-      blocks.push({ type: "subheading", id: `${sectionId}-${slugifyHeading(title)}`, title });
-      index += 1;
-      continue;
-    }
+function asStringArray(value: unknown, path: string) {
+  if (!Array.isArray(value) || value.length === 0) {
+    fail(path, "expected a non-empty string array");
+  }
+  return value.map((item, index) => asString(item, `${path}[${index}]`));
+}
 
-    if (line.startsWith("```")) {
-      const code: string[] = [];
-      index += 1;
-      while (index < lines.length && !lines[index].trim().startsWith("```")) {
-        code.push(lines[index]);
-        index += 1;
-      }
-      index += 1;
-      blocks.push({ type: "code", text: code.join("\n") });
-      continue;
-    }
+function parseBlock(value: unknown, path: string): ManualBlock {
+  const block = asRecord(value, path);
+  const type = asString(block.type, `${path}.type`);
 
-    if (line.startsWith("- ")) {
-      const items: string[] = [];
-      while (index < lines.length && lines[index].trim().startsWith("- ")) {
-        items.push(lines[index].trim().slice(2).trim());
-        index += 1;
-      }
-      blocks.push({ type: "unordered-list", items });
-      continue;
-    }
-
-    if (/^\d+\.\s+/.test(line)) {
-      const items: string[] = [];
-      while (index < lines.length && /^\d+\.\s+/.test(lines[index].trim())) {
-        items.push(lines[index].trim().replace(/^\d+\.\s+/, ""));
-        index += 1;
-      }
-      blocks.push({ type: "ordered-list", items });
-      continue;
-    }
-
-    if (line.startsWith(">")) {
-      const note: string[] = [];
-      while (index < lines.length && lines[index].trim().startsWith(">")) {
-        note.push(lines[index].trim().replace(/^>\s?/, ""));
-        index += 1;
-      }
-      blocks.push({ type: "note", text: note.join(" ") });
-      continue;
-    }
-
-    const paragraph = [line];
-    index += 1;
-    while (index < lines.length && lines[index].trim() && !isBlockStart(lines[index].trim())) {
-      paragraph.push(lines[index].trim());
-      index += 1;
-    }
-    blocks.push({ type: "paragraph", text: paragraph.join(" ") });
+  if (type === "subheading") {
+    return {
+      type,
+      id: asStableId(block.id, `${path}.id`),
+      title: asString(block.title, `${path}.title`),
+    };
   }
 
-  return blocks;
+  if (type === "unordered-list" || type === "ordered-list") {
+    return {
+      type,
+      items: asStringArray(block.items, `${path}.items`),
+    };
+  }
+
+  if (TEXT_BLOCK_TYPES.has(type)) {
+    return {
+      type: type as "paragraph" | "note" | "code",
+      text: asString(block.text, `${path}.text`),
+    };
+  }
+
+  return fail(`${path}.type`, `unsupported block type "${type}"`);
 }
 
-export function parseManual(source: string): ManualDocument {
-  const lines = source.replace(/\r\n/g, "\n").split("\n");
-  let title = "OpenRM user manual";
-  const introLines: string[] = [];
-  const rawSections: Array<{ title: string; lines: string[] }> = [];
-  let currentSection: { title: string; lines: string[] } | null = null;
+function parseBlocks(value: unknown, path: string) {
+  if (!Array.isArray(value)) fail(path, "expected a block array");
+  return value.map((block, index) => parseBlock(block, `${path}[${index}]`));
+}
 
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (line.startsWith("# ") && !line.startsWith("## ")) {
-      title = line.slice(2).trim();
-      continue;
-    }
-    if (line.startsWith("## ") && !line.startsWith("### ")) {
-      if (currentSection) rawSections.push(currentSection);
-      currentSection = { title: line.slice(3).trim(), lines: [] };
-      continue;
-    }
-    if (currentSection) currentSection.lines.push(rawLine);
-    else introLines.push(rawLine);
+function parseMetadata(value: unknown): ManualMetadata {
+  const metadata = asRecord(value, "metadata");
+  const lastVerified = asString(metadata.lastVerified, "metadata.lastVerified");
+  const parsedDate = new Date(`${lastVerified}T00:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(lastVerified)
+    || Number.isNaN(parsedDate.valueOf())
+    || parsedDate.toISOString().slice(0, 10) !== lastVerified) {
+    fail("metadata.lastVerified", "expected a valid ISO calendar date in YYYY-MM-DD format");
   }
-  if (currentSection) rawSections.push(currentSection);
 
-  const sections = rawSections.map((section) => {
-    const id = slugifyHeading(section.title);
-    return { id, title: section.title, blocks: parseBlocks(section.lines, id) };
+  return {
+    documentVersion: asString(metadata.documentVersion, "metadata.documentVersion"),
+    appliesTo: asString(metadata.appliesTo, "metadata.appliesTo"),
+    owner: asString(metadata.owner, "metadata.owner"),
+    lastVerified,
+    status: asString(metadata.status, "metadata.status"),
+  };
+}
+
+export function parseManual(source: unknown): ManualDocument {
+  const document = asRecord(source, "document");
+  if (document.$schema !== "./USER_MANUAL.schema.json") {
+    fail("$schema", "expected the colocated USER_MANUAL.schema.json reference");
+  }
+  if (document.schemaVersion !== 1) {
+    fail("schemaVersion", "only schema version 1 is supported");
+  }
+  if (!Array.isArray(document.sections) || document.sections.length === 0) {
+    fail("sections", "expected at least one manual section");
+  }
+
+  const seenAnchors = new Set<string>();
+  const sections = document.sections.map((value, sectionIndex): ManualSection => {
+    const path = `sections[${sectionIndex}]`;
+    const section = asRecord(value, path);
+    const id = asStableId(section.id, `${path}.id`);
+    const blocks = parseBlocks(section.blocks, `${path}.blocks`);
+
+    for (const anchor of [id, ...blocks.filter((block) => block.type === "subheading").map((block) => block.id)]) {
+      if (seenAnchors.has(anchor)) fail(path, `duplicate anchor "${anchor}"`);
+      seenAnchors.add(anchor);
+    }
+
+    return {
+      id,
+      title: asString(section.title, `${path}.title`),
+      blocks,
+    };
   });
 
   return {
-    title,
-    intro: parseBlocks(introLines, "manual-introduction"),
+    $schema: "./USER_MANUAL.schema.json",
+    schemaVersion: 1,
+    title: asString(document.title, "title"),
+    summary: asString(document.summary, "summary"),
+    metadata: parseMetadata(document.metadata),
+    intro: parseBlocks(document.intro, "intro"),
     sections,
   };
 }

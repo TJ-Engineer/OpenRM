@@ -17,7 +17,7 @@ OpenRM is an open, self-hostable configuration and requirements management platf
 - 🟢 Phase 3 is complete: live graph/matrix/coverage queries, gap reporting, directed relationship controls, asynchronous suspect propagation, reviewer dispositions, attributable changesets, immutable baseline comparison, and deterministic signed evidence export pass locally and in [protected OpenRM CI run 42499758656](https://github.com/TJ-Engineer/OpenRM/actions/runs/42499758656).
 - 🟢 Phase 4 is complete: baseline-bound reviews, segregation-of-duty approvals, immutable verification procedures, independent runs, signed results, content-addressed attachments, exact-revision coverage, explainable readiness, due events, and deterministic complete gate export pass locally and in [protected OpenRM CI run 42504423145](https://github.com/TJ-Engineer/OpenRM/actions/runs/42504423145).
 - 🟢 Phase 5 is complete: governed Jira delivery/replay, Prometheus/OTLP observability, hardened deployment assets, recovery and upgrade rehearsals, three-browser/WCAG validation, load and security gates, and pilot operations procedures pass locally and in [protected OpenRM CI run 42508760769](https://github.com/TJ-Engineer/OpenRM/actions/runs/42508760769).
-- 🟡 Phase 6 is active: the [first-edition user manual](docs/user/USER_MANUAL.md) is available through persistent in-product Help with search, stable anchors, responsive rendering, and three-browser WCAG checks; the complete matrix and production artifact pass in [OpenRM CI run 42545427886](https://github.com/TJ-Engineer/OpenRM/actions/runs/42545427886), while contextual links, governance, external-link validation, and the code-aligned maintainer SDD remain.
+- 🟡 Phase 6 is active: the structured JSON [first-edition user manual](docs/user/USER_MANUAL.json) is available through persistent in-product Help with search, stable anchors, responsive rendering, and three-browser WCAG checks; the complete matrix and production artifact pass in [OpenRM CI run 42545427886](https://github.com/TJ-Engineer/OpenRM/actions/runs/42545427886), while contextual links, governance, external-link validation, and the code-aligned maintainer SDD remain.
 
 See the [development dashboard](DEVELOPMENT_DASHBOARD.md) for current evidence, priorities, gaps, and per-phase time/token accounting, and the [implementation plan](IMPLEMENTATION_PLAN.md) for the full roadmap and exit criteria.
 
@@ -30,7 +30,7 @@ See the [development dashboard](DEVELOPMENT_DASHBOARD.md) for current evidence, 
 | `contracts/` | Versioned OpenAPI contract |
 | `db/migrations/` | PostgreSQL schema and deterministic local seed |
 | `docs/adr/` | Accepted architecture decisions |
-| `docs/user/` | Authoritative end-user manual rendered by in-product Help |
+| `docs/user/` | Structured JSON end-user manual rendered by in-product Help |
 | `aws/` | Static preview infrastructure |
 | `scripts/` | Bootstrap, checks, provisioning, and deployment |
 

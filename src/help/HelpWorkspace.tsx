@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { ArrowUp, BookOpen, Search } from "lucide-react";
-import manualSource from "../../docs/user/USER_MANUAL.md?raw";
+import manualSource from "../../docs/user/USER_MANUAL.json";
 import { parseManual, sectionSearchText, type ManualBlock } from "./manual";
 
 const INLINE_TOKEN = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g;
@@ -32,25 +32,26 @@ function ManualBlockView({ block }: { block: ManualBlock }) {
   return <p>{renderInline(block.text)}</p>;
 }
 
+function formatVerifiedDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", { dateStyle: "long", timeZone: "UTC" })
+    .format(new Date(`${value}T00:00:00Z`));
+}
+
 export function HelpWorkspace() {
   const manual = useMemo(() => parseManual(manualSource), []);
   const [query, setQuery] = useState("");
-  const contentSections = useMemo(
-    () => manual.sections.filter((section) => section.id !== "table-of-contents"),
-    [manual],
-  );
   const normalizedQuery = query.trim().toLowerCase();
   const visibleSections = normalizedQuery
-    ? contentSections.filter((section) => sectionSearchText(section).includes(normalizedQuery))
-    : contentSections;
+    ? manual.sections.filter((section) => sectionSearchText(section).includes(normalizedQuery))
+    : manual.sections;
 
   return (
     <div className="help-workspace" id="help-top">
       <div className="page-header help-heading">
         <div>
-          <div className="eyebrow"><BookOpen size={14} /> Product guide • First in-product edition</div>
+          <div className="eyebrow"><BookOpen size={14} /> Product guide • Version {manual.metadata.documentVersion}</div>
           <h1>{manual.title}</h1>
-          <p>Task-oriented guidance for authors, reviewers, verification personnel, administrators, and stakeholders.</p>
+          <p>{manual.summary}</p>
         </div>
         <label className="help-search">
           <span>Search this manual</span>
@@ -65,7 +66,7 @@ export function HelpWorkspace() {
         <aside className="help-toc panel">
           <div className="panel-kicker">Table of contents</div>
           <nav aria-label="User manual table of contents">
-            {contentSections.map((section, index) => (
+            {manual.sections.map((section, index) => (
               <a key={section.id} href={`#${section.id}`}>
                 <span>{String(index + 1).padStart(2, "0")}</span>
                 {section.title}
@@ -76,6 +77,13 @@ export function HelpWorkspace() {
 
         <article className="help-article panel" aria-label="OpenRM user manual">
           <div className="help-introduction">
+            <dl className="help-manual-meta" aria-label="Manual metadata">
+              <div><dt>Document version</dt><dd>{manual.metadata.documentVersion}</dd></div>
+              <div><dt>Applies to</dt><dd>{manual.metadata.appliesTo}</dd></div>
+              <div><dt>Owner</dt><dd>{manual.metadata.owner}</dd></div>
+              <div><dt>Last verified</dt><dd>{formatVerifiedDate(manual.metadata.lastVerified)}</dd></div>
+              <div><dt>Status</dt><dd>{manual.metadata.status}</dd></div>
+            </dl>
             {manual.intro.map((block, index) => <ManualBlockView key={`${block.type}-${index}`} block={block} />)}
           </div>
 
