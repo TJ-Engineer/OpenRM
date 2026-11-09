@@ -131,7 +131,7 @@ const DEVELOPMENT_PHASES = [
     name: "Documentation",
     window: "Active",
     status: "active",
-    outcome: "In-product manual live; contextual Help and maintainer SDD next",
+    outcome: "In-product manual and maintainer SDD live; walkthrough and governance next",
   },
 ];
 
@@ -216,8 +216,8 @@ const DEVELOPMENT_BACKLOG = [
   { id: "DOC-202", horizon: "now", priority: "P0", title: "Review and complete the comprehensive user manual", stream: "Documentation", effort: "3d", status: "In progress" },
   { id: "WEB-201", horizon: "now", priority: "P0", title: "Add Help navigation, rendering, anchors, and contextual links", stream: "Web", effort: "3d", status: "In progress" },
   { id: "QLT-301", horizon: "now", priority: "P0", title: "Protect manual structure, routing, browser, and WCAG checks", stream: "Quality", effort: "2d", status: "In progress" },
-  { id: "ARC-201", horizon: "next", priority: "P0", title: "Generate the code-aligned maintainer SDD", stream: "Architecture", effort: "4d", status: "Ready" },
-  { id: "ARC-202", horizon: "next", priority: "P1", title: "Validate the SDD through a maintainer walkthrough", stream: "Architecture", effort: "2d", status: "Ready" },
+  { id: "ARC-201", horizon: "now", priority: "P0", title: "Generate the code-aligned maintainer SDD", stream: "Architecture", effort: "4d", status: "Complete" },
+  { id: "ARC-202", horizon: "now", priority: "P1", title: "Validate the SDD through a maintainer walkthrough", stream: "Architecture", effort: "2d", status: "In progress" },
   { id: "GOV-201", horizon: "next", priority: "P1", title: "Add documentation ownership and freshness controls", stream: "Governance", effort: "2d", status: "Ready" },
   { id: "DOC-203", horizon: "later", priority: "P1", title: "Add a schema-aware JSON Help editor and preview workflow", stream: "Documentation", effort: "3d", status: "Planned" },
 ];
@@ -458,7 +458,7 @@ function DevelopmentDashboard({ notify }) {
       .join("\n");
 
     try {
-      await navigator.clipboard.writeText(`OpenRM Phase 6 active — in-product Help review and maintainer SDD next\n${brief}`);
+      await navigator.clipboard.writeText(`OpenRM Phase 6 active — in-product Help review and maintainer SDD walkthrough next\n${brief}`);
       notify("Current sprint brief copied");
     } catch {
       notify("Sprint brief is listed in IMPLEMENTATION_PLAN.md");
@@ -498,18 +498,19 @@ function DevelopmentDashboard({ notify }) {
           <p>
             The first in-product Help increment publishes the authoritative manual through persistent dashboard
             navigation, searchable contents, stable anchors, responsive rendering, and three-browser WCAG checks.
-            Contextual workspace links, documentation governance, and the maintainer SDD remain in progress.
+            The code-aligned maintainer SDD is now published. Contextual workspace links, its independent
+            walkthrough, and documentation governance remain in progress.
           </p>
           <div className="command-meta">
             <span><GitBranch size={14} /> Stage: Phase 6 active</span>
-            <span><BadgeCheck size={14} /> Next: contextual Help and maintainer SDD</span>
+            <span><BadgeCheck size={14} /> Next: contextual Help and SDD walkthrough</span>
           </div>
         </div>
         <div className="gate-card">
           <div className="gate-card-head">
             <div>
-              <span>First Help increment</span>
-              <strong>4 / 7 work items started</strong>
+              <span>Phase 6 maintainability</span>
+              <strong>6 / 7 workstreams started</strong>
             </div>
             <div className="gate-score active">Active</div>
           </div>
@@ -519,7 +520,8 @@ function DevelopmentDashboard({ notify }) {
             <span className="complete"><CheckCircle2 size={13} /> Search, stable anchors, and responsive layout</span>
             <span className="complete"><CheckCircle2 size={13} /> Three-browser workflows and WCAG A/AA</span>
             <span><CircleDot size={13} /> Contextual workspace links</span>
-            <span><CircleDot size={13} /> Maintainer SDD and walkthrough</span>
+            <span className="complete"><CheckCircle2 size={13} /> Code-aligned maintainer SDD published</span>
+            <span><CircleDot size={13} /> Independent SDD walkthrough</span>
             <span><CircleDot size={13} /> Ownership and freshness controls</span>
           </div>
         </div>
@@ -638,7 +640,7 @@ function DevelopmentDashboard({ notify }) {
 
       <div className="dashboard-source-note">
         <FileCheck2 size={16} />
-        <p><strong>Source of truth:</strong> Phase 6 JSON Help structure, routing, search, stable anchors, responsive rendering, and WCAG A/AA checks pass locally and in protected OpenRM CI run 42547019573, including the complete 42-test browser matrix and production artifact.</p>
+        <p><strong>Source of truth:</strong> Phase 6 JSON Help structure, routing, search, stable anchors, responsive rendering, and WCAG A/AA checks pass locally and in protected OpenRM CI run 42547019573. The first code-aligned SDD is published with ADR and source-path traceability; its independent maintainer walkthrough remains open.</p>
       </div>
     </>
   );

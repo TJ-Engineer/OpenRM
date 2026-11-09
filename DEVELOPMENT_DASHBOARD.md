@@ -1,6 +1,6 @@
 # OpenRM development dashboard
 
-**Last verified:** 8 November 2026, 19:46 CST<br>
+**Last verified:** 8 November 2026, 19:57 CST<br>
 **Foundation evidence commit:** `fc6687f`<br>
 **Phase 2 evidence commit:** `f498031`<br>
 **Phase 3 implementation evidence commit:** `4f50618`<br>
@@ -8,7 +8,7 @@
 **Phase 5 protected evidence:** [OpenRM CI run 42508760769](https://github.com/TJ-Engineer/OpenRM/actions/runs/42508760769)<br>
 **Phase 6 Help protected evidence:** [OpenRM CI run 42547019573](https://github.com/TJ-Engineer/OpenRM/actions/runs/42547019573)<br>
 **Portable stack protected evidence:** [OpenRM CI run 42518730569](https://github.com/TJ-Engineer/OpenRM/actions/runs/42518730569)<br>
-**Overall status:** 🟡 Phase 6 active; the first in-product Help increment is protected-CI verified, with contextual guidance, external-link validation, governance, and the maintainer SDD next
+**Overall status:** 🟡 Phase 6 active; the first in-product Help increment is protected-CI verified and the code-aligned maintainer SDD is published, with contextual guidance, the independent SDD walkthrough, external-link validation, and governance next
 
 This file is the repository-level status dashboard. It summarizes delivery evidence and immediate priorities; [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) remains the source for scope, architecture, phase definitions, and exit gates.
 
@@ -28,8 +28,8 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | Phase 3 — Traceability and controlled change | 🟢 Complete | The complete trace, impact, changeset, baseline, comparison, and signed-export slice passed locally and in protected CI. |
 | Phase 4 — Reviews and verification | 🟢 Complete | The complete review-to-verification signed-evidence exit path passes locally and in protected hosted CI. |
 | Phase 5 — Integration and beta hardening | 🟢 Complete | Jira operations, telemetry, recovery, security, load, three-browser accessibility, deployment artifacts, and operator procedures pass locally and in protected hosted CI. |
-| Phase 6 — Product documentation and maintainability | 🟡 Active | The first-edition manual, persistent Help, quality matrix, and production artifact are protected-CI verified; the SDD, contextual guidance, external-link validation, and governance remain open. |
-| In-product Help and maintenance design | 🟡 First increment protected | Help opens from the topbar and sidebar, renders the authoritative manual, filters by search, and passes parser plus three-browser WCAG checks in protected CI; contextual links and representative-role review remain. |
+| Phase 6 — Product documentation and maintainability | 🟡 Active | The first-edition manual, persistent Help, quality matrix, and production artifact are protected-CI verified; the first SDD edition is locally source/link verified; its walkthrough, contextual guidance, external-link validation, and governance remain open. |
+| In-product Help and maintenance design | 🟡 First increments delivered | Help opens from the topbar and sidebar, renders the authoritative manual, filters by search, and passes parser plus three-browser WCAG checks in protected CI. The SDD maps the implementation to its ADRs, interfaces, data, deployment, operations, and maintenance paths. |
 | OpenRM self-verification project | 🟢 Protected CI verified | The isolated `OPENRM` project contains 12 system and 48 derived requirements, 48 decomposition links, four independently executed evidence cases, 100% trace and verification coverage, and a ready gate with no blockers; clean reconstruction passed in [OpenRM CI run 42512977538](https://github.com/TJ-Engineer/OpenRM/actions/runs/42512977538). |
 | Portable container distribution | 🟢 Protected CI verified | PostgreSQL, migrations, API, self-project bootstrap, and the same-origin web gateway build and start with one command; clean reconstruction and hardening passed in [OpenRM CI run 42518730569](https://github.com/TJ-Engineer/OpenRM/actions/runs/42518730569). |
 | Production API and database | ⚪ Not commissioned | Hardened deployment assets are verified, but the pilot environment, OIDC tenant, PITR, secret manager, and alert receivers remain operator-specific work. |
@@ -44,7 +44,7 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | 🟢 | 3. Traceability and controlled change | Complete | Directed relationships, trace queries, asynchronous impact, attributable changesets, immutable baselines, comparison, and signed export are protected-CI verified. |
 | 🟢 | 4. Reviews and verification | Complete | Reviews, independent verification, exact coverage, readiness, due events, and complete signed export are protected-CI verified. |
 | 🟢 | 5. Integration and beta hardening | Complete | Jira delivery/replay, telemetry, recovery, security, load, browser/accessibility, pilot operations, and all five protected hosted jobs pass. |
-| 🟡 | 6. Product documentation and maintainability | Active | The authoritative manual, dashboard Help, 42-test browser matrix, and production artifact pass protected CI; contextual links, external-link validation, governance, and the SDD remain. |
+| 🟡 | 6. Product documentation and maintainability | Active | The authoritative manual, dashboard Help, 42-test browser matrix, and production artifact pass protected CI; the first SDD edition is published; contextual links, SDD walkthrough, external-link validation, and governance remain. |
 
 ## Phase time and token usage
 
@@ -87,6 +87,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 8 November 2026, 19:27 CST | 6 | `N/R` | `N/R` | Corrected the container build context and passed all five protected jobs in OpenRM CI run 42545427886, including the 42-test web matrix and hardened production artifact. Session usage telemetry was unavailable. |
 | 8 November 2026, 19:42 CST | 6 | `N/R` | `N/R` | Converted the authoritative manual to schema-backed structured JSON, added runtime structure and anchor validation, preserved generated navigation, and passed the full local repository, browser/WCAG, and container gates. Session usage telemetry was unavailable. |
 | 8 November 2026, 19:46 CST | 6 | `N/R` | `N/R` | Deferred the optional schema-aware JSON Help editor and preview workflow as later backlog item `DOC-203`. Session usage telemetry was unavailable. |
+| 8 November 2026, 19:57 CST | 6 | `N/R` | `N/R` | Published the first code-aligned maintainer SDD with system, component, runtime, API, data, security, deployment, operations, testing, maintenance, ADR, and source traceability; all 69 unique local links resolve. Session usage telemetry was unavailable. |
 
 ### Usage accounting rules
 
@@ -127,7 +128,7 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 
 1. Review the first-edition manual with representative author, reviewer, verifier, and administrator users; close content gaps and add accessible visual guidance where it materially helps.
 2. Add contextual links from primary workspaces to the corresponding stable manual sections.
-3. Generate and validate the code-aligned maintainer SDD.
+3. Walk a maintainer through the code-aligned SDD and close any discrepancies found against the running system.
 4. Add documentation ownership and freshness rules plus external-link validation.
 5. Commission the bounded pilot environment with production OIDC, secret delivery, PITR, retained traces, and alert routing.
 6. Complete environment-specific recovery, SLO, and Jira dry-run acceptance evidence.
@@ -145,7 +146,8 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 | Responsive behavior | 🟢 Browser verified | The Help layout collapses without horizontal page overflow at a 390-by-844 viewport. |
 | Manual structure | 🟢 Unit verified | Runtime schema checks detect invalid versions, dates, block types, IDs, and duplicate anchors; each JSON section generates one contents target. |
 | Accessibility | 🟢 Protected CI verified | All nine Help navigation, mobile, and WCAG checks pass in Chromium, Firefox, and WebKit; the JSON-backed 42-test browser matrix and production artifact pass in [OpenRM CI run 42547019573](https://github.com/TJ-Engineer/OpenRM/actions/runs/42547019573). |
-| Remaining gate | 🟡 Active | Representative-role review, contextual links, SDD delivery/walkthrough, governance, and external-link validation remain. |
+| Maintainer SDD | 🟢 Locally verified | `docs/design/SOFTWARE_DESIGN_DESCRIPTION.md` provides 23 maintained sections, Mermaid architecture/runtime views, accepted-ADR traceability, representative change guidance, known limitations, and 69 unique resolving local links. |
+| Remaining gate | 🟡 Active | Representative-role review, contextual links, independent SDD walkthrough, governance, and external-link validation remain. |
 
 ## Phase 3 completion evidence
 
@@ -211,7 +213,7 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 
 - The bounded pilot API/database environment and production OIDC provider are not commissioned by this repository change.
 - The first-edition manual and Help workspace require representative-role review, contextual workspace links, and any visual guidance proven useful by that review.
-- A code-aligned SDD, maintainer walkthrough, documentation ownership model, external-link validation, and automated freshness controls have not yet been delivered.
+- The first code-aligned SDD is published; its independent maintainer walkthrough, documentation ownership model, external-link validation, and automated freshness controls have not yet been completed.
 - The static preview does not yet export CloudFront standard request logs; add an encrypted, selected-Region-compatible destination before regulated production traffic.
 - Alert receivers, database encryption/PITR, backup retention, and secret-manager integration require environment-specific evidence.
 - Registry promotion and independent external penetration-test assurance remain required before broader regulated production exposure.

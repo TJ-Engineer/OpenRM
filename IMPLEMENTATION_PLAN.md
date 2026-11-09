@@ -1,7 +1,7 @@
 # OpenRM implementation plan
 
 **Planning baseline:** 7 November 2026  
-**Current stage:** Phase 6 active; the first in-product Help increment is protected-CI verified, with contextual guidance, documentation governance, the maintainer SDD, and bounded pilot commissioning next
+**Current stage:** Phase 6 active; the first in-product Help increment is protected-CI verified and the first code-aligned maintainer SDD is published, with its independent walkthrough, contextual guidance, documentation governance, and bounded pilot commissioning next
 
 **Primary outcome:** Deliver a self-hostable configuration and requirements management platform with controlled change, end-to-end traceability, review evidence, and verification records.
 
@@ -249,7 +249,7 @@ Completion evidence:
 
 **Outcome:** End users can obtain complete, task-oriented help from inside OpenRM, and maintainers have a code-aligned design reference for safely evolving and operating the application.
 
-**Status:** Active. The structured JSON first-edition manual, persistent Help route, generated contents, search, stable anchors, responsive rendering, schema/browser/WCAG checks, and production artifact pass in [OpenRM CI run 42547019573](https://github.com/TJ-Engineer/OpenRM/actions/runs/42547019573). Pilot review, contextual workspace links, external-link validation, ownership controls, and the maintainer SDD remain open.
+**Status:** Active. The structured JSON first-edition manual, persistent Help route, generated contents, search, stable anchors, responsive rendering, schema/browser/WCAG checks, and production artifact pass in [OpenRM CI run 42547019573](https://github.com/TJ-Engineer/OpenRM/actions/runs/42547019573). The first code-aligned maintainer SDD is published and locally source/link verified. Pilot review, contextual workspace links, external-link validation, ownership controls, and the independent SDD walkthrough remain open.
 
 Deliverables:
 
@@ -258,9 +258,9 @@ Deliverables:
 - [x] Cover getting started, authentication, dashboard navigation, projects and roles, requirement authoring, folders/tags/attributes/saved views, revision comparison, traceability, suspect links, changesets, baselines, reviews, verification, search, import/export, Jira operations, notifications, accessibility/keyboard use, troubleshooting, FAQ, glossary, and support escalation.
 - [x] Provide stable section anchors and an in-product linked table of contents.
 - [ ] Add contextual deep links from relevant OpenRM workspaces into the corresponding manual procedures.
-- [ ] Publish `docs/design/SOFTWARE_DESIGN_DESCRIPTION.md` as the authoritative, versioned SDD for application maintenance.
-- [ ] Document system context, architecture views, repository and component boundaries, runtime interactions, APIs, data/revision/audit design, identity/authorization/tenancy, asynchronous processing, configuration and secrets, deployment topologies, security controls, observability, failure handling, backup/recovery/upgrades, CI/test strategy, and known limitations.
-- [ ] Link the SDD to the accepted ADRs and concrete source, contract, migration, infrastructure, and operations paths; include maintainable diagrams stored as text alongside the document.
+- [x] Publish `docs/design/SOFTWARE_DESIGN_DESCRIPTION.md` as the authoritative, versioned SDD for application maintenance.
+- [x] Document system context, architecture views, repository and component boundaries, runtime interactions, APIs, data/revision/audit design, identity/authorization/tenancy, asynchronous processing, configuration and secrets, deployment topologies, security controls, observability, failure handling, backup/recovery/upgrades, CI/test strategy, and known limitations.
+- [x] Link the SDD to the accepted ADRs and concrete source, contract, migration, infrastructure, and operations paths; include maintainable Mermaid diagrams stored as text in the document.
 - [ ] Define ownership and change triggers so user-visible workflow changes update the manual and design/runtime changes update the SDD in the same pull request.
 - [x] Add local automated checks for duplicate or missing anchors, table-of-contents coverage, dashboard Help routing, search/navigation, responsive rendering, and WCAG 2 A/AA regressions.
 - [x] Protect the documentation structure, Help browser/WCAG, and production-artifact checks in hosted CI.
@@ -341,8 +341,8 @@ FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-
 | DOC-202 | P0 | Author the comprehensive OpenRM user manual, including procedures, troubleshooting, FAQ, glossary, and accessible visual guidance | In progress | First edition is complete; representative-role review and visual guidance remain |
 | DOC-203 | P1 | Add a maintainer-friendly, schema-aware JSON Help editor and preview workflow | Planned — later | A maintainer can edit, validate, preview, and review manual changes without modifying renderer code |
 | WEB-201 | P0 | Add persistent dashboard Help navigation, responsive rendering, stable anchors, and contextual deep links | In progress | Persistent navigation, rendering, search, and anchors pass browser tests; contextual links remain |
-| ARC-201 | P0 | Generate the code-aligned Software Design Description for application maintenance | Planned | Reviewed `docs/design/SOFTWARE_DESIGN_DESCRIPTION.md` with source and ADR traceability |
-| ARC-202 | P1 | Validate SDD architecture, security, data, deployment, recovery, and maintenance guidance against the running system | Planned | Maintainer walkthrough and documented discrepancy closure |
+| ARC-201 | P0 | Generate the code-aligned Software Design Description for application maintenance | Complete | `docs/design/SOFTWARE_DESIGN_DESCRIPTION.md` covers the implementation and validates 69 unique local source/document links plus ADR traceability |
+| ARC-202 | P1 | Validate SDD architecture, security, data, deployment, recovery, and maintenance guidance against the running system | In progress | Source and link reconciliation complete; independent maintainer walkthrough and documented discrepancy closure remain |
 | QLT-301 | P0 | Enforce documentation links, anchors, table-of-contents coverage, Help routing, keyboard access, and WCAG checks in CI | In progress | The JSON-backed complete matrix and production artifact pass in OpenRM CI run `42547019573`; external-link validation remains |
 | GOV-201 | P1 | Add pull-request and release criteria that keep the manual and SDD synchronized with relevant changes | Planned | Contribution checklist, document owners, release review, and freshness evidence |
 
