@@ -34,7 +34,7 @@ For a non-SSO development account, use your organization's approved credential
 method. AWS CLI v2.32 and later can use browser-based temporary credentials:
 
 ```bash
-aws login --profile openrm-demo --region us-east-1
+aws login --profile openrm-demo --region us-east-2
 ```
 
 Avoid long-lived root-account access keys.
@@ -45,21 +45,26 @@ Verify the account number and ARN before provisioning:
 AWS_PROFILE=openrm-demo aws sts get-caller-identity
 ```
 
-For a personal account initially authenticated as root, provision the demo and
-bootstrap the content-only deployment role once:
+Confirm the selected Region in **AWS Settings > View all projects > Overview >
+Additional Info > Region** before provisioning. This project targets US East
+(Ohio), `us-east-2`.
+
+For a new AWS project authenticated through its managed
+`AccountFullAccessRole` (or an advanced AWS account authenticated as root),
+provision the demo and bootstrap the content-only deployment role once:
 
 ```bash
 npm run provision:aws
 ```
 
-The temporary root session creates the S3/CloudFront stack and
+The temporary project administration session creates the S3/CloudFront stack and
 `OpenRMDeploymentRole`. The persistent role can only read the exact stack,
 upload files to the exact demo bucket, and invalidate the CloudFront
 distribution carrying the matching OpenRM tags. It cannot create or modify
 infrastructure, IAM, databases, or unrelated AWS resources. Subsequent content
 deployments use the `openrm-deployer` profile.
 
-The provisioning script logs out the temporary root browser session when it
+The provisioning script logs out the temporary project administration session when it
 finishes, including when an error stops the script.
 
 ## 2. Deploy content updates
@@ -67,7 +72,7 @@ finishes, including when an error stops the script.
 From this project directory:
 
 ```bash
-aws login --profile openrm-demo --region us-east-1
+aws login --profile openrm-demo --region us-east-2
 npm run deploy:aws
 aws logout --profile openrm-demo
 ```
@@ -76,12 +81,16 @@ Optional settings:
 
 ```bash
 AWS_PROFILE=openrm-deployer \
-AWS_REGION=us-east-1 \
+AWS_REGION=us-east-2 \
+CLOUDFRONT_REGION=us-east-1 \
 STACK_NAME=openrm-demo \
 PROJECT_NAME=openrm \
 ENVIRONMENT_NAME=demo \
 npm run deploy:aws
 ```
+
+`CLOUDFRONT_REGION=us-east-1` is limited to CloudFront's global API. The S3 and
+CloudFormation resources remain in the project's selected Region, `us-east-2`.
 
 The source login supplies temporary credentials for assuming the restricted
 role; deployment commands run through `openrm-deployer`. The script waits for
@@ -110,6 +119,15 @@ curl -I "$(AWS_PROFILE=YOUR_PROFILE aws cloudformation describe-stacks \
 
 Confirm that the result is `HTTP/2 200` and includes the configured security
 headers.
+
+## Observability boundary
+
+The initial static preview does not enable CloudFront request access logging.
+Before production or regulated traffic, configure standard logging v2 with an
+encrypted destination that is compatible with the project's selected-Region
+constraints. Use CloudTrail separately for management-plane changes; request
+logs and CloudTrail answer different audit questions and should not be treated
+as substitutes.
 
 ## Remove the demo
 

@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-AWS_REGION="${AWS_REGION:-us-east-1}"
+AWS_REGION="${AWS_REGION:-us-east-2}"
 SOURCE_PROFILE="${SOURCE_PROFILE:-openrm-demo}"
 DEPLOY_PROFILE="${DEPLOY_PROFILE:-openrm-deployer}"
 STACK_NAME="${DEPLOY_ROLE_STACK_NAME:-openrm-deployer-role}"
@@ -13,17 +13,31 @@ SITE_STACK_NAME="${SITE_STACK_NAME:-openrm-demo}"
 PROJECT_NAME="${PROJECT_NAME:-openrm}"
 ENVIRONMENT_NAME="${ENVIRONMENT_NAME:-demo}"
 
-CALLER_ARN="$(aws sts get-caller-identity \
+read -r ACCOUNT_ID CALLER_ARN < <(aws sts get-caller-identity \
   --profile "${SOURCE_PROFILE}" \
   --region "${AWS_REGION}" \
-  --query Arn \
-  --output text)"
+  --query '[Account, Arn]' \
+  --output text)
 
-if [[ "${CALLER_ARN}" != *":root" ]]; then
-  echo "Bootstrap expected the temporary root login profile, got ${CALLER_ARN}." >&2
-  echo "Refusing to modify IAM from an unexpected identity." >&2
-  exit 1
-fi
+case "${CALLER_ARN}" in
+  "arn:aws:iam::${ACCOUNT_ID}:root")
+    DEPLOYMENT_PRINCIPAL_ARN="${CALLER_ARN}"
+    ;;
+  "arn:aws:sts::${ACCOUNT_ID}:assumed-role/AccountFullAccessRole/"*)
+    DEPLOYMENT_PRINCIPAL_ARN="$(aws iam get-role \
+      --profile "${SOURCE_PROFILE}" \
+      --region "${AWS_REGION}" \
+      --role-name AccountFullAccessRole \
+      --query Role.Arn \
+      --output text)"
+    ;;
+  *)
+    echo "Bootstrap expected the project administration profile, got ${CALLER_ARN}." >&2
+    echo "Expected the project root identity or managed AccountFullAccessRole." >&2
+    echo "Refusing to modify IAM from an unexpected identity." >&2
+    exit 1
+    ;;
+esac
 
 aws cloudformation deploy \
   --profile "${SOURCE_PROFILE}" \
@@ -32,6 +46,7 @@ aws cloudformation deploy \
   --stack-name "${STACK_NAME}" \
   --parameter-overrides \
     "RoleName=${ROLE_NAME}" \
+    "DeploymentPrincipalArn=${DEPLOYMENT_PRINCIPAL_ARN}" \
     "SiteStackName=${SITE_STACK_NAME}" \
     "ProjectName=${PROJECT_NAME}" \
     "EnvironmentName=${ENVIRONMENT_NAME}" \

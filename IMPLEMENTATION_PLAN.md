@@ -1,7 +1,7 @@
 # OpenRM implementation plan
 
 **Planning baseline:** 7 November 2026  
-**Current stage:** Phase 5 complete; bounded pilot commissioning is next
+**Current stage:** Phase 6 active; the first in-product Help increment is protected-CI verified and the first code-aligned maintainer SDD is published, with its independent walkthrough, contextual guidance, documentation governance, and bounded pilot commissioning next
 
 **Primary outcome:** Deliver a self-hostable configuration and requirements management platform with controlled change, end-to-end traceability, review evidence, and verification records.
 
@@ -11,7 +11,7 @@ The repository currently contains a polished React/Vite funding preview and a se
 
 What exists now:
 
-- Responsive React prototype covering ten product surfaces.
+- Responsive React application covering eleven product surfaces, including in-product Help.
 - Static production build with Vite.
 - Private S3 origin and CloudFront distribution defined in CloudFormation.
 - Restricted content-deployment role, deployment scripts, caching, HTTPS, and security headers.
@@ -32,6 +32,7 @@ What exists now:
 - PostgreSQL backup/restore and forward-only upgrade rehearsals, multi-browser and accessibility coverage, load validation, security smoke tests, and pilot operations documentation.
 - A reproducible `OPENRM` dogfood project with 12 system requirements, 48 derived requirements, complete decomposition trace, independent review, and repository-linked signed test, analysis, and observation evidence.
 - A one-command portable container distribution for PostgreSQL, forward-only migrations, the hardened API, the complete self-verification project, and the same-origin web application.
+- An authoritative structured JSON user manual exposed through persistent dashboard Help, with generated contents, full-text section search, stable anchors, responsive rendering, schema/anchor tests, three-browser WCAG 2 A/AA coverage, and protected container-build evidence.
 
 What does not exist yet:
 
@@ -39,6 +40,8 @@ What does not exist yet:
 - Environment-specific alert routing, encrypted backup retention, and point-in-time recovery evidence.
 - Automated image-registry promotion and a live Jira service identity for the pilot tenant.
 - Independent external penetration-test assurance for broader regulated production use.
+- Contextual Help links from each primary workspace, representative-role review of the first manual edition, and documentation ownership/freshness controls.
+- A versioned Software Design Description (SDD) that maintainers can use to understand, change, test, deploy, and operate the application safely.
 
 The repository Phase 5 gate is complete. The next operational gate is environment-specific pilot commissioning and acceptance.
 
@@ -242,6 +245,33 @@ Completion evidence:
 - The `OPENRM` self-verification project reaches 100% trace coverage and 100% passed exact-revision verification coverage with no orphans, suspect links, or readiness blockers; [OpenRM CI run 42512977538](https://github.com/TJ-Engineer/OpenRM/actions/runs/42512977538) reconstructed the complete gate from a clean database in the protected `database-path` workflow.
 - [OpenRM CI run 42518730569](https://github.com/TJ-Engineer/OpenRM/actions/runs/42518730569) built the complete portable container distribution and reconstructed its PostgreSQL, migrations, API, 60-requirement bootstrap, and same-origin web gateway from a clean volume with non-root, read-only, capability-dropped application containers.
 
+### Phase 6 — Product documentation and maintainability (Weeks 18–19, active)
+
+**Outcome:** End users can obtain complete, task-oriented help from inside OpenRM, and maintainers have a code-aligned design reference for safely evolving and operating the application.
+
+**Status:** Active. The structured JSON first-edition manual, persistent Help route, generated contents, search, stable anchors, responsive rendering, schema/browser/WCAG checks, and production artifact pass in [OpenRM CI run 42547019573](https://github.com/TJ-Engineer/OpenRM/actions/runs/42547019573). The first code-aligned maintainer SDD is published and locally source/link verified. Pilot review, contextual workspace links, external-link validation, ownership controls, and the independent SDD walkthrough remain open.
+
+Deliverables:
+
+- [x] Publish `docs/user/USER_MANUAL.json` as the authoritative user manual, with a versioned schema, generated linked table of contents, document version, applicable OpenRM release, owner, and last-verified date.
+- [x] Add a persistent **Help** entry to the OpenRM dashboard that opens a responsive, keyboard-accessible manual route without losing the user's application context.
+- [x] Cover getting started, authentication, dashboard navigation, projects and roles, requirement authoring, folders/tags/attributes/saved views, revision comparison, traceability, suspect links, changesets, baselines, reviews, verification, search, import/export, Jira operations, notifications, accessibility/keyboard use, troubleshooting, FAQ, glossary, and support escalation.
+- [x] Provide stable section anchors and an in-product linked table of contents.
+- [ ] Add contextual deep links from relevant OpenRM workspaces into the corresponding manual procedures.
+- [x] Publish `docs/design/SOFTWARE_DESIGN_DESCRIPTION.md` as the authoritative, versioned SDD for application maintenance.
+- [x] Document system context, architecture views, repository and component boundaries, runtime interactions, APIs, data/revision/audit design, identity/authorization/tenancy, asynchronous processing, configuration and secrets, deployment topologies, security controls, observability, failure handling, backup/recovery/upgrades, CI/test strategy, and known limitations.
+- [x] Link the SDD to the accepted ADRs and concrete source, contract, migration, infrastructure, and operations paths; include maintainable Mermaid diagrams stored as text in the document.
+- [ ] Define ownership and change triggers so user-visible workflow changes update the manual and design/runtime changes update the SDD in the same pull request.
+- [x] Add local automated checks for duplicate or missing anchors, table-of-contents coverage, dashboard Help routing, search/navigation, responsive rendering, and WCAG 2 A/AA regressions.
+- [x] Protect the documentation structure, Help browser/WCAG, and production-artifact checks in hosted CI.
+- [ ] Validate external documentation links as part of the release gate.
+
+Exit gate:
+
+- A representative author, reviewer, verifier, and administrator can open Help from the dashboard, navigate the table of contents, deep-link to a task, and complete their primary workflows without undocumented steps.
+- A maintainer unfamiliar with the implementation can use the SDD to locate the responsible component, interface, data objects, security boundary, tests, deployment path, and operational evidence for a representative change.
+- Manual and SDD reviewers confirm that every link resolves, diagrams match the deployed architecture, documented roles and workflows match product behavior, and document version metadata identifies the verified release.
+
 ## 5. Phase 1 execution backlog
 
 | ID | Priority | Work item | Primary evidence | Estimate |
@@ -255,7 +285,7 @@ Completion evidence:
 | WEB-001 | P1 | Migrate the client to TypeScript and API client | Typecheck + build | 3 days |
 | QLT-001 | P0 | Add CI quality and security gates | Protected CI run | 2 days |
 
-FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1 through Phase 5 are closed.
+FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1 through Phase 5 are closed; Phase 6 is active.
 
 ## 5.1 Phase 2 execution backlog
 
@@ -303,6 +333,19 @@ FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-
 | QLT-201 | P0 | Validate load, soak harness, browsers, and accessibility | Complete | Load threshold plus Chromium, Firefox, WebKit, and WCAG A/AA matrix |
 | PIL-101 | P1 | Publish administration, operations, and onboarding procedures | Complete | Deployment guide, administration guide, runbook, and pilot checklist |
 
+## 5.5 Phase 6 execution backlog
+
+| ID | Priority | Work item | Status | Primary evidence |
+| --- | --- | --- | --- | --- |
+| DOC-201 | P0 | Define the manual information architecture, audience map, document metadata, ownership, and linked table of contents | Complete | `docs/user/USER_MANUAL.json` metadata and schema-validated contents cover every primary user role and product workflow |
+| DOC-202 | P0 | Author the comprehensive OpenRM user manual, including procedures, troubleshooting, FAQ, glossary, and accessible visual guidance | In progress | First edition is complete; representative-role review and visual guidance remain |
+| DOC-203 | P1 | Add a maintainer-friendly, schema-aware JSON Help editor and preview workflow | Planned — later | A maintainer can edit, validate, preview, and review manual changes without modifying renderer code |
+| WEB-201 | P0 | Add persistent dashboard Help navigation, responsive rendering, stable anchors, and contextual deep links | In progress | Persistent navigation, rendering, search, and anchors pass browser tests; contextual links remain |
+| ARC-201 | P0 | Generate the code-aligned Software Design Description for application maintenance | Complete | `docs/design/SOFTWARE_DESIGN_DESCRIPTION.md` covers the implementation and validates 69 unique local source/document links plus ADR traceability |
+| ARC-202 | P1 | Validate SDD architecture, security, data, deployment, recovery, and maintenance guidance against the running system | In progress | Source and link reconciliation complete; independent maintainer walkthrough and documented discrepancy closure remain |
+| QLT-301 | P0 | Enforce documentation links, anchors, table-of-contents coverage, Help routing, keyboard access, and WCAG checks in CI | In progress | The JSON-backed complete matrix and production artifact pass in OpenRM CI run `42547019573`; external-link validation remains |
+| GOV-201 | P1 | Add pull-request and release criteria that keep the manual and SDD synchronized with relevant changes | Planned | Contribution checklist, document owners, release review, and freshness evidence |
+
 ## 6. Quality gates
 
 Every merged vertical slice must satisfy:
@@ -316,6 +359,9 @@ Every merged vertical slice must satisfy:
 - Migration forward test and documented rollback or roll-forward strategy.
 - Structured audit event for controlled mutations.
 - Updated operational notes and architecture decisions where behavior changed.
+- Updated user-manual procedures when a user-visible workflow, role, message, or navigation path changes.
+- Updated SDD sections and diagrams when architecture, interfaces, data, security boundaries, deployment, operations, or maintenance behavior changes.
+- Passing documentation link, anchor, table-of-contents, dashboard Help route, keyboard, and accessibility checks when documentation surfaces are affected.
 
 ## 7. Program risks
 
@@ -352,4 +398,6 @@ OpenRM is beta-ready when a pilot team can:
 6. Export a deterministic evidence package.
 7. Recover the service and data within agreed objectives.
 8. Operate the system with documented alerts, runbooks, and no unresolved launch-blocking security findings.
+9. Open comprehensive in-product Help and complete role-specific workflows using the versioned user manual.
+10. Maintain and extend the application using a verified SDD that traces architecture and operational guidance to the implementation.
 

@@ -1,15 +1,28 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >-
-  Content-only deployment role for the OpenRM demo. Infrastructure is
-  provisioned separately with a temporary administrative session. This role
-  can upload the built site, read one stack, and invalidate one tagged
-  CloudFront distribution; it cannot modify infrastructure or IAM.
+  Content-only deployment role for the OpenRM demo — routine releases are
+  isolated from the project administration session and cannot modify
+  infrastructure or IAM.
+
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@3
+  "com.aws.cloudformation.Context":
+    arch: project admin principal -> restricted deployment role -> exact stack, bucket, and tagged distribution
+    must:
+      - deployment trust remains limited to the authenticated same-project principal
+      - content role cannot create or modify infrastructure or IAM
 
 Parameters:
   RoleName:
     Type: String
     Default: OpenRMDeploymentRole
     AllowedPattern: "^[A-Za-z0-9+=,.@_-]{1,64}$"
+
+  DeploymentPrincipalArn:
+    Type: String
+    AllowedPattern: "^arn:(aws|aws-us-gov|aws-cn):iam::[0-9]{12}:(root|role/[A-Za-z0-9+=,.@_/-]+)$"
+    Description: Same-project root or managed role ARN allowed to assume the content deployment role.
 
   SiteStackName:
     Type: String
@@ -29,6 +42,15 @@ Parameters:
 Resources:
   DeploymentRole:
     Type: AWS::IAM::Role
+    Metadata:
+      "com.aws.cloudformation.Context":
+        why: least-privilege profile for routine static-site releases; keeps project admin session out of content deploys
+        must:
+          - trust only DeploymentPrincipalArn through same-project account principal
+          - keep stack, bucket, and distribution permissions scoped to this OpenRM environment
+        mutable: change-with-constraints
+        mutability:
+          RoleName: review-required
     Properties:
       RoleName: !Ref RoleName
       Description: Content-only deployment role for the OpenRM preview
@@ -36,15 +58,14 @@ Resources:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Sid: AllowOnlyThisAccountsRootSession
+          - Sid: AllowOnlyProvisioningPrincipal
             Effect: Allow
             Principal:
               AWS: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
             Action: sts:AssumeRole
             Condition:
               ArnEquals:
-                aws:PrincipalArn: !Sub >-
-                  arn:${AWS::Partition}:iam::${AWS::AccountId}:root
+                aws:PrincipalArn: !Ref DeploymentPrincipalArn
       Policies:
         - PolicyName: OpenRMContentDeploymentPolicy
           PolicyDocument:
