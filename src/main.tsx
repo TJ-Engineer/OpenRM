@@ -171,10 +171,10 @@ const DEVELOPMENT_WORKSTREAMS = [
   {
     name: "Quality & delivery",
     icon: TestTube2,
-    progress: 96,
-    status: "Help checks green locally",
-    tone: "amber",
-    now: "Protect documentation and Help checks in hosted CI",
+    progress: 98,
+    status: "Help checks protected",
+    tone: "mint",
+    now: "Add external-link and documentation-freshness validation",
   },
   {
     name: "Operations",
@@ -637,7 +637,7 @@ function DevelopmentDashboard({ notify }) {
 
       <div className="dashboard-source-note">
         <FileCheck2 size={16} />
-        <p><strong>Source of truth:</strong> Phase 6 Help structure, routing, search, stable anchors, responsive rendering, and WCAG A/AA checks pass locally; the complete 42-test Chromium, Firefox, and WebKit matrix is green, with protected hosted evidence pending.</p>
+        <p><strong>Source of truth:</strong> Phase 6 Help structure, routing, search, stable anchors, responsive rendering, and WCAG A/AA checks pass locally and in protected OpenRM CI run 42545427886, including the complete 42-test browser matrix and production artifact.</p>
       </div>
     </>
   );

@@ -1,7 +1,7 @@
 # OpenRM implementation plan
 
 **Planning baseline:** 7 November 2026  
-**Current stage:** Phase 6 active; the first in-product Help increment is locally verified, with contextual guidance, documentation governance, the maintainer SDD, and bounded pilot commissioning next
+**Current stage:** Phase 6 active; the first in-product Help increment is protected-CI verified, with contextual guidance, documentation governance, the maintainer SDD, and bounded pilot commissioning next
 
 **Primary outcome:** Deliver a self-hostable configuration and requirements management platform with controlled change, end-to-end traceability, review evidence, and verification records.
 
@@ -32,7 +32,7 @@ What exists now:
 - PostgreSQL backup/restore and forward-only upgrade rehearsals, multi-browser and accessibility coverage, load validation, security smoke tests, and pilot operations documentation.
 - A reproducible `OPENRM` dogfood project with 12 system requirements, 48 derived requirements, complete decomposition trace, independent review, and repository-linked signed test, analysis, and observation evidence.
 - A one-command portable container distribution for PostgreSQL, forward-only migrations, the hardened API, the complete self-verification project, and the same-origin web application.
-- An authoritative Markdown user manual exposed through persistent dashboard Help, with a linked table of contents, full-text section search, stable anchors, responsive rendering, parser/anchor tests, and three-browser WCAG 2 A/AA coverage.
+- An authoritative Markdown user manual exposed through persistent dashboard Help, with a linked table of contents, full-text section search, stable anchors, responsive rendering, parser/anchor tests, three-browser WCAG 2 A/AA coverage, and protected container-build evidence.
 
 What does not exist yet:
 
@@ -249,7 +249,7 @@ Completion evidence:
 
 **Outcome:** End users can obtain complete, task-oriented help from inside OpenRM, and maintainers have a code-aligned design reference for safely evolving and operating the application.
 
-**Status:** Active. The first edition manual, persistent Help route, generated contents, search, stable anchors, responsive rendering, and local parser/browser/WCAG checks are implemented. Pilot review, contextual workspace links, protected hosted evidence, ownership controls, and the maintainer SDD remain open.
+**Status:** Active. The first edition manual, persistent Help route, generated contents, search, stable anchors, responsive rendering, parser/browser/WCAG checks, and production artifact pass in [OpenRM CI run 42545427886](https://github.com/TJ-Engineer/OpenRM/actions/runs/42545427886). Pilot review, contextual workspace links, external-link validation, ownership controls, and the maintainer SDD remain open.
 
 Deliverables:
 
@@ -263,7 +263,8 @@ Deliverables:
 - [ ] Link the SDD to the accepted ADRs and concrete source, contract, migration, infrastructure, and operations paths; include maintainable diagrams stored as text alongside the document.
 - [ ] Define ownership and change triggers so user-visible workflow changes update the manual and design/runtime changes update the SDD in the same pull request.
 - [x] Add local automated checks for duplicate or missing anchors, table-of-contents coverage, dashboard Help routing, search/navigation, responsive rendering, and WCAG 2 A/AA regressions.
-- [ ] Add protected hosted documentation checks and validate external links as part of the release gate.
+- [x] Protect the documentation structure, Help browser/WCAG, and production-artifact checks in hosted CI.
+- [ ] Validate external documentation links as part of the release gate.
 
 Exit gate:
 
@@ -341,7 +342,7 @@ FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-
 | WEB-201 | P0 | Add persistent dashboard Help navigation, responsive rendering, stable anchors, and contextual deep links | In progress | Persistent navigation, rendering, search, and anchors pass browser tests; contextual links remain |
 | ARC-201 | P0 | Generate the code-aligned Software Design Description for application maintenance | Planned | Reviewed `docs/design/SOFTWARE_DESIGN_DESCRIPTION.md` with source and ADR traceability |
 | ARC-202 | P1 | Validate SDD architecture, security, data, deployment, recovery, and maintenance guidance against the running system | Planned | Maintainer walkthrough and documented discrepancy closure |
-| QLT-301 | P0 | Enforce documentation links, anchors, table-of-contents coverage, Help routing, keyboard access, and WCAG checks in CI | In progress | Local unit checks and the complete 42-test Chromium, Firefox, WebKit, and WCAG matrix pass; protected hosted evidence remains |
+| QLT-301 | P0 | Enforce documentation links, anchors, table-of-contents coverage, Help routing, keyboard access, and WCAG checks in CI | In progress | The complete matrix and production artifact pass in OpenRM CI run `42545427886`; external-link validation remains |
 | GOV-201 | P1 | Add pull-request and release criteria that keep the manual and SDD synchronized with relevant changes | Planned | Contribution checklist, document owners, release review, and freshness evidence |
 
 ## 6. Quality gates
