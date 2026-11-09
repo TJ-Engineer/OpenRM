@@ -1,6 +1,6 @@
 # OpenRM development dashboard
 
-**Last verified:** 8 November 2026, 14:13 CST<br>
+**Last verified:** 8 November 2026, 18:53 CST<br>
 **Foundation evidence commit:** `fc6687f`<br>
 **Phase 2 evidence commit:** `f498031`<br>
 **Phase 3 implementation evidence commit:** `4f50618`<br>
@@ -17,7 +17,8 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 
 | Area | Status | Evidence or next condition |
 | --- | --- | --- |
-| Phase 0 — Prototype and delivery preview | 🟢 Complete | Interactive React preview and restricted static AWS delivery path are implemented. |
+| Phase 0 — Prototype and delivery preview | 🟢 AWS deployed | The [interactive React preview](https://d20kr4lr7ux18x.cloudfront.net) is live through CloudFront with a private encrypted S3 origin and restricted deployment role. |
+| AWS static preview | 🟢 Live and verified | CloudFront returned `HTTP 200` with CSP/HSTS headers; immutable assets and SPA fallback passed; direct S3 access returned `HTTP 403`. |
 | Phase 1 — Foundation | 🟢 Complete | All foundation deliverables, local checks, hosted CI jobs, and protected-branch controls are complete. |
 | Hosted CI | 🟢 Passed | All five Phase 5 jobs passed in [OpenRM CI run 42508760769](https://github.com/TJ-Engineer/OpenRM/actions/runs/42508760769). |
 | `main` branch protection | 🟢 Enforced | Requires `web`, `api`, `database-path`, `recovery-rehearsal`, and `production-artifact`; applies to administrators; disallows force-pushes and deletion. |
@@ -75,6 +76,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 8 November 2026, 12:16 CST | 5 | 0.1 h | `N/R` | Corrected the hosted recovery harness, passed all five Phase 5 CI jobs, and expanded protected `main` to require recovery and production-artifact validation. |
 | 8 November 2026, 12:58 CST | 5 | 0.7 h | `N/R` | Created the OpenRM self-verification catalog and idempotent API loader; loaded 12 system and 48 derived requirements with complete trace, independent review, linked signed evidence, and 100% ready verification coverage. |
 | 8 November 2026, 14:13 CST | 5 | 1.1 h | `N/R` | Containerized PostgreSQL, migrations, API, self-project bootstrap, and the web gateway; passed clean-volume local and protected hosted reconstruction with non-root, read-only, capability-dropped application containers. |
+| 8 November 2026, 18:53 CST | 0 | `N/R` | `N/R` | Provisioned the `us-east-2` static preview stacks, deployed through the restricted role, completed CloudFront invalidation, and verified HTTPS/security headers, immutable asset caching, SPA fallback, and private-origin isolation. Session usage telemetry was unavailable. |
 
 ### Usage accounting rules
 
@@ -180,6 +182,7 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 ## Known delivery gaps
 
 - The bounded pilot API/database environment and production OIDC provider are not commissioned by this repository change.
+- The static preview does not yet export CloudFront standard request logs; add an encrypted, selected-Region-compatible destination before regulated production traffic.
 - Alert receivers, database encryption/PITR, backup retention, and secret-manager integration require environment-specific evidence.
 - Registry promotion and independent external penetration-test assurance remain required before broader regulated production exposure.
 

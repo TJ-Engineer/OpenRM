@@ -8,7 +8,7 @@ OpenRM is an open, self-hostable configuration and requirements management platf
 
 **Current stage:** 🟢 Phase 5 integration and beta hardening is complete; bounded pilot commissioning is next (updated 8 November 2026).
 
-- 🟢 Phase 0, the interactive prototype and static delivery preview, is complete.
+- 🟢 Phase 0, the interactive prototype and static delivery preview, is complete and [live on AWS](https://d20kr4lr7ux18x.cloudfront.net).
 - 🟢 Phase 1 is complete: all foundation deliverables and local evidence checks are implemented.
 - 🟢 Hosted OpenRM CI passes web, API, security-audit, migration, browser, accessibility, authenticated PostgreSQL, recovery, upgrade, and production-artifact checks.
 - 🟢 The protected `main` branch requires `web`, `api`, `database-path`, `recovery-rehearsal`, and `production-artifact`, and disallows force-pushes and deletion.

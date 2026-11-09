@@ -1,7 +1,16 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >-
-  Private S3 origin and CloudFront distribution for the OpenRM React funding
-  preview. The bucket is never public; CloudFront reads it through OAC.
+  OpenRM React preview — uses a private encrypted S3 origin behind CloudFront
+  OAC so application files are never served from a public bucket.
+
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@3
+  "com.aws.cloudformation.Context":
+    arch: browser -> CloudFront HTTPS -> OAC-signed request -> private S3 origin
+    must:
+      - Regional resources stay in the project's selected Region
+      - S3 public access remains blocked and CloudFront remains the only read path
 
 Parameters:
   ProjectName:
@@ -15,6 +24,11 @@ Parameters:
     Default: demo
     AllowedPattern: "^[a-z][a-z0-9-]{1,9}$"
     Description: Deployment environment identifier.
+
+  CachePolicyId:
+    Type: String
+    AllowedPattern: "^[0-9a-fA-F-]{36}$"
+    Description: Current ID of the AWS managed CachingOptimized policy, resolved by the provisioning script.
 
   PriceClass:
     Type: String
@@ -30,6 +44,15 @@ Resources:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
+    Metadata:
+      "com.aws.cloudformation.Context":
+        why: durable private origin for compiled React assets; versioning protects releases and lifecycle bounds stale-version cost
+        must:
+          - retain on stack deletion or replacement to prevent accidental data loss
+          - keep encryption, ownership enforcement, and all public-access blocks enabled
+        mutable: change-with-constraints
+        mutability:
+          BucketName: must-never-change
     Properties:
       BucketName: !Sub "${ProjectName}-${EnvironmentName}-${AWS::AccountId}-${AWS::Region}"
       BucketEncryption:
@@ -66,6 +89,12 @@ Resources:
 
   OriginAccessControl:
     Type: AWS::CloudFront::OriginAccessControl
+    Metadata:
+      "com.aws.cloudformation.Context":
+        why: gives CloudFront SigV4 access to private S3 without legacy origin access identities
+        must:
+          - signing behavior stays always and origin type stays s3
+        mutable: change-with-constraints
     Properties:
       OriginAccessControlConfig:
         Description: !Sub "Private access to ${ProjectName}-${EnvironmentName} assets"
@@ -76,6 +105,12 @@ Resources:
 
   SecurityHeadersPolicy:
     Type: AWS::CloudFront::ResponseHeadersPolicy
+    Metadata:
+      "com.aws.cloudformation.Context":
+        why: central browser security policy for the static app; blocks framing abuse, MIME sniffing, and unnecessary device APIs
+        must:
+          - preserve CSP, HSTS, frame, content-type, referrer, and permissions headers
+        mutable: review-required
     Properties:
       ResponseHeadersPolicyConfig:
         Name: !Sub "${AWS::StackName}-security-headers"
@@ -109,6 +144,13 @@ Resources:
 
   Distribution:
     Type: AWS::CloudFront::Distribution
+    Metadata:
+      "com.aws.cloudformation.Context":
+        why: global HTTPS delivery and SPA fallback while keeping the S3 origin private
+        must:
+          - origin uses OAC and viewer traffic redirects to HTTPS
+          - 403 and 404 responses continue to load index.html for client-side routing
+        mutable: change-with-constraints
     Properties:
       DistributionConfig:
         Comment: !Sub "${ProjectName}-${EnvironmentName} management preview"
@@ -131,7 +173,7 @@ Resources:
             - GET
             - HEAD
             - OPTIONS
-          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          CachePolicyId: !Ref CachePolicyId
           Compress: true
           ResponseHeadersPolicyId: !Ref SecurityHeadersPolicy
           TargetOriginId: SiteBucketOrigin
@@ -158,6 +200,13 @@ Resources:
 
   SiteBucketPolicy:
     Type: AWS::S3::BucketPolicy
+    Metadata:
+      "com.aws.cloudformation.Context":
+        why: allows reads only from this CloudFront distribution and denies every non-TLS S3 request
+        must:
+          - scope CloudFront read access to the exact distribution ARN
+          - preserve explicit aws:SecureTransport deny for bucket and objects
+        mutable: change-with-constraints
     Properties:
       Bucket: !Ref SiteBucket
       PolicyDocument:
@@ -174,6 +223,17 @@ Resources:
               StringEquals:
                 AWS:SourceArn: !Sub >-
                   arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${Distribution}
+                AWS:SourceAccount: !Ref AWS::AccountId
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: s3:*
+            Resource:
+              - !GetAtt SiteBucket.Arn
+              - !Sub "${SiteBucket.Arn}/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
 
 Outputs:
   BucketName:

@@ -4,7 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-AWS_REGION="${AWS_REGION:-us-east-1}"
+AWS_REGION="${AWS_REGION:-us-east-2}"
+CLOUDFRONT_REGION="${CLOUDFRONT_REGION:-us-east-1}"
 AWS_PROFILE="${AWS_PROFILE:-openrm-deployer}"
 STACK_NAME="${STACK_NAME:-openrm-demo}"
 PROJECT_NAME="${PROJECT_NAME:-openrm}"
@@ -12,6 +13,7 @@ ENVIRONMENT_NAME="${ENVIRONMENT_NAME:-demo}"
 WAIT_FOR_INVALIDATION="${WAIT_FOR_INVALIDATION:-true}"
 
 AWS_ARGS=(--profile "${AWS_PROFILE}" --region "${AWS_REGION}")
+CLOUDFRONT_ARGS=(--profile "${AWS_PROFILE}" --region "${CLOUDFRONT_REGION}")
 
 if ! command -v aws >/dev/null 2>&1; then
   echo "AWS CLI v2 is required. Install it, authenticate, then rerun this command." >&2
@@ -67,15 +69,15 @@ aws "${AWS_ARGS[@]}" s3 cp "${PROJECT_DIR}/dist/index.html" "s3://${BUCKET_NAME}
   --cache-control "no-cache,no-store,must-revalidate" \
   --only-show-errors
 
-INVALIDATION_ID="$(aws "${AWS_ARGS[@]}" cloudfront create-invalidation \
+INVALIDATION_ID="$(aws "${CLOUDFRONT_ARGS[@]}" cloudfront create-invalidation \
   --distribution-id "${DISTRIBUTION_ID}" \
   --paths "/*" \
-  --query Id \
+  --query Invalidation.Id \
   --output text)"
 
 if [[ "${WAIT_FOR_INVALIDATION}" == "true" ]]; then
   echo "Waiting for CloudFront invalidation ${INVALIDATION_ID}..."
-  aws "${AWS_ARGS[@]}" cloudfront wait invalidation-completed \
+  aws "${CLOUDFRONT_ARGS[@]}" cloudfront wait invalidation-completed \
     --distribution-id "${DISTRIBUTION_ID}" \
     --id "${INVALIDATION_ID}"
 fi

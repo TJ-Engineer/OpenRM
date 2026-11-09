@@ -4,28 +4,34 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-AWS_REGION="${AWS_REGION:-us-east-1}"
+AWS_REGION="${AWS_REGION:-us-east-2}"
+CLOUDFRONT_REGION="${CLOUDFRONT_REGION:-us-east-1}"
 SOURCE_PROFILE="${SOURCE_PROFILE:-openrm-demo}"
 STACK_NAME="${STACK_NAME:-openrm-demo}"
 PROJECT_NAME="${PROJECT_NAME:-openrm}"
 ENVIRONMENT_NAME="${ENVIRONMENT_NAME:-demo}"
 PRICE_CLASS="${PRICE_CLASS:-PriceClass_100}"
 
-CALLER_ARN="$(aws sts get-caller-identity \
+read -r ACCOUNT_ID CALLER_ARN < <(aws sts get-caller-identity \
   --profile "${SOURCE_PROFILE}" \
   --region "${AWS_REGION}" \
-  --query Arn \
-  --output text)"
+  --query '[Account, Arn]' \
+  --output text)
 
-if [[ "${CALLER_ARN}" != *":root" ]]; then
-  echo "Provisioning expected the temporary root login profile, got ${CALLER_ARN}." >&2
-  echo "Refusing to provision from an unexpected identity." >&2
-  exit 1
-fi
+case "${CALLER_ARN}" in
+  "arn:aws:iam::${ACCOUNT_ID}:root"|"arn:aws:sts::${ACCOUNT_ID}:assumed-role/AccountFullAccessRole/"*)
+    ;;
+  *)
+    echo "Provisioning expected the project administration profile, got ${CALLER_ARN}." >&2
+    echo "Expected the project root identity or managed AccountFullAccessRole." >&2
+    echo "Refusing to provision from an unexpected identity." >&2
+    exit 1
+    ;;
+esac
 
 logout_source_profile() {
   if aws logout --profile "${SOURCE_PROFILE}" >/dev/null 2>&1; then
-    echo "Temporary root browser session logged out."
+    echo "Temporary project administration session logged out."
   fi
 }
 
@@ -35,6 +41,18 @@ echo "Provisioning the OpenRM demo infrastructure once"
 echo "  Caller:  ${CALLER_ARN}"
 echo "  Region:  ${AWS_REGION}"
 echo "  Stack:   ${STACK_NAME}"
+
+CACHE_POLICY_ID="$(aws cloudfront list-cache-policies \
+  --profile "${SOURCE_PROFILE}" \
+  --region "${CLOUDFRONT_REGION}" \
+  --type managed \
+  --query "CachePolicyList.Items[?CachePolicy.CachePolicyConfig.Name=='Managed-CachingOptimized'].CachePolicy.Id | [0]" \
+  --output text)"
+
+if [[ -z "${CACHE_POLICY_ID}" || "${CACHE_POLICY_ID}" == "None" ]]; then
+  echo "Could not resolve the AWS managed CachingOptimized cache policy." >&2
+  exit 1
+fi
 
 aws cloudformation validate-template \
   --profile "${SOURCE_PROFILE}" \
@@ -49,6 +67,7 @@ aws cloudformation deploy \
   --parameter-overrides \
     "ProjectName=${PROJECT_NAME}" \
     "EnvironmentName=${ENVIRONMENT_NAME}" \
+    "CachePolicyId=${CACHE_POLICY_ID}" \
     "PriceClass=${PRICE_CLASS}" \
   --tags \
     "Project=${PROJECT_NAME}" \
