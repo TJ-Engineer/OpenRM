@@ -8,6 +8,7 @@ SMOKE_PORT="${OPENRM_SMOKE_PORT:-18080}"
 SMOKE_POSTGRES_PORT="${OPENRM_SMOKE_POSTGRES_PORT:-15432}"
 BASE_URL="http://127.0.0.1:${SMOKE_PORT}"
 ORGANIZATION_ID="00000000-0000-4000-8000-000000000001"
+PILOT_ORGANIZATION_ID="00000000-0000-4000-8000-000000000002"
 
 if [[ "${SMOKE_PROJECT}" != openrm-portability-smoke* ]]; then
   echo "OPENRM_SMOKE_PROJECT must begin with openrm-portability-smoke to protect non-test volumes." >&2
@@ -79,6 +80,25 @@ if [[ "${requirements}" != *'"total":60'* ]]; then
   exit 1
 fi
 
+pilot_projects="$(curl --fail --silent \
+  -H 'Authorization: Bearer dev:local-user' \
+  -H "X-OpenRM-Organization: ${PILOT_ORGANIZATION_ID}" \
+  "${BASE_URL}/api/v1/projects")"
+pilot_project_id="$(printf '%s' "${pilot_projects}" | sed -n 's/.*"id":"\([^"]*\)","key":"OPENRM".*/\1/p')"
+if [[ -z "${pilot_project_id}" ]]; then
+  echo "The clean pilot migration did not create the isolated OPENRM workspace." >&2
+  exit 1
+fi
+
+pilot_requirements="$(curl --fail --silent \
+  -H 'Authorization: Bearer dev:local-user' \
+  -H "X-OpenRM-Organization: ${PILOT_ORGANIZATION_ID}" \
+  "${BASE_URL}/api/v1/projects/${pilot_project_id}/requirements?limit=1&offset=0")"
+if [[ "${pilot_requirements}" != *'"total":0'* ]]; then
+  echo "The clean pilot workspace unexpectedly contains demo requirements." >&2
+  exit 1
+fi
+
 for service_name in api web; do
   container_id="$(compose ps --quiet "${service_name}")"
   container_user="$(docker inspect --format '{{.Config.User}}' "${container_id}")"
@@ -98,4 +118,4 @@ for service_name in api web; do
   fi
 done
 
-echo "Portable OpenRM stack verified at ${BASE_URL}: web, API, PostgreSQL, migrations, 60-requirement bootstrap, and container hardening passed."
+echo "Portable OpenRM stack verified at ${BASE_URL}: web, API, PostgreSQL, migrations, isolated blank pilot workspace, 60-requirement development bootstrap, and container hardening passed."

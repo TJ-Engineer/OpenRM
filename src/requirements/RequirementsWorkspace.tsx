@@ -19,8 +19,8 @@ import {
   X,
 } from "lucide-react";
 
-import { resolveApiBaseUrl, sessionHeaders } from "../api/client";
 import type { components } from "../api/generated";
+import { apiRequest, runtimeConfig } from "../api/runtime";
 
 type Project = components["schemas"]["Project"];
 type Requirement = components["schemas"]["Requirement"];
@@ -33,9 +33,7 @@ type RequirementsWorkspaceProps = {
   notify: (message: string) => void;
 };
 
-const DEFAULT_ORGANIZATION = "00000000-0000-4000-8000-000000000001";
 const DEFAULT_PROJECT = "00000000-0000-4000-8000-000000000101";
-const DEFAULT_TOKEN = "dev:local-user";
 
 const PREVIEW_REQUIREMENTS: Requirement[] = [
   {
@@ -67,33 +65,6 @@ const PREVIEW_REQUIREMENTS: Requirement[] = [
     updated_at: "2026-11-08T11:00:00Z",
   },
 ];
-
-function runtimeConfig() {
-  return {
-    baseUrl: resolveApiBaseUrl(import.meta.env.VITE_API_BASE_URL),
-    organizationId: import.meta.env.VITE_OPENRM_ORGANIZATION_ID || DEFAULT_ORGANIZATION,
-    projectId: import.meta.env.VITE_OPENRM_PROJECT_ID || DEFAULT_PROJECT,
-    token: import.meta.env.VITE_OPENRM_TOKEN || DEFAULT_TOKEN,
-  };
-}
-
-async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const config = runtimeConfig();
-  const response = await fetch(`${config.baseUrl}${path}`, {
-    ...init,
-    headers: {
-      ...sessionHeaders(config.token, config.organizationId),
-      ...(init.body ? { "Content-Type": "application/json" } : {}),
-      ...init.headers,
-    },
-  });
-  if (!response.ok) {
-    const payload = await response.json().catch(() => null);
-    const message = payload?.error?.message || `Request failed with status ${response.status}`;
-    throw new Error(message);
-  }
-  return response.json() as Promise<T>;
-}
 
 export function RequirementsWorkspace({ notify }: RequirementsWorkspaceProps) {
   const config = runtimeConfig();
@@ -131,20 +102,28 @@ export function RequirementsWorkspace({ notify }: RequirementsWorkspaceProps) {
         setProjectId(response.items[0].id);
       }
       setMode("live");
-    } catch {
-      setProjects([
-        {
-          id: DEFAULT_PROJECT,
-          key: "AURORA-2",
-          name: "Aurora Flight Computer",
-          description: "Static preview fallback",
-          created_at: "2026-11-01T12:00:00Z",
-        },
-      ]);
-      setRequirements(PREVIEW_REQUIREMENTS);
-      setTotal(PREVIEW_REQUIREMENTS.length);
-      setSelectedId(PREVIEW_REQUIREMENTS[0].id);
-      setMode("preview");
+    } catch (requestError) {
+      if (config.allowPreviewFallback) {
+        setProjects([
+          {
+            id: DEFAULT_PROJECT,
+            key: "AURORA-2",
+            name: "Aurora Flight Computer",
+            description: "Static preview fallback",
+            created_at: "2026-11-01T12:00:00Z",
+          },
+        ]);
+        setRequirements(PREVIEW_REQUIREMENTS);
+        setTotal(PREVIEW_REQUIREMENTS.length);
+        setSelectedId(PREVIEW_REQUIREMENTS[0].id);
+        setMode("preview");
+      } else {
+        setProjects([]);
+        setRequirements([]);
+        setTotal(0);
+        setError(requestError instanceof Error ? requestError.message : "Could not load projects");
+        setMode("preview");
+      }
     }
   };
 

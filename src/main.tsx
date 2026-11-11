@@ -47,6 +47,13 @@ import { RequirementsWorkspace } from "./requirements/RequirementsWorkspace";
 import { ReviewsWorkspace } from "./reviews/ReviewsWorkspace";
 import { TraceabilityWorkspace } from "./traceability/TraceabilityWorkspace";
 import { VerificationWorkspace } from "./verification/VerificationWorkspace";
+import {
+  beginSignIn,
+  initializeAuthentication,
+  signOut,
+  type AuthenticatedUser,
+} from "./api/auth";
+import { loadRuntimeConfiguration, runtimeConfiguration } from "./api/config";
 
 type PageHeaderProps = {
   eyebrow: React.ReactNode;
@@ -280,16 +287,20 @@ const TOUR_STEPS = [
   },
 ];
 
-function App() {
-  const [page, setPage] = useState("overview");
+function App({ user }: { user: AuthenticatedUser }) {
+  const configuration = runtimeConfiguration();
+  const production = configuration.authMode === "cognito";
+  const workspaceItems = production ? NAV_ITEMS.filter((item) => item.id !== "overview") : NAV_ITEMS;
+  const [page, setPage] = useState(production ? "requirements" : "overview");
   const [tourOpen, setTourOpen] = useState(false);
   const [tourStep, setTourStep] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toast, setToast] = useState("");
 
   const currentLabel = useMemo(
-    () => [...DELIVERY_ITEMS, ...NAV_ITEMS, ...PLATFORM_ITEMS].find((item) => item.id === page)?.label || "Overview",
-    [page],
+    () => [...(production ? [] : DELIVERY_ITEMS), ...workspaceItems, ...PLATFORM_ITEMS]
+      .find((item) => item.id === page)?.label || "Requirements",
+    [page, production, workspaceItems],
   );
 
   const navigate = (target) => {
@@ -315,6 +326,9 @@ function App() {
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         onNavigate={navigate}
+        production={production}
+        projectKey={configuration.projectKey}
+        projectName={configuration.projectName}
       />
 
       <main className="main-shell">
@@ -323,22 +337,29 @@ function App() {
             <Menu size={19} />
           </button>
           <div className="breadcrumb">
-            <span>{page === "development" ? "OpenRM program" : page === "help" ? "OpenRM" : "Aurora Flight Computer"}</span>
+            <span>{page === "development" ? "OpenRM program" : configuration.projectName}</span>
             <ChevronRight size={14} />
             <strong>{currentLabel}</strong>
           </div>
           <div className="topbar-actions">
-            <span className="illustrative-chip"><CircleDot size={12} /> {page === "development" ? "Repository evidence" : page === "help" ? "Product guide" : "Illustrative data"}</span>
+            <span className="illustrative-chip"><CircleDot size={12} /> {production ? "Live controlled data" : page === "development" ? "Repository evidence" : page === "help" ? "Product guide" : "Illustrative data"}</span>
             <button className="ghost-button project-button">
-              {page === "development" ? "PROGRAM" : "AURORA-2"} <ChevronDown size={14} />
+              {page === "development" ? "PROGRAM" : configuration.projectKey} <ChevronDown size={14} />
             </button>
             <button className="help-button" onClick={() => navigate("help")} aria-current={page === "help" ? "page" : undefined}>
               <BookOpen size={15} /> Help
             </button>
-            <button className="tour-button" onClick={() => { setTourStep(0); setTourOpen(true); }}>
+            {!production && <button className="tour-button" onClick={() => { setTourStep(0); setTourOpen(true); }}>
               <Sparkles size={15} /> Guided demo
+            </button>}
+            <button
+              className="avatar"
+              aria-label={`Sign out ${user.displayName}`}
+              title={`Sign out ${user.displayName}`}
+              onClick={() => void signOut()}
+            >
+              {user.displayName.split(/[@ ._-]+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "OR"}
             </button>
-            <button className="avatar" aria-label="User profile">GJ</button>
           </div>
         </header>
 
@@ -373,7 +394,8 @@ function App() {
   );
 }
 
-function Sidebar({ page, open, onClose, onNavigate }) {
+function Sidebar({ page, open, onClose, onNavigate, production, projectKey, projectName }) {
+  const workspaceItems = production ? NAV_ITEMS.filter((item) => item.id !== "overview") : NAV_ITEMS;
   const renderItem = (item) => {
     const Icon = item.icon;
     return (
@@ -397,25 +419,24 @@ function Sidebar({ page, open, onClose, onNavigate }) {
           <div className="brand-mark"><GitBranch size={20} /></div>
           <div>
             <div className="brand-name">Open<span>RM</span></div>
-            <div className="brand-subtitle">Funding preview</div>
+            <div className="brand-subtitle">{production ? "Controlled workspace" : "Funding preview"}</div>
           </div>
           <button className="sidebar-close icon-button" onClick={onClose} aria-label="Close menu"><X size={18} /></button>
         </div>
 
         <div className="project-card">
-          <div className="project-icon">{page === "development" ? "CM" : "A2"}</div>
+          <div className="project-icon">{page === "development" ? "CM" : projectKey.slice(0, 2)}</div>
           <div>
-            <strong>{page === "development" ? "OpenRM delivery program" : "Aurora Flight Computer"}</strong>
-            <span>{page === "development" ? "Foundation planning baseline" : "Design gate • SRR"}</span>
+            <strong>{page === "development" ? "OpenRM delivery program" : projectName}</strong>
+            <span>{page === "development" ? "Foundation planning baseline" : "Live controlled project"}</span>
           </div>
           <MoreHorizontal size={18} />
         </div>
 
         <nav className="sidebar-nav">
-          <div className="nav-label">Delivery</div>
-          {DELIVERY_ITEMS.map(renderItem)}
+          {!production && <><div className="nav-label">Delivery</div>{DELIVERY_ITEMS.map(renderItem)}</>}
           <div className="nav-label platform-label">Workspace</div>
-          {NAV_ITEMS.map(renderItem)}
+          {workspaceItems.map(renderItem)}
           <div className="nav-label platform-label">Platform</div>
           {PLATFORM_ITEMS.map(renderItem)}
         </nav>
@@ -423,8 +444,8 @@ function Sidebar({ page, open, onClose, onNavigate }) {
         <div className="sidebar-footer">
           <div className="health-dot" />
           <div>
-            <strong>{page === "development" ? "Preview build operational" : "All systems operational"}</strong>
-            <span>{page === "development" ? "Production services not connected" : "PostgreSQL + S3 connected"}</span>
+            <strong>{production ? "Live pilot connected" : page === "development" ? "Preview build operational" : "All systems operational"}</strong>
+            <span>{production ? "PostgreSQL + API" : page === "development" ? "Production services not connected" : "PostgreSQL + S3 connected"}</span>
           </div>
           <ChevronRight size={15} />
         </div>
@@ -1012,8 +1033,46 @@ function TourModal({ step, onClose, onNext, onBack, onExplore }) {
   );
 }
 
-createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+function SignInScreen({ error }: { error?: string }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <main className="sign-in-shell">
+      <section className="sign-in-card">
+        <div className="brand-mark"><GitBranch size={24} /></div>
+        <div className="eyebrow">Controlled configuration and requirements</div>
+        <h1>Sign in to OpenRM</h1>
+        <p>Use the administrator invitation for this private pilot workspace.</p>
+        {error && <div className="workspace-error" role="alert">{error}</div>}
+        <button className="primary-button" disabled={busy} onClick={() => {
+          setBusy(true);
+          void beginSignIn().catch(() => setBusy(false));
+        }}>
+          <LockKeyhole size={16} /> {busy ? "Opening secure sign-in…" : "Continue to secure sign-in"}
+        </button>
+      </section>
+    </main>
+  );
+}
+
+async function bootstrapApplication() {
+  const root = createRoot(document.getElementById("root")!);
+  try {
+    await loadRuntimeConfiguration();
+    const authentication = await initializeAuthentication();
+    root.render(
+      <React.StrictMode>
+        {authentication.authenticated
+          ? <App user={authentication.user} />
+          : <SignInScreen />}
+      </React.StrictMode>,
+    );
+  } catch (error) {
+    root.render(
+      <React.StrictMode>
+        <SignInScreen error={error instanceof Error ? error.message : "OpenRM could not initialize"} />
+      </React.StrictMode>,
+    );
+  }
+}
+
+void bootstrapApplication();

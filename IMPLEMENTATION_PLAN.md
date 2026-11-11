@@ -1,13 +1,13 @@
 # OpenRM implementation plan
 
 **Planning baseline:** 7 November 2026  
-**Current stage:** Phase 6 active; the first in-product Help increment is protected-CI verified and the first code-aligned maintainer SDD is published, with its independent walkthrough, contextual guidance, documentation governance, and bounded pilot commissioning next
+**Current stage:** Phase 6 active; the clean bounded AWS pilot is commissioned, the first in-product Help increment is protected-CI verified, and the first code-aligned maintainer SDD is published. Phase 7 controlled development archive is planned as the required next product increment alongside pilot acceptance.
 
-**Primary outcome:** Deliver a self-hostable configuration and requirements management platform with controlled change, end-to-end traceability, review evidence, and verification records.
+**Primary outcome:** Deliver a self-hostable configuration and requirements management platform with controlled change, end-to-end traceability, review evidence, verification records, and a reconstructable long-term archive of the complete application lifecycle.
 
 ## 1. Current state
 
-The repository currently contains a polished React/Vite funding preview and a secure static deployment path. The preview demonstrates the intended workflows for requirements, traceability, baselines, reviews, verification, object storage, the API, integrations, and architecture.
+The repository contains the original React/Vite stakeholder preview, the complete application implementation, and a clean bounded AWS pilot. The pilot exposes the real Cognito-protected requirements workspace and API without loading the demo tenant or demo artifacts.
 
 What exists now:
 
@@ -33,17 +33,20 @@ What exists now:
 - A reproducible `OPENRM` dogfood project with 12 system requirements, 48 derived requirements, complete decomposition trace, independent review, and repository-linked signed test, analysis, and observation evidence.
 - A one-command portable container distribution for PostgreSQL, forward-only migrations, the hardened API, the complete self-verification project, and the same-origin web application.
 - An authoritative structured JSON user manual exposed through persistent dashboard Help, with generated contents, full-text section search, stable anchors, responsive rendering, schema/anchor tests, three-browser WCAG 2 A/AA coverage, and protected container-build evidence.
+- A live clean pilot at `https://d3785w5m5qzybi.cloudfront.net/` using Cognito managed login, CloudFront, an origin-restricted ALB, one ARM64 Fargate task, immutable ECR image digests, Secrets Manager, and private deletion-protected PostgreSQL 17 in `us-east-2`.
+- A separate blank pilot organization and `OPENRM` project with no demo artifacts, production OIDC enforcement, disabled preview fallback, and a verified unauthenticated `401` API boundary.
 
 What does not exist yet:
 
-- A commissioned pilot API/database environment and connected production OIDC provider.
-- Environment-specific alert routing, encrypted backup retention, and point-in-time recovery evidence.
+- Initial-administrator first sign-in and live create/revise/history acceptance evidence from the commissioned pilot.
+- Environment-specific alert routing plus restore evidence for the encrypted one-day automated-backup window.
 - Automated image-registry promotion and a live Jira service identity for the pilot tenant.
 - Independent external penetration-test assurance for broader regulated production use.
 - Contextual Help links from each primary workspace, representative-role review of the first manual edition, and documentation ownership/freshness controls.
-- A versioned Software Design Description (SDD) that maintainers can use to understand, change, test, deploy, and operate the application safely.
+- Independent maintainer walkthrough evidence for the versioned Software Design Description (SDD), plus closure of any discrepancies found against the running system.
+- A complete controlled archive: artifact-byte transfer, immutable cross-system manifests, full Jira inbound history, CI evidence ingestion, customer acceptance packages, retention/legal hold/disposition controls, scheduled integrity scans, archive export and restore rehearsal, unified archive search, and joint PostgreSQL/object-store reconstruction evidence.
 
-The repository Phase 5 gate is complete. The next operational gate is environment-specific pilot commissioning and acceptance.
+The repository Phase 5 gate is complete, Phase 6 is active, and Phase 7 is planned. The clean pilot is commissioned and the initial administrator is invited; the next operational gate is first sign-in and live artifact-creation acceptance.
 
 ## 2. Delivery principles
 
@@ -241,7 +244,7 @@ Completion evidence:
 
 - `web`, `api`, `database-path`, `recovery-rehearsal`, and `production-artifact` passed in [OpenRM CI run 42508760769](https://github.com/TJ-Engineer/OpenRM/actions/runs/42508760769).
 - Protected `main` now requires all five Phase 5 checks with strict up-to-date validation and administrator enforcement.
-- Live pilot commissioning remains an environment-specific operational gate, not an unresolved repository implementation gate.
+- The clean AWS pilot is commissioned in `us-east-2` and its initial administrator invitation is issued; first sign-in and live artifact-creation acceptance remain environment-specific operational gates.
 - The `OPENRM` self-verification project reaches 100% trace coverage and 100% passed exact-revision verification coverage with no orphans, suspect links, or readiness blockers; [OpenRM CI run 42512977538](https://github.com/TJ-Engineer/OpenRM/actions/runs/42512977538) reconstructed the complete gate from a clean database in the protected `database-path` workflow.
 - [OpenRM CI run 42518730569](https://github.com/TJ-Engineer/OpenRM/actions/runs/42518730569) built the complete portable container distribution and reconstructed its PostgreSQL, migrations, API, 60-requirement bootstrap, and same-origin web gateway from a clean volume with non-root, read-only, capability-dropped application containers.
 
@@ -272,6 +275,32 @@ Exit gate:
 - A maintainer unfamiliar with the implementation can use the SDD to locate the responsible component, interface, data objects, security boundary, tests, deployment path, and operational evidence for a representative change.
 - Manual and SDD reviewers confirm that every link resolves, diagrams match the deployed architecture, documented roles and workflows match product behavior, and document version metadata identifies the verified release.
 
+### Phase 7 — Controlled development archive (Weeks 20–23, planned)
+
+**Outcome:** OpenRM can preserve, discover, verify, export, restore, and reconstruct the complete application-lifecycle record for a project or release, including requirements, Jira history, source and build identity, test evidence, release artifacts, and customer acceptance.
+
+**Status:** Planned. OpenRM already provides append-only PostgreSQL evidence, deterministic signed exports, content-addressed attachment metadata, and database recovery rehearsals. It does not yet ingest and retain every external evidence byte, collect complete Jira inbound history, manage customer acceptance packages, enforce archive retention and legal holds, or prove coordinated database/object-store reconstruction.
+
+Deliverables:
+
+- [ ] Add S3-compatible upload, download, multipart, and presigned-transfer support for evidence bytes while keeping cloud-specific behavior behind the object-storage adapter.
+- [ ] Create immutable artifact manifests that bind hashes, signatures, media types, sizes, source identities, timestamps, and object versions to projects, requirements, baselines, commits, builds, and releases.
+- [ ] Collect and reconcile complete Jira inbound history, including issue revisions, comments, transitions, attachments, links, users, and synchronization checkpoints, without weakening the existing governed outbound delivery path.
+- [ ] Add authenticated CI evidence-ingestion endpoints and reference pipeline integrations for test results, coverage, static analysis, security scans, build provenance, software bills of materials, and release artifacts.
+- [ ] Add dedicated customer-acceptance packages with acceptance criteria, delivered baseline/release identity, customer observations, decisions, signatures, attachments, and revocation or supersession history.
+- [ ] Define and enforce retention schedules, legal holds, retention overrides, disposition review, dual approval, and auditable defensible deletion across PostgreSQL records and object versions.
+- [ ] Run scheduled integrity scans that recompute object hashes, validate signatures and manifest references, detect missing or altered evidence, and emit attributable findings and alerts.
+- [ ] Export a self-describing archive and rehearse its restore in an isolated environment without relying on the source OpenRM deployment.
+- [ ] Search and retrieve archived evidence by project, requirement, Jira key, commit, build, test, baseline, release, customer, and acceptance decision while preserving tenant and role boundaries.
+- [ ] Prove that PostgreSQL records and referenced object versions can be backed up, restored, and reconstructed together to the same consistent archive point.
+
+Exit gate:
+
+- A selected release can be exported and restored into an isolated environment; every manifest hash and signature verifies, and the restored record traces requirements through Jira, commits, builds, tests, release artifacts, and customer acceptance.
+- A coordinated recovery rehearsal reconstructs PostgreSQL records and exact object versions to a declared archive point with no missing, substituted, or unreferenced required evidence.
+- Automated policy tests prove retention, legal hold, disposition approval, tenant isolation, and audit behavior, including denied deletion while a hold is active.
+- Scheduled integrity scanning and unified archive search pass on representative evidence volumes, and operators can resolve or formally disposition every reported integrity finding.
+
 ## 5. Phase 1 execution backlog
 
 | ID | Priority | Work item | Primary evidence | Estimate |
@@ -285,7 +314,7 @@ Exit gate:
 | WEB-001 | P1 | Migrate the client to TypeScript and API client | Typecheck + build | 3 days |
 | QLT-001 | P0 | Add CI quality and security gates | Protected CI run | 2 days |
 
-FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1 through Phase 5 are closed; Phase 6 is active.
+FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-002 are complete. Phase 1 through Phase 5 are closed; Phase 6 is active; Phase 7 is planned.
 
 ## 5.1 Phase 2 execution backlog
 
@@ -346,6 +375,21 @@ FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-
 | QLT-301 | P0 | Enforce documentation links, anchors, table-of-contents coverage, Help routing, keyboard access, and WCAG checks in CI | In progress | The JSON-backed complete matrix and production artifact pass in OpenRM CI run `42547019573`; external-link validation remains |
 | GOV-201 | P1 | Add pull-request and release criteria that keep the manual and SDD synchronized with relevant changes | Planned | Contribution checklist, document owners, release review, and freshness evidence |
 
+## 5.6 Phase 7 execution backlog
+
+| ID | Priority | Work item | Status | Primary evidence |
+| --- | --- | --- | --- | --- |
+| ARV-101 | P0 | Add S3-compatible evidence upload, download, multipart, and presigned transfers | Planned | Object-adapter contract, authorization tests, checksum validation, and portable integration test |
+| ARV-102 | P0 | Persist immutable cross-system artifact manifests linked to projects, requirements, baselines, commits, builds, and releases | Planned | Manifest schema, database immutability tests, deterministic signature verification, and object-version binding |
+| ARV-103 | P0 | Collect and reconcile complete Jira inbound history | Planned | Connector replay, checkpoint recovery, attachment capture, change-history reconciliation, and tenant-isolation tests |
+| ARV-104 | P0 | Ingest CI test, analysis, security, provenance, SBOM, build, and release evidence | Planned | Authenticated ingestion contract plus reference pipeline end-to-end tests |
+| ARV-105 | P0 | Create controlled customer-acceptance packages and external signature evidence | Planned | Acceptance workflow, signature validation, supersession history, authorization, and signed export test |
+| ARV-106 | P0 | Enforce retention schedules, legal holds, and approved defensible disposition | Planned | Policy matrix, hold-denial tests, dual-approval deletion, object-version disposition, and immutable audit evidence |
+| ARV-107 | P1 | Schedule archive integrity scans that recompute hashes and validate signatures and references | Planned | Corruption and missing-object injection tests, scan findings, alerts, and attributable resolution evidence |
+| ARV-108 | P0 | Export and restore a self-describing archive in an isolated environment | Planned | Clean-environment archive portability and restore rehearsal |
+| ARV-109 | P1 | Search archive evidence across requirements, Jira, source, builds, tests, releases, and acceptance | Planned | Relevance, authorization, tenancy, pagination, and representative-volume tests |
+| ARV-110 | P0 | Reconstruct PostgreSQL records and exact object versions to one consistent archive point | Planned | Coordinated backup/restore rehearsal with referential, hash, signature, and completeness verification |
+
 ## 6. Quality gates
 
 Every merged vertical slice must satisfy:
@@ -362,6 +406,9 @@ Every merged vertical slice must satisfy:
 - Updated user-manual procedures when a user-visible workflow, role, message, or navigation path changes.
 - Updated SDD sections and diagrams when architecture, interfaces, data, security boundaries, deployment, operations, or maintenance behavior changes.
 - Passing documentation link, anchor, table-of-contents, dashboard Help route, keyboard, and accessibility checks when documentation surfaces are affected.
+- Immutable manifest, hash, signature, object-version, and referential-integrity verification when archive evidence is created, transferred, exported, or restored.
+- Retention, legal-hold, disposition-approval, tenant-isolation, and immutable-audit policy tests when archive lifecycle behavior changes.
+- A coordinated PostgreSQL and object-store recovery test when archive schemas, object layouts, backup procedures, or restore procedures change.
 
 ## 7. Program risks
 
@@ -372,6 +419,8 @@ Every merged vertical slice must satisfy:
 | Authorization is bolted on after feature work | Cross-project exposure or inconsistent policy | Central policy layer, deny-by-default tests, tenant-isolation suite | A query bypasses the policy boundary |
 | Connector work destabilizes the core | Delivery stalls on external-system behavior | Adapter boundary, outbox, replay, rate limiting, dead-letter queue | External availability blocks a core transaction |
 | Static preview infrastructure is treated as production architecture | Missing API, data, recovery, and observability controls | Separate preview hosting from platform environments and operating model | Production data is proposed for the preview stack |
+| External evidence is linked but not durably captured | A release record becomes incomplete when Jira, CI, source, or customer systems change or are retired | Ingest evidence bytes and complete history into immutable manifests with retention, integrity scanning, and portable export | A required audit artifact can only be retrieved from an external system |
+| Database and object archives recover to different points | Restored records reference missing or incorrect evidence bytes | Coordinate archive points, retain exact object versions, and rehearse joint reconstruction | A restore contains missing objects, hash mismatches, or manifest references newer than the database snapshot |
 
 ## 8. Development dashboard operating rules
 

@@ -1,27 +1,31 @@
-import { resolveApiBaseUrl, sessionHeaders } from "./client";
-
-const DEFAULT_ORGANIZATION = "00000000-0000-4000-8000-000000000001";
-const DEFAULT_PROJECT = "00000000-0000-4000-8000-000000000101";
-const DEFAULT_TOKEN = "dev:local-user";
-const DEFAULT_REVIEWER_TOKEN = "dev:local-reviewer";
+import { currentUserSubject, getIdentityToken } from "./auth";
+import { runtimeConfiguration } from "./config";
+import { sessionHeaders } from "./client";
 
 export function runtimeConfig() {
+  const configuration = runtimeConfiguration();
   return {
-    baseUrl: resolveApiBaseUrl(import.meta.env.VITE_API_BASE_URL),
-    organizationId: import.meta.env.VITE_OPENRM_ORGANIZATION_ID || DEFAULT_ORGANIZATION,
-    projectId: import.meta.env.VITE_OPENRM_PROJECT_ID || DEFAULT_PROJECT,
-    token: import.meta.env.VITE_OPENRM_TOKEN || DEFAULT_TOKEN,
-    reviewerToken: import.meta.env.VITE_OPENRM_REVIEWER_TOKEN || DEFAULT_REVIEWER_TOKEN,
-    reviewerSubject: import.meta.env.VITE_OPENRM_REVIEWER_SUBJECT || "local-reviewer",
+    baseUrl: configuration.apiBaseUrl,
+    organizationId: configuration.organizationId,
+    projectId: configuration.projectId,
+    projectKey: configuration.projectKey,
+    projectName: configuration.projectName,
+    allowPreviewFallback: configuration.allowPreviewFallback,
+    token: configuration.developmentToken || "",
+    reviewerToken: configuration.developmentReviewerToken || "",
+    reviewerSubject: currentUserSubject() || configuration.developmentReviewerSubject || "current-user",
   };
 }
 
 export async function apiRequestAs<T>(path: string, token: string, init: RequestInit = {}): Promise<T> {
   const config = runtimeConfig();
+  const identityToken = runtimeConfiguration().authMode === "cognito"
+    ? await getIdentityToken()
+    : token;
   const response = await fetch(`${config.baseUrl}${path}`, {
     ...init,
     headers: {
-      ...sessionHeaders(token, config.organizationId),
+      ...sessionHeaders(identityToken, config.organizationId),
       ...(init.body ? { "Content-Type": "application/json" } : {}),
       ...init.headers,
     },
@@ -36,7 +40,9 @@ export async function apiRequestAs<T>(path: string, token: string, init: Request
 }
 
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  return apiRequestAs(path, runtimeConfig().token, init);
+  const configuration = runtimeConfiguration();
+  const token = configuration.developmentToken || "dev:local-user";
+  return apiRequestAs(path, token, init);
 }
 
 export function downloadJson(filename: string, payload: unknown) {

@@ -527,3 +527,10 @@ code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.82em; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+.sign-in-shell { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at 20% 10%, #244f42 0, #10251f 42%, #07130f 100%); }
+.sign-in-card { width: min(440px, 100%); display: grid; gap: 16px; padding: 40px; border: 1px solid rgba(255,255,255,.12); border-radius: 20px; background: var(--paper); box-shadow: 0 28px 90px rgba(0,0,0,.42); }
+.sign-in-card .brand-mark { width: 48px; height: 48px; }
+.sign-in-card h1 { margin: 0; font: 500 38px/1.05 Georgia, serif; }
+.sign-in-card p { margin: 0 0 8px; color: #52655c; font-size: 11px; line-height: 1.65; }
+.sign-in-card .primary-button { min-height: 44px; justify-content: center; }

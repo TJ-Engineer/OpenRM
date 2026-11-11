@@ -1,6 +1,6 @@
 # OpenRM development dashboard
 
-**Last verified:** 8 November 2026, 19:57 CST<br>
+**Last verified:** 10 November 2026<br>
 **Foundation evidence commit:** `fc6687f`<br>
 **Phase 2 evidence commit:** `f498031`<br>
 **Phase 3 implementation evidence commit:** `4f50618`<br>
@@ -8,7 +8,7 @@
 **Phase 5 protected evidence:** [OpenRM CI run 42508760769](https://github.com/TJ-Engineer/OpenRM/actions/runs/42508760769)<br>
 **Phase 6 Help protected evidence:** [OpenRM CI run 42547019573](https://github.com/TJ-Engineer/OpenRM/actions/runs/42547019573)<br>
 **Portable stack protected evidence:** [OpenRM CI run 42518730569](https://github.com/TJ-Engineer/OpenRM/actions/runs/42518730569)<br>
-**Overall status:** 🟡 Phase 6 active; the first in-product Help increment is protected-CI verified and the code-aligned maintainer SDD is published, with contextual guidance, the independent SDD walkthrough, external-link validation, and governance next
+**Overall status:** 🟡 Phase 6 active; the clean bounded AWS pilot is live, the initial administrator is invited, the first in-product Help increment is protected-CI verified, and the code-aligned maintainer SDD is published. First sign-in and live artifact-creation acceptance remain open.
 
 This file is the repository-level status dashboard. It summarizes delivery evidence and immediate priorities; [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) remains the source for scope, architecture, phase definitions, and exit gates.
 
@@ -20,6 +20,7 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | --- | --- | --- |
 | Phase 0 — Prototype and delivery preview | 🟢 AWS deployed | The [interactive React preview](https://d20kr4lr7ux18x.cloudfront.net) is live through CloudFront with a private encrypted S3 origin and restricted deployment role. |
 | AWS static preview | 🟢 Live and verified | CloudFront returned `HTTP 200` with CSP/HSTS headers; immutable assets and SPA fallback passed; direct S3 access returned `HTTP 403`. |
+| AWS clean pilot | 🟢 Live and healthy | [OpenRM](https://d3785w5m5qzybi.cloudfront.net/) serves the Cognito-protected production UI with no demo artifacts; CloudFront, ECS/Fargate, the Rust API, and private PostgreSQL 17 are healthy in `us-east-2`. |
 | Phase 1 — Foundation | 🟢 Complete | All foundation deliverables, local checks, hosted CI jobs, and protected-branch controls are complete. |
 | Hosted CI | 🟢 Passed | All five Phase 5 jobs passed in [OpenRM CI run 42508760769](https://github.com/TJ-Engineer/OpenRM/actions/runs/42508760769). |
 | `main` branch protection | 🟢 Enforced | Requires `web`, `api`, `database-path`, `recovery-rehearsal`, and `production-artifact`; applies to administrators; disallows force-pushes and deletion. |
@@ -29,10 +30,11 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | Phase 4 — Reviews and verification | 🟢 Complete | The complete review-to-verification signed-evidence exit path passes locally and in protected hosted CI. |
 | Phase 5 — Integration and beta hardening | 🟢 Complete | Jira operations, telemetry, recovery, security, load, three-browser accessibility, deployment artifacts, and operator procedures pass locally and in protected hosted CI. |
 | Phase 6 — Product documentation and maintainability | 🟡 Active | The first-edition manual, persistent Help, quality matrix, and production artifact are protected-CI verified; the first SDD edition is locally source/link verified; its walkthrough, contextual guidance, external-link validation, and governance remain open. |
+| Phase 7 — Controlled development archive | ⚪ Planned | Ten required work items cover evidence-byte transfers, immutable manifests, Jira inbound history, CI evidence, customer acceptance, retention/legal holds/disposition, integrity scans, export/restore, archive search, and coordinated PostgreSQL/object reconstruction. |
 | In-product Help and maintenance design | 🟡 First increments delivered | Help opens from the topbar and sidebar, renders the authoritative manual, filters by search, and passes parser plus three-browser WCAG checks in protected CI. The SDD maps the implementation to its ADRs, interfaces, data, deployment, operations, and maintenance paths. |
 | OpenRM self-verification project | 🟢 Protected CI verified | The isolated `OPENRM` project contains 12 system and 48 derived requirements, 48 decomposition links, four independently executed evidence cases, 100% trace and verification coverage, and a ready gate with no blockers; clean reconstruction passed in [OpenRM CI run 42512977538](https://github.com/TJ-Engineer/OpenRM/actions/runs/42512977538). |
 | Portable container distribution | 🟢 Protected CI verified | PostgreSQL, migrations, API, self-project bootstrap, and the same-origin web gateway build and start with one command; clean reconstruction and hardening passed in [OpenRM CI run 42518730569](https://github.com/TJ-Engineer/OpenRM/actions/runs/42518730569). |
-| Production API and database | ⚪ Not commissioned | Hardened deployment assets are verified, but the pilot environment, OIDC tenant, PITR, secret manager, and alert receivers remain operator-specific work. |
+| Production API and database | 🟡 Pilot commissioned | Cognito OIDC, Secrets Manager, immutable ECR digests, a private deletion-protected RDS instance, and one healthy non-root/read-only ECS task are live. The initial administrator invitation is issued; first sign-in, artifact-creation acceptance, alert receivers, and broader-production hardening remain. |
 
 ## Phase progress
 
@@ -45,6 +47,7 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | 🟢 | 4. Reviews and verification | Complete | Reviews, independent verification, exact coverage, readiness, due events, and complete signed export are protected-CI verified. |
 | 🟢 | 5. Integration and beta hardening | Complete | Jira delivery/replay, telemetry, recovery, security, load, browser/accessibility, pilot operations, and all five protected hosted jobs pass. |
 | 🟡 | 6. Product documentation and maintainability | Active | The authoritative manual, dashboard Help, 42-test browser matrix, and production artifact pass protected CI; the first SDD edition is published; contextual links, SDD walkthrough, external-link validation, and governance remain. |
+| ⚪ | 7. Controlled development archive | Planned | The required scope and exit gate are defined; implementation and verification evidence have not started. |
 
 ## Phase time and token usage
 
@@ -59,6 +62,7 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 4. Reviews and verification | Complete | 8 Nov 2026 | 8 Nov 2026 | 0.9 h | `N/R` |
 | 5. Integration and beta hardening | Complete | 8 Nov 2026 | 8 Nov 2026 | 2.7 h | `N/R` |
 | 6. Product documentation and maintainability | Active; session telemetry unavailable | 8 Nov 2026 | Not complete | `N/R` | `N/R` |
+| 7. Controlled development archive | Planned | Not started | Not complete | 0.0 h | 0 |
 
 ### Usage change log
 
@@ -130,9 +134,10 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 2. Add contextual links from primary workspaces to the corresponding stable manual sections.
 3. Walk a maintainer through the code-aligned SDD and close any discrepancies found against the running system.
 4. Add documentation ownership and freshness rules plus external-link validation.
-5. Commission the bounded pilot environment with production OIDC, secret delivery, PITR, retained traces, and alert routing.
-6. Complete environment-specific recovery, SLO, and Jira dry-run acceptance evidence.
+5. Complete the initial administrator's first sign-in and the live create/revise/history artifact acceptance path in the clean AWS tenant.
+6. Complete environment-specific recovery, alert-receiver, SLO, and Jira dry-run acceptance evidence.
 7. Obtain independent external assurance before broader regulated production use.
+8. Decompose and sequence the Phase 7 controlled development archive backlog after the Phase 6 documentation gate, preserving portable S3-compatible storage and coordinated database/object recovery as architectural constraints.
 
 **Later backlog:** `DOC-203` — add a maintainer-friendly, schema-aware JSON Help editor and preview workflow after the current Phase 6 documentation and SDD gates.
 
@@ -148,6 +153,23 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 | Accessibility | 🟢 Protected CI verified | All nine Help navigation, mobile, and WCAG checks pass in Chromium, Firefox, and WebKit; the JSON-backed 42-test browser matrix and production artifact pass in [OpenRM CI run 42547019573](https://github.com/TJ-Engineer/OpenRM/actions/runs/42547019573). |
 | Maintainer SDD | 🟢 Locally verified | `docs/design/SOFTWARE_DESIGN_DESCRIPTION.md` provides 23 maintained sections, Mermaid architecture/runtime views, accepted-ADR traceability, representative change guidance, known limitations, and 69 unique resolving local links. |
 | Remaining gate | 🟡 Active | Representative-role review, contextual links, independent SDD walkthrough, governance, and external-link validation remain. |
+
+## Phase 7 planned scope
+
+| Required capability | State | Completion evidence |
+| --- | --- | --- |
+| S3-compatible evidence transfer | ⚪ Planned | Authorized upload/download, multipart, presigned-transfer, checksum, and portable adapter integration tests pass. |
+| Immutable artifact manifests | ⚪ Planned | Signed manifests bind hashes and exact object versions to projects, requirements, baselines, commits, builds, and releases. |
+| Full Jira inbound history | ⚪ Planned | Issue revisions, transitions, comments, links, attachments, users, and synchronization checkpoints reconcile under replay. |
+| CI evidence ingestion | ⚪ Planned | Authenticated pipeline integrations archive test, coverage, analysis, security, provenance, SBOM, build, and release evidence. |
+| Customer acceptance packages | ⚪ Planned | Acceptance criteria, delivered baseline/release identity, observations, decisions, signatures, attachments, and supersession history are controlled and exportable. |
+| Retention, legal hold, and disposition | ⚪ Planned | Policy tests prove schedules, holds, overrides, dual approval, auditable deletion, and denial of deletion while a hold is active. |
+| Scheduled integrity scans | ⚪ Planned | Scans recompute hashes, verify signatures and references, detect missing or altered evidence, and track resolution. |
+| Archive export and isolated restore | ⚪ Planned | A self-describing release archive restores and verifies without depending on the source deployment. |
+| Unified archive search | ⚪ Planned | Authorized queries find evidence by requirement, Jira key, commit, build, test, baseline, release, customer, and acceptance decision. |
+| Coordinated reconstruction | ⚪ Planned | One rehearsal restores PostgreSQL records and exact object versions to the same declared archive point with no missing required evidence. |
+
+**Phase 7 exit condition:** A selected release is independently restorable and cryptographically verifiable from requirements through Jira, source/build identity, tests, release artifacts, and customer acceptance, with retention and legal-hold controls enforced.
 
 ## Phase 3 completion evidence
 
@@ -217,6 +239,8 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 - The static preview does not yet export CloudFront standard request logs; add an encrypted, selected-Region-compatible destination before regulated production traffic.
 - Alert receivers, database encryption/PITR, backup retention, and secret-manager integration require environment-specific evidence.
 - Registry promotion and independent external penetration-test assurance remain required before broader regulated production exposure.
+- OpenRM currently stores signed database evidence and attachment metadata, but it does not yet archive every Jira, CI, release, and customer-acceptance byte under immutable manifests and lifecycle policy.
+- Scheduled archive integrity scans, unified archive search, isolated archive restore, and coordinated PostgreSQL/object-version reconstruction remain Phase 7 work.
 
 ## Update policy
 
