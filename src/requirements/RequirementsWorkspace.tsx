@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- Effects synchronize remote API state. */
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
@@ -10,6 +9,7 @@ import {
   Folder,
   GitCompareArrows,
   History,
+  Link2,
   Plus,
   RefreshCw,
   Save,
@@ -20,56 +20,21 @@ import {
 } from "lucide-react";
 
 import type { components } from "../api/generated";
-import { apiRequest, runtimeConfig } from "../api/runtime";
+import { apiRequest } from "../api/runtime";
 
-type Project = components["schemas"]["Project"];
 type Requirement = components["schemas"]["Requirement"];
 type RequirementRevision = components["schemas"]["RequirementRevision"];
 type RequirementComparison = components["schemas"]["RequirementComparison"];
+type Relationship = components["schemas"]["Relationship"];
 type CreateRequirement = components["schemas"]["CreateRequirementRequest"];
 type WorkspaceItem = Record<string, unknown> & { id?: string; name?: string; color?: string };
 
 type RequirementsWorkspaceProps = {
   notify: (message: string) => void;
+  projectId: string;
 };
 
-const DEFAULT_PROJECT = "00000000-0000-4000-8000-000000000101";
-
-const PREVIEW_REQUIREMENTS: Requirement[] = [
-  {
-    id: "00000000-0000-4000-8000-000000000201",
-    project_id: DEFAULT_PROJECT,
-    key: "SYS-184",
-    title: "Maintain attitude during failover",
-    statement: "The flight controller shall maintain commanded vehicle attitude within ±2° during failover.",
-    attributes: { priority: "critical" },
-    folder_id: null,
-    tag_ids: [],
-    revision: 12,
-    created_by: "preview-user",
-    created_at: "2026-11-01T12:00:00Z",
-    updated_at: "2026-11-08T12:00:00Z",
-  },
-  {
-    id: "00000000-0000-4000-8000-000000000202",
-    project_id: DEFAULT_PROJECT,
-    key: "SYS-203",
-    title: "Record command transitions",
-    statement: "The system shall record command transitions with a monotonic timestamp and actor identity.",
-    attributes: { priority: "high" },
-    folder_id: null,
-    tag_ids: [],
-    revision: 8,
-    created_by: "preview-user",
-    created_at: "2026-11-01T12:00:00Z",
-    updated_at: "2026-11-08T11:00:00Z",
-  },
-];
-
-export function RequirementsWorkspace({ notify }: RequirementsWorkspaceProps) {
-  const config = runtimeConfig();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [projectId, setProjectId] = useState(config.projectId);
+export function RequirementsWorkspace({ notify, projectId }: RequirementsWorkspaceProps) {
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [folders, setFolders] = useState<WorkspaceItem[]>([]);
@@ -77,14 +42,15 @@ export function RequirementsWorkspace({ notify }: RequirementsWorkspaceProps) {
   const [savedViews, setSavedViews] = useState<WorkspaceItem[]>([]);
   const [revisions, setRevisions] = useState<RequirementRevision[]>([]);
   const [comparison, setComparison] = useState<RequirementComparison | null>(null);
+  const [relationships, setRelationships] = useState<Relationship[]>([]);
   const [search, setSearch] = useState("");
   const [folderFilter, setFolderFilter] = useState("");
   const [tagFilter, setTagFilter] = useState("");
   const [offset, setOffset] = useState(0);
   const [total, setTotal] = useState(0);
-  const [mode, setMode] = useState<"loading" | "live" | "preview">("loading");
+  const [mode, setMode] = useState<"loading" | "live" | "offline">("loading");
   const [error, setError] = useState("");
-  const [editor, setEditor] = useState<"create" | "edit" | null>(null);
+  const [editor, setEditor] = useState<"create" | "edit" | "derive" | null>(null);
   const [busy, setBusy] = useState(false);
   const importInput = useRef<HTMLInputElement>(null);
   const pageSize = 25;
@@ -94,41 +60,7 @@ export function RequirementsWorkspace({ notify }: RequirementsWorkspaceProps) {
     [requirements, selectedId],
   );
 
-  const loadProjects = async () => {
-    try {
-      const response = await apiRequest<{ items: Project[] }>("/api/v1/projects");
-      setProjects(response.items);
-      if (!response.items.some((project) => project.id === projectId) && response.items[0]) {
-        setProjectId(response.items[0].id);
-      }
-      setMode("live");
-    } catch (requestError) {
-      if (config.allowPreviewFallback) {
-        setProjects([
-          {
-            id: DEFAULT_PROJECT,
-            key: "AURORA-2",
-            name: "Aurora Flight Computer",
-            description: "Static preview fallback",
-            created_at: "2026-11-01T12:00:00Z",
-          },
-        ]);
-        setRequirements(PREVIEW_REQUIREMENTS);
-        setTotal(PREVIEW_REQUIREMENTS.length);
-        setSelectedId(PREVIEW_REQUIREMENTS[0].id);
-        setMode("preview");
-      } else {
-        setProjects([]);
-        setRequirements([]);
-        setTotal(0);
-        setError(requestError instanceof Error ? requestError.message : "Could not load projects");
-        setMode("preview");
-      }
-    }
-  };
-
   const loadWorkspace = async () => {
-    if (mode === "preview") return;
     setError("");
     const query = new URLSearchParams({ limit: String(pageSize), offset: String(offset) });
     if (search.trim()) query.set("search", search.trim());
@@ -156,29 +88,68 @@ export function RequirementsWorkspace({ notify }: RequirementsWorkspaceProps) {
       setMode("live");
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Could not load requirements");
+      setRequirements([]);
+      setTotal(0);
+      setSelectedId(null);
+      setMode("offline");
     }
   };
 
   useEffect(() => {
-    void loadProjects();
-  }, []);
+    setMode("loading");
+    setOffset(0);
+    setSelectedId(null);
+    void loadWorkspace();
+  }, [projectId]);
 
   useEffect(() => {
-    if (mode !== "loading") void loadWorkspace();
-  }, [projectId, offset, folderFilter, tagFilter, mode]);
+    if (mode === "live") void loadWorkspace();
+  }, [offset, folderFilter, tagFilter]);
 
   useEffect(() => {
     if (!selected || mode !== "live") {
       setRevisions([]);
+      setRelationships([]);
       setComparison(null);
       return;
     }
+    let cancelled = false;
     void apiRequest<{ items: RequirementRevision[] }>(
       `/api/v1/projects/${projectId}/requirements/${selected.id}/revisions`,
     )
-      .then((response) => setRevisions(response.items))
-      .catch(() => setRevisions([]));
-  }, [selected?.id, selected?.revision, projectId, mode]);
+      .then((response) => !cancelled && setRevisions(response.items))
+      .catch(() => !cancelled && setRevisions([]));
+    void apiRequest<{ items: Relationship[] }>(
+      `/api/v1/projects/${projectId}/relationships?artifact_id=${selected.id}&direction=both`,
+    )
+      .then((response) => !cancelled && setRelationships(
+        response.items.filter((relationship) => relationship.relationship_type_key === "DECOMPOSES_TO"),
+      ))
+      .catch(() => !cancelled && setRelationships([]));
+    return () => { cancelled = true; };
+  }, [selected?.id, selected?.revision, projectId, mode, requirements]);
+
+  const openLinkedRequirement = async (requirementId: string) => {
+    const loaded = requirements.find((requirement) => requirement.id === requirementId);
+    if (loaded) {
+      setSelectedId(loaded.id);
+      return;
+    }
+    try {
+      const linked = await apiRequest<Requirement>(`/api/v1/projects/${projectId}/requirements/${requirementId}`);
+      setRequirements((current) => [linked, ...current.filter((requirement) => requirement.id !== linked.id)]);
+      setSelectedId(linked.id);
+    } catch (requestError) {
+      notify(requestError instanceof Error ? requestError.message : "Could not open linked requirement");
+    }
+  };
+
+  const parentRelationships = selected
+    ? relationships.filter((relationship) => relationship.target_artifact_id === selected.id)
+    : [];
+  const childRelationships = selected
+    ? relationships.filter((relationship) => relationship.source_artifact_id === selected.id)
+    : [];
 
   const submitSearch = (event: React.FormEvent) => {
     event.preventDefault();
@@ -284,7 +255,7 @@ export function RequirementsWorkspace({ notify }: RequirementsWorkspaceProps) {
       <div className={`workspace-mode ${mode}`} role="status" aria-live="polite">
         {mode === "loading" && <><RefreshCw size={14} /> Connecting to the requirements API…</>}
         {mode === "live" && <><CheckCircle2 size={14} /> Live controlled workspace</>}
-        {mode === "preview" && <><AlertTriangle size={14} /> Preview fallback — start the API to persist changes</>}
+        {mode === "offline" && <><X size={14} /> Requirements API unavailable — changes are disabled</>}
       </div>
       {error && <div className="workspace-error" role="alert">{error}</div>}
 
@@ -298,9 +269,6 @@ export function RequirementsWorkspace({ notify }: RequirementsWorkspaceProps) {
             onChange={(event) => setSearch(event.target.value)}
           />
         </form>
-        <select aria-label="Project" value={projectId} onChange={(event) => { setProjectId(event.target.value); setOffset(0); }}>
-          {projects.map((project) => <option key={project.id} value={project.id}>{project.key} — {project.name}</option>)}
-        </select>
         <select aria-label="Folder filter" value={folderFilter} onChange={(event) => { setFolderFilter(event.target.value); setOffset(0); }}>
           <option value="">All folders</option>
           {folders.map((folder) => <option key={String(folder.id)} value={String(folder.id)}>{String(folder.name)}</option>)}
@@ -345,20 +313,30 @@ export function RequirementsWorkspace({ notify }: RequirementsWorkspaceProps) {
         <section className="requirements-table panel" aria-label="Requirements results">
           <div className="table-head"><span>ID</span><span>Requirement</span><span>Revision</span><span>Priority</span><span>Author</span></div>
           {requirements.length === 0 && <div className="empty-requirements">No requirements match this view.</div>}
-          {requirements.map((requirement) => (
-            <button
-              key={requirement.id}
-              className={`requirement-row ${selected?.id === requirement.id ? "selected" : ""}`}
-              aria-pressed={selected?.id === requirement.id}
-              onClick={() => setSelectedId(requirement.id)}
-            >
-              <code>{requirement.key}</code>
-              <span className="requirement-title"><strong>{requirement.title}</strong><small>{requirement.statement}</small></span>
-              <span className="status-pill connected">r{requirement.revision}</span>
-              <span className="status-pill planned">{String(requirement.attributes.priority || "normal")}</span>
-              <span className="owner-cell"><i>{requirement.created_by.slice(0, 2).toUpperCase()}</i>{requirement.created_by}</span>
-            </button>
-          ))}
+          {requirements.map((requirement) => {
+            const author = requirement.created_by_name || requirement.created_by;
+            const initials = author
+              .split(/\s+/)
+              .map((part) => part.replace(/[^\p{L}\p{N}]/gu, "").charAt(0))
+              .filter(Boolean)
+              .slice(0, 2)
+              .join("")
+              .toUpperCase();
+            return (
+              <button
+                key={requirement.id}
+                className={`requirement-row ${selected?.id === requirement.id ? "selected" : ""}`}
+                aria-pressed={selected?.id === requirement.id}
+                onClick={() => setSelectedId(requirement.id)}
+              >
+                <code>{requirement.key}</code>
+                <span className="requirement-title"><strong>{requirement.title}</strong><small>{requirement.statement}</small></span>
+                <span className="status-pill connected">r{requirement.revision}</span>
+                <span className="status-pill planned">{String(requirement.attributes.priority || "normal")}</span>
+                <span className="owner-cell"><i>{initials}</i>{author}</span>
+              </button>
+            );
+          })}
           <nav className="pagination" aria-label="Requirements pagination">
             <button className="secondary-button" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - pageSize))}><ArrowLeft size={14} /> Previous</button>
             <span>{total === 0 ? 0 : offset + 1}–{Math.min(offset + pageSize, total)} of {total}</span>
@@ -373,17 +351,39 @@ export function RequirementsWorkspace({ notify }: RequirementsWorkspaceProps) {
               <h2>{selected.title}</h2>
               <div className="inspector-section"><label>Statement</label><p>{selected.statement}</p></div>
               <div className="inspector-grid">
-                <div><label>Author</label><strong>{selected.created_by}</strong></div>
+                <div><label>Author</label><strong>{selected.created_by_name || selected.created_by}</strong></div>
                 <div><label>Revision</label><strong>r{selected.revision}</strong></div>
                 <div><label>Priority</label><strong>{String(selected.attributes.priority || "Normal")}</strong></div>
                 <div><label>Updated</label><strong>{new Date(selected.updated_at).toLocaleDateString()}</strong></div>
               </div>
+              <div className="requirement-links" aria-label="Requirement links">
+                <div className="tree-header"><span>Requirement links</span><Link2 size={14} /></div>
+                <div className="requirement-link-field">
+                  <label>Parent requirement</label>
+                  {parentRelationships.length === 0 && <span className="requirement-link-empty">None — this is a root requirement</span>}
+                  {parentRelationships.map((relationship) => (
+                    <button key={relationship.id} type="button" onClick={() => void openLinkedRequirement(relationship.source_artifact_id)}>
+                      <code>{relationship.source_key}</code><span>{relationship.source_title}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="requirement-link-field">
+                  <label>Child requirements</label>
+                  {childRelationships.length === 0 && <span className="requirement-link-empty">None</span>}
+                  {childRelationships.map((relationship) => (
+                    <button key={relationship.id} type="button" onClick={() => void openLinkedRequirement(relationship.target_artifact_id)}>
+                      <code>{relationship.target_key}</code><span>{relationship.target_title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="revision-history">
                 <div className="tree-header"><span>Revision history</span><History size={14} /></div>
-                {revisions.slice(0, 5).map((revision) => <div className="revision-item" key={revision.id}><strong>r{revision.revision}</strong><span>{revision.title}</span><small>{revision.created_by}</small></div>)}
+                {revisions.slice(0, 5).map((revision) => <div className="revision-item" key={revision.id}><strong>r{revision.revision}</strong><span>{revision.title}</span><small>{revision.created_by_name || revision.created_by}</small></div>)}
               </div>
               {comparison && <div className="comparison-result" role="status"><strong>Changed fields</strong><span>{comparison.changed_fields.join(", ") || "No changes"}</span></div>}
               <button className="secondary-button full-width" disabled={revisions.length < 2} onClick={() => void compareRevisions()}><GitCompareArrows size={15} /> Compare first to current</button>
+              <button className="secondary-button full-width" onClick={() => setEditor("derive")}><Plus size={15} /> Create derived requirement</button>
               <button className="primary-button full-width" onClick={() => setEditor("edit")}>Revise requirement <ArrowRight size={15} /></button>
             </>
           ) : <div className="empty-requirements">Select or create a requirement.</div>}
@@ -394,16 +394,13 @@ export function RequirementsWorkspace({ notify }: RequirementsWorkspaceProps) {
         <RequirementEditor
           mode={editor}
           requirement={editor === "edit" ? selected : null}
+          sourceRequirement={editor === "derive" ? selected : null}
           folders={folders}
           tags={tags}
           busy={busy}
           onClose={() => setEditor(null)}
           onSubmit={async (draft) => {
-            if (mode !== "live") {
-              notify("Preview mode does not persist changes");
-              setEditor(null);
-              return;
-            }
+            if (mode !== "live") return notify("The requirements API is unavailable");
             setBusy(true);
             try {
               if (editor === "create") {
@@ -413,6 +410,13 @@ export function RequirementsWorkspace({ notify }: RequirementsWorkspaceProps) {
                   body: JSON.stringify(draft),
                 });
                 notify("Requirement created");
+              } else if (editor === "derive" && selected) {
+                await apiRequest(`/api/v1/projects/${projectId}/requirements/${selected.id}/derived`, {
+                  method: "POST",
+                  headers: { "X-Idempotency-Key": `web-derive-${selected.id}-${Date.now()}` },
+                  body: JSON.stringify(draft),
+                });
+                notify(`Derived requirement created from ${selected.key}`);
               } else if (selected) {
                 await apiRequest(`/api/v1/projects/${projectId}/requirements/${selected.id}`, {
                   method: "PUT",
@@ -438,21 +442,22 @@ export function RequirementsWorkspace({ notify }: RequirementsWorkspaceProps) {
 function RequirementEditor({
   mode,
   requirement,
+  sourceRequirement,
   folders,
   tags,
   busy,
   onClose,
   onSubmit,
 }: {
-  mode: "create" | "edit";
+  mode: "create" | "edit" | "derive";
   requirement: Requirement | null;
+  sourceRequirement: Requirement | null;
   folders: WorkspaceItem[];
   tags: WorkspaceItem[];
   busy: boolean;
   onClose: () => void;
   onSubmit: (draft: CreateRequirement) => Promise<void>;
 }) {
-  const [key, setKey] = useState(requirement?.key || "");
   const [title, setTitle] = useState(requirement?.title || "");
   const [statement, setStatement] = useState(requirement?.statement || "");
   const [priority, setPriority] = useState(String(requirement?.attributes.priority || "medium"));
@@ -464,11 +469,11 @@ function RequirementEditor({
       <section className="requirement-editor" role="dialog" aria-modal="true" aria-labelledby="requirement-editor-title">
         <button className="icon-button modal-close" onClick={onClose} aria-label="Close requirement editor"><X size={18} /></button>
         <div className="eyebrow">Controlled command</div>
-        <h2 id="requirement-editor-title">{mode === "create" ? "Create requirement" : `Revise ${requirement?.key}`}</h2>
+        <h2 id="requirement-editor-title">{mode === "create" ? "Create requirement" : mode === "derive" ? `Derive from ${sourceRequirement?.key}` : `Revise ${requirement?.key}`}</h2>
+        {mode !== "edit" && <p className="editor-hint">The requirement key will be assigned automatically from this project's prefix.</p>}
         <form onSubmit={(event) => {
           event.preventDefault();
           void onSubmit({
-            key: key.trim(),
             title: title.trim(),
             statement: statement.trim(),
             attributes: { priority },
@@ -476,7 +481,7 @@ function RequirementEditor({
             tag_ids: tagIds,
           });
         }}>
-          <label>Requirement key<input required pattern="[A-Z][A-Z0-9-]{1,31}" disabled={mode === "edit"} value={key} onChange={(event) => setKey(event.target.value.toUpperCase())} /></label>
+          {mode === "edit" && <label>Requirement key<input disabled value={requirement?.key || ""} /></label>}
           <label>Title<input required maxLength={200} value={title} onChange={(event) => setTitle(event.target.value)} /></label>
           <label>Statement<textarea required maxLength={20000} rows={7} value={statement} onChange={(event) => setStatement(event.target.value)} /></label>
           <div className="editor-grid">
@@ -502,7 +507,7 @@ function RequirementEditor({
               );
             })}
           </fieldset>
-          <div className="editor-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button className="primary-button" disabled={busy}>{busy ? "Saving…" : mode === "create" ? "Create requirement" : "Commit revision"}</button></div>
+          <div className="editor-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button className="primary-button" disabled={busy}>{busy ? "Saving…" : mode === "create" ? "Create requirement" : mode === "derive" ? "Create derived requirement" : "Commit revision"}</button></div>
         </form>
       </section>
     </div>

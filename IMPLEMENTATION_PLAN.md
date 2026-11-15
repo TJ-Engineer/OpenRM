@@ -1,13 +1,13 @@
 # OpenRM implementation plan
 
 **Planning baseline:** 7 November 2026  
-**Current stage:** Phase 6 active; the clean bounded AWS pilot is commissioned, the first in-product Help increment is protected-CI verified, and the first code-aligned maintainer SDD is published. Phase 7 controlled development archive is planned as the required next product increment alongside pilot acceptance.
+**Current stage:** Phase 6 active; the clean bounded AWS pilot and the [OPENRM-101 through OPENRM-104](ISSUES.md) P0 pilot-feedback remediation increment are deployed in AWS, the first in-product Help increment is protected-CI verified, and the first code-aligned maintainer SDD is published. Live remediation acceptance and Phase 7 controlled development archive work remain planned.
 
 **Primary outcome:** Deliver a self-hostable configuration and requirements management platform with controlled change, end-to-end traceability, review evidence, verification records, and a reconstructable long-term archive of the complete application lifecycle.
 
 ## 1. Current state
 
-The repository contains the original React/Vite stakeholder preview, the complete application implementation, and a clean bounded AWS pilot. The pilot exposes the real Cognito-protected requirements workspace and API without loading the demo tenant or demo artifacts.
+The repository contains the complete application implementation, historical static-delivery infrastructure, and a clean bounded AWS pilot. The product UI exposes only API-backed workspaces and no longer includes the stakeholder demo, funding sections, fabricated overview data, or sample requirement fallback.
 
 What exists now:
 
@@ -34,11 +34,14 @@ What exists now:
 - A one-command portable container distribution for PostgreSQL, forward-only migrations, the hardened API, the complete self-verification project, and the same-origin web application.
 - An authoritative structured JSON user manual exposed through persistent dashboard Help, with generated contents, full-text section search, stable anchors, responsive rendering, schema/anchor tests, three-browser WCAG 2 A/AA coverage, and protected container-build evidence.
 - A live clean pilot at `https://d3785w5m5qzybi.cloudfront.net/` using Cognito managed login, CloudFront, an origin-restricted ALB, one ARM64 Fargate task, immutable ECR image digests, Secrets Manager, and private deletion-protected PostgreSQL 17 in `us-east-2`.
-- A separate blank pilot organization and `OPENRM` project with no demo artifacts, production OIDC enforcement, disabled preview fallback, and a verified unauthenticated `401` API boundary.
+- A separate blank pilot organization and `OPENRM` project with no demo artifacts, production OIDC enforcement, no fabricated-data fallback, and a verified unauthenticated `401` API boundary.
+- Application-wide project setup and switching, project-configured collision-safe requirement identifiers, atomic derived-requirement creation, and Cognito-backed administration and editable user profiles.
+- A top-bar development profile switcher backed by the live user directory, with selected-profile roles applied to API requests and production Cognito impersonation explicitly disabled.
+- Cognito administrator, author, reviewer, and viewer groups plus least-privilege ECS permissions for in-product invitations, deployed with a healthy API/web task revision and a successful public health/readiness smoke test.
 
 What does not exist yet:
 
-- Initial-administrator first sign-in and live create/revise/history acceptance evidence from the commissioned pilot.
+- Complete live acceptance evidence for project creation/switching, automatic-prefix allocation, derived-requirement creation, user invitation delivery, first-password change, profile editing, group claims, and project isolation.
 - Environment-specific alert routing plus restore evidence for the encrypted one-day automated-backup window.
 - Automated image-registry promotion and a live Jira service identity for the pilot tenant.
 - Independent external penetration-test assurance for broader regulated production use.
@@ -46,7 +49,7 @@ What does not exist yet:
 - Independent maintainer walkthrough evidence for the versioned Software Design Description (SDD), plus closure of any discrepancies found against the running system.
 - A complete controlled archive: artifact-byte transfer, immutable cross-system manifests, full Jira inbound history, CI evidence ingestion, customer acceptance packages, retention/legal hold/disposition controls, scheduled integrity scans, archive export and restore rehearsal, unified archive search, and joint PostgreSQL/object-store reconstruction evidence.
 
-The repository Phase 5 gate is complete, Phase 6 is active, and Phase 7 is planned. The clean pilot is commissioned and the initial administrator is invited; the next operational gate is first sign-in and live artifact-creation acceptance.
+The repository Phase 5 gate is complete, Phase 6 is active, and Phase 7 is planned. The clean pilot and P0 pilot-feedback remediation increment are deployed; the next product gate is live artifact-creation, invitation, profile, and isolation acceptance.
 
 ## 2. Delivery principles
 
@@ -56,6 +59,7 @@ The repository Phase 5 gate is complete, Phase 6 is active, and Phase 7 is plann
 4. **Secure by construction.** Least privilege, immutable audit evidence, tenant isolation, and dependency scanning are release criteria.
 5. **Portable core.** PostgreSQL and S3-compatible storage remain the default portable data services; cloud-specific capabilities stay behind adapters.
 6. **Thin vertical slices.** Each phase ships an end-to-end user outcome instead of isolated layers.
+7. **Local-first promotion.** Routine increments run and regress in the persistent local container stack. Only candidates that pass clean-room reconstruction, the full repository matrix, and multi-browser acceptance are promoted as immutable images to AWS.
 
 ## 3. Target architecture
 
@@ -279,10 +283,11 @@ Exit gate:
 
 **Outcome:** OpenRM can preserve, discover, verify, export, restore, and reconstruct the complete application-lifecycle record for a project or release, including requirements, Jira history, source and build identity, test evidence, release artifacts, and customer acceptance.
 
-**Status:** Planned. OpenRM already provides append-only PostgreSQL evidence, deterministic signed exports, content-addressed attachment metadata, and database recovery rehearsals. It does not yet ingest and retain every external evidence byte, collect complete Jira inbound history, manage customer acceptance packages, enforce archive retention and legal holds, or prove coordinated database/object-store reconstruction.
+**Status:** Started. OpenRM now provides project-scoped S3-compatible inventory plus guarded, audited administrator deletion for unlinked objects, alongside append-only PostgreSQL evidence, deterministic signed exports, content-addressed attachment metadata, and database recovery rehearsals. It does not yet ingest and retain every external evidence byte, collect complete Jira inbound history, manage customer acceptance packages, enforce archive retention and legal holds, or prove coordinated database/object-store reconstruction.
 
 Deliverables:
 
+- [x] Add project-scoped object inventory and administrator deletion that rejects verification-linked objects, coordinates linking/deletion races, and records attributable audit evidence.
 - [ ] Add S3-compatible upload, download, multipart, and presigned-transfer support for evidence bytes while keeping cloud-specific behavior behind the object-storage adapter.
 - [ ] Create immutable artifact manifests that bind hashes, signatures, media types, sizes, source identities, timestamps, and object versions to projects, requirements, baselines, commits, builds, and releases.
 - [ ] Collect and reconcile complete Jira inbound history, including issue revisions, comments, transitions, attachments, links, users, and synchronization checkpoints, without weakening the existing governed outbound delivery path.
@@ -356,6 +361,7 @@ FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-
 | ID | Priority | Work item | Status | Primary evidence |
 | --- | --- | --- | --- | --- |
 | INT-101 | P0 | Deliver governed Jira mapping, queueing, retry, dead-letter, and replay | Complete | API/UI workflow, append-only attempts, and database-path matrix |
+| INT-102 | P0 | Record immutable signed agent-run provenance linked to exact OpenRM revisions and external factory outputs | Complete locally | Migration `0014`, REST contract, policy/idempotency/audit controls, signature verification, unit tests, and database-path coverage |
 | OPS-101 | P0 | Add metrics, OTLP traces, SLO status, dashboards, and alerts | Complete | Prometheus endpoint, operations API, and provisioned observability topology |
 | OPS-102 | P0 | Rehearse backup, restore, disaster recovery, and upgrades | Complete | PostgreSQL 17 archive round trip and idempotent migration rehearsal |
 | SEC-201 | P0 | Complete threat review and pilot security remediation | Complete | Threat model, dependency gates, security smoke matrix, and hardened container |
@@ -379,6 +385,7 @@ FND-001, FND-002, API-001, API-002, DAT-001, SEC-001, WEB-001, QLT-001, and QLT-
 
 | ID | Priority | Work item | Status | Primary evidence |
 | --- | --- | --- | --- | --- |
+| ARV-100 | P0 | Inventory project objects and safely delete unlinked objects | Complete | Project/tenant prefix isolation, administrator authorization, linked-object conflict, audit evidence, versioned storage, and focused browser/API checks |
 | ARV-101 | P0 | Add S3-compatible evidence upload, download, multipart, and presigned transfers | Planned | Object-adapter contract, authorization tests, checksum validation, and portable integration test |
 | ARV-102 | P0 | Persist immutable cross-system artifact manifests linked to projects, requirements, baselines, commits, builds, and releases | Planned | Manifest schema, database immutability tests, deterministic signature verification, and object-version binding |
 | ARV-103 | P0 | Collect and reconcile complete Jira inbound history | Planned | Connector replay, checkpoint recovery, attachment capture, change-history reconciliation, and tenant-isolation tests |

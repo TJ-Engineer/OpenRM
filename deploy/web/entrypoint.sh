@@ -3,11 +3,10 @@ set -eu
 
 : "${OPENRM_AUTH_MODE:=development}"
 : "${OPENRM_API_BASE_URL:=/}"
-: "${OPENRM_ORGANIZATION_ID:=00000000-0000-4000-8000-000000000001}"
-: "${OPENRM_PROJECT_ID:=00000000-0000-4000-8000-000000000101}"
-: "${OPENRM_PROJECT_KEY:=AURORA-2}"
-: "${OPENRM_PROJECT_NAME:=Aurora Flight Computer}"
-: "${OPENRM_ALLOW_PREVIEW_FALLBACK:=true}"
+: "${OPENRM_ORGANIZATION_ID:=00000000-0000-4000-8000-000000000002}"
+: "${OPENRM_PROJECT_ID:=00000000-0000-4000-8000-000000000102}"
+: "${OPENRM_PROJECT_KEY:=OPENRM}"
+: "${OPENRM_PROJECT_NAME:=OpenRM}"
 : "${OPENRM_COGNITO_DOMAIN:=}"
 : "${OPENRM_COGNITO_CLIENT_ID:=}"
 
@@ -25,7 +24,6 @@ printf '%s\n' \
     "  \"projectId\": \"${OPENRM_PROJECT_ID}\"," \
     "  \"projectKey\": \"${OPENRM_PROJECT_KEY}\"," \
     "  \"projectName\": \"${OPENRM_PROJECT_NAME}\"," \
-    "  \"allowPreviewFallback\": ${OPENRM_ALLOW_PREVIEW_FALLBACK}," \
     '  "cognito": {' \
     "    \"domain\": \"${OPENRM_COGNITO_DOMAIN}\"," \
     "    \"clientId\": \"${OPENRM_COGNITO_CLIENT_ID}\"," \

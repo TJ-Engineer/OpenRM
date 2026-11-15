@@ -26,13 +26,12 @@ type GateReadiness = components["schemas"]["GateReadiness"];
 type DueEvent = components["schemas"]["VerificationDueEvent"];
 type GateEvidence = components["schemas"]["GateEvidenceExport"];
 type BaselineEvidence = components["schemas"]["EvidenceExport"];
-type Props = { notify: (message: string) => void };
+type Props = { notify: (message: string) => void; projectId: string };
 
 const label = (value: string) => value.replaceAll("_", " ").toUpperCase();
 
-export function VerificationWorkspace({ notify }: Props) {
+export function VerificationWorkspace({ notify, projectId }: Props) {
   const config = runtimeConfig();
-  const projectId = config.projectId;
   const [reviews, setReviews] = useState<Review[]>([]);
   const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
   const [cases, setCases] = useState<VerificationCase[]>([]);

@@ -14,16 +14,15 @@ import {
 } from "lucide-react";
 
 import type { components } from "../api/generated";
-import { apiRequest, downloadJson, runtimeConfig } from "../api/runtime";
+import { apiRequest, downloadJson } from "../api/runtime";
 
 type Baseline = components["schemas"]["Baseline"];
 type BaselineComparison = components["schemas"]["BaselineComparison"];
 type Changeset = components["schemas"]["Changeset"];
 type EvidenceExport = components["schemas"]["EvidenceExport"];
-type Props = { notify: (message: string) => void };
+type Props = { notify: (message: string) => void; projectId: string };
 
-export function BaselinesWorkspace({ notify }: Props) {
-  const projectId = runtimeConfig().projectId;
+export function BaselinesWorkspace({ notify, projectId }: Props) {
   const [baselines, setBaselines] = useState<Baseline[]>([]);
   const [changesets, setChangesets] = useState<Changeset[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);

@@ -10,6 +10,9 @@ version = "0.1.0"
 
 [workspace.dependencies]
 axum = { version = "0.8.9", features = ["macros"] }
+aws-config = { version = "1.13.0", features = ["behavior-version-latest"] }
+aws-sdk-cognitoidentityprovider = "1.144.0"
+aws-sdk-s3 = "1"
 chrono = { version = "0.4", features = ["serde"] }
 dotenvy = "0.15"
 http = "1"

@@ -73,6 +73,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List organization users and their project memberships */
+        get: operations["listUsers"];
+        put?: never;
+        /** Invite a user and assign organization and project roles */
+        post: operations["inviteUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read the signed-in user's OpenRM profile */
+        get: operations["getProfile"];
+        /** Update the signed-in user's editable profile fields */
+        put: operations["updateProfile"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/members": {
         parameters: {
             query?: never;
@@ -167,6 +203,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/requirements/{requirement_id}/derived": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                requirement_id: components["parameters"]["RequirementId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a requirement derived from a selected base requirement */
+        post: operations["createDerivedRequirement"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/requirements/{requirement_id}/revisions": {
         parameters: {
             query?: never;
@@ -208,6 +267,81 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/agent-runs": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** List immutable signed agent-run configuration records */
+        get: operations["listAgentRuns"];
+        put?: never;
+        /**
+         * Record one immutable signed agent execution and its exact outputs
+         * @description Authors record completed agent executions. Structured credential-bearing fields are rejected; secrets must never be included in prompts or evidence.
+         */
+        post: operations["createAgentRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/agent-runs/{agent_run_id}": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                agent_run_id: components["parameters"]["AgentRunId"];
+            };
+            cookie?: never;
+        };
+        /** Read one immutable agent run and verify its evidence signature */
+        get: operations["getAgentRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/storage/objects": {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        /** List project-scoped objects and immutable evidence links */
+        get: operations["listStorageObjects"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete an unlinked project object
+         * @description Administrator-only. Objects referenced by immutable evidence are rejected with a conflict.
+         */
+        delete: operations["deleteStorageObject"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1004,11 +1138,59 @@ export interface components {
             /** @constant */
             database: "available";
         };
+        UserProjectMembership: {
+            /** Format: uuid */
+            project_id: string;
+            project_key?: string | null;
+            project_name?: string | null;
+            /** @enum {string} */
+            role: "administrator" | "author" | "reviewer" | "viewer";
+        };
+        InviteUserRequest: {
+            /** Format: email */
+            email: string;
+            display_name?: string | null;
+            title?: string | null;
+            department?: string | null;
+            /** @enum {string} */
+            organization_role: "administrator" | "author" | "reviewer" | "viewer";
+            /** @default [] */
+            project_memberships: components["schemas"]["UserProjectMembership"][];
+        };
+        UpdateProfileRequest: {
+            display_name?: string | null;
+            title?: string | null;
+            department?: string | null;
+            bio?: string | null;
+        };
+        UserProfile: {
+            /** Format: uuid */
+            id: string;
+            subject: string;
+            /** Format: email */
+            email: string | null;
+            display_name: string | null;
+            title: string | null;
+            department: string | null;
+            bio: string | null;
+            /** @enum {string} */
+            organization_role: "administrator" | "author" | "reviewer" | "viewer";
+            project_memberships: components["schemas"]["UserProjectMembership"][];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        UserListResponse: {
+            items: components["schemas"]["UserProfile"][];
+        };
         Project: {
             /** Format: uuid */
             id: string;
             key: string;
             name: string;
+            requirement_prefix: string;
+            next_requirement_number: number;
             description: string;
             /** Format: date-time */
             created_at: string;
@@ -1019,6 +1201,7 @@ export interface components {
         CreateProjectRequest: {
             key: string;
             name: string;
+            requirement_prefix: string;
             /** @default  */
             description: string;
         };
@@ -1059,6 +1242,117 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
+        /** @description Exactly one identity form is required: artifact_id plus artifact_revision_id for an exact OpenRM revision, or external_system plus external_reference for a Jira issue, commit, build, or other output. */
+        AgentRunOutputInput: {
+            /** @enum {string} */
+            relation: "created" | "updated" | "generated" | "referenced" | "verified";
+            /** Format: uuid */
+            artifact_id?: string | null;
+            /** Format: uuid */
+            artifact_revision_id?: string | null;
+            external_system?: string | null;
+            external_reference?: string | null;
+            /** Format: uri */
+            external_uri?: string | null;
+            sha256?: string | null;
+        };
+        CreateAgentRunRequest: {
+            external_run_id: string;
+            model: string;
+            /** @description Sanitized task prompt; credentials and hidden system instructions must not be recorded. */
+            prompt: string;
+            /** @default {} */
+            context: {
+                [key: string]: unknown;
+            };
+            /** @default [] */
+            tool_calls: unknown[];
+            /** @description Sanitized structured or scalar output produced by the agent execution. */
+            output: unknown;
+            /** @enum {string} */
+            outcome: "succeeded" | "failed" | "cancelled";
+            /** Format: date-time */
+            started_at: string;
+            /** Format: date-time */
+            completed_at: string;
+            /** @default [] */
+            outputs: components["schemas"]["AgentRunOutputInput"][];
+        };
+        AgentRunOutput: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            relation: "created" | "updated" | "generated" | "referenced" | "verified";
+            /** Format: uuid */
+            artifact_id: string | null;
+            /** Format: uuid */
+            artifact_revision_id: string | null;
+            artifact_key: string | null;
+            external_system: string | null;
+            external_reference: string | null;
+            /** Format: uri */
+            external_uri: string | null;
+            sha256: string | null;
+            /** Format: date-time */
+            recorded_at: string;
+        };
+        AgentRun: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            project_id: string;
+            external_run_id: string;
+            model: string;
+            prompt: string;
+            context: {
+                [key: string]: unknown;
+            };
+            tool_calls: unknown[];
+            output: unknown;
+            /** @enum {string} */
+            outcome: "succeeded" | "failed" | "cancelled";
+            /** Format: date-time */
+            started_at: string;
+            /** Format: date-time */
+            completed_at: string;
+            evidence_hash: string;
+            signature: string;
+            /** @constant */
+            signing_algorithm: "HMAC-SHA256";
+            signing_key_id: string;
+            recorded_by: string;
+            /** Format: date-time */
+            recorded_at: string;
+            signature_valid: boolean;
+            outputs: components["schemas"]["AgentRunOutput"][];
+        };
+        AgentRunListResponse: {
+            items: components["schemas"]["AgentRun"][];
+            total: number;
+            limit: number;
+            offset: number;
+        };
+        StorageObject: {
+            key: string;
+            /** Format: int64 */
+            size_bytes: number;
+            etag: string | null;
+            /** Format: date-time */
+            last_modified: string | null;
+            linked: boolean;
+            link_count: number;
+        };
+        StorageObjectListResponse: {
+            items: components["schemas"]["StorageObject"][];
+            prefix: string;
+            /** Format: int64 */
+            total_size_bytes: number;
+        };
+        DeleteStorageObjectResponse: {
+            key: string;
+            deleted: boolean;
+            version_id: string | null;
+        };
         Requirement: {
             /** Format: uuid */
             id: string;
@@ -1075,6 +1369,8 @@ export interface components {
             tag_ids: string[];
             revision: number;
             created_by: string;
+            /** @description Human-readable author label formatted as first initial and last name. */
+            created_by_name: string;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -1087,7 +1383,7 @@ export interface components {
             offset: number;
         };
         CreateRequirementRequest: {
-            key: string;
+            key?: string;
             title: string;
             statement: string;
             /** @default {} */
@@ -1125,6 +1421,8 @@ export interface components {
             folder_id: string | null;
             tag_ids: string[];
             created_by: string;
+            /** @description Human-readable revision author label formatted as first initial and last name. */
+            created_by_name: string;
             /** Format: date-time */
             created_at: string;
         };
@@ -1144,6 +1442,11 @@ export interface components {
         RequirementImportResponse: {
             items: components["schemas"]["Requirement"][];
             imported: number;
+        };
+        DerivedRequirementResponse: {
+            requirement: components["schemas"]["Requirement"];
+            /** Format: uuid */
+            relationship_id: string;
         };
         RelationshipType: {
             /** Format: uuid */
@@ -1932,6 +2235,7 @@ export interface components {
         OrganizationHeader: string;
         ProjectId: string;
         RequirementId: string;
+        AgentRunId: string;
         RelationshipId: string;
         ChangesetId: string;
         BaselineId: string;
@@ -2083,6 +2387,120 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listUsers: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Organization user profiles. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    inviteUser: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteUserRequest"];
+            };
+        };
+        responses: {
+            /** @description Cognito invitation sent and OpenRM profile created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfile"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getProfile: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current user profile. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfile"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    updateProfile: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated current user profile. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfile"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             503: components["responses"]["ServiceUnavailable"];
         };
     };
@@ -2366,6 +2784,44 @@ export interface operations {
             503: components["responses"]["ServiceUnavailable"];
         };
     };
+    createDerivedRequirement: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                requirement_id: components["parameters"]["RequirementId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRequirementRequest"];
+            };
+        };
+        responses: {
+            /** @description Derived requirement and DECOMPOSES_TO relationship created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DerivedRequirementResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
     listRequirementRevisions: {
         parameters: {
             query?: never;
@@ -2427,6 +2883,180 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listAgentRuns: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bounded project-scoped agent-run history with verified signatures. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentRunListResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    createAgentRun: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+                /** @description Stable client command identifier scoped to tenant, actor, and operation. */
+                "X-Idempotency-Key": components["parameters"]["IdempotencyHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAgentRunRequest"];
+            };
+        };
+        responses: {
+            /** @description Idempotent replay of the original agent-run command. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentRun"];
+                };
+            };
+            /** @description Immutable signed agent-run evidence created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentRun"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getAgentRun: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+                agent_run_id: components["parameters"]["AgentRunId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Agent execution, exact output links, and signature state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentRun"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listStorageObjects: {
+        parameters: {
+            query?: {
+                search?: string;
+                limit?: number;
+            };
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Project object inventory. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageObjectListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    deleteStorageObject: {
+        parameters: {
+            query: {
+                key: string;
+            };
+            header: {
+                /** @description Organization UUID selected for the request. */
+                "X-OpenRM-Organization": components["parameters"]["OrganizationHeader"];
+            };
+            path: {
+                project_id: components["parameters"]["ProjectId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The unlinked object was deleted. Versioned stores may retain a recoverable prior version. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteStorageObjectResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             503: components["responses"]["ServiceUnavailable"];
         };
     };

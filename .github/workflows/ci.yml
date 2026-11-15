@@ -676,6 +676,41 @@ jobs:
           request GET 'dev:ci-author:author' "${base_url}/projects" > /tmp/author-projects.json
           test "$(jq -r '.items | length' /tmp/author-projects.json)" -eq 1
 
+          request GET 'dev:ci-author:author' "${api_url}/${requirement_id}/revisions" \
+            > /tmp/agent-run-revisions.json
+          agent_output_revision_id="$(jq -r '.items[0].id' /tmp/agent-run-revisions.json)"
+          agent_runs_url="${base_url}/projects/${project_id}/agent-runs"
+          agent_run_body='{"external_run_id":"ci:agent-run:001","model":"ci-model","prompt":"Implement the controlled requirement and retain attributable evidence.","context":{"requirement_key":"CI-REQ-1"},"tool_calls":[{"tool":"openrm.requirements.get","status":"succeeded"}],"output":{"summary":"Controlled requirement implementation completed."},"outcome":"succeeded","started_at":"2026-11-14T12:00:00Z","completed_at":"2026-11-14T12:01:00Z","outputs":[{"relation":"updated","artifact_id":"'"${requirement_id}"'","artifact_revision_id":"'"${agent_output_revision_id}"'"},{"relation":"generated","external_system":"git","external_reference":"ci/agent-run-provenance","external_uri":"https://example.invalid/commits/ci-agent-run","sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]}'
+          request POST 'dev:ci-author:author' "${agent_runs_url}" "${agent_run_body}" \
+            'ci-agent-run-create-001' > /tmp/agent-run.json
+          agent_run_id="$(jq -r '.id' /tmp/agent-run.json)"
+          agent_run_output_id="$(jq -r '.outputs[0].id' /tmp/agent-run.json)"
+          test "$(jq -r '.signature_valid' /tmp/agent-run.json)" = 'true'
+          test "$(jq -r '.outputs | length' /tmp/agent-run.json)" -eq 2
+          test "$(jq -r '.outputs[] | select(.artifact_id != null) | .artifact_key' /tmp/agent-run.json)" = 'CI-REQ-1'
+          request POST 'dev:ci-author:author' "${agent_runs_url}" "${agent_run_body}" \
+            'ci-agent-run-create-001' > /tmp/agent-run-replay.json
+          test "$(jq -r '.id' /tmp/agent-run-replay.json)" = "${agent_run_id}"
+          request GET 'dev:ci-viewer:viewer' "${agent_runs_url}/${agent_run_id}" \
+            > /tmp/agent-run-read.json
+          test "$(jq -r '.signature_valid' /tmp/agent-run-read.json)" = 'true'
+          request GET 'dev:ci-viewer:viewer' "${agent_runs_url}?limit=10&offset=0" \
+            > /tmp/agent-run-list.json
+          test "$(jq -r '.total' /tmp/agent-run-list.json)" -eq 1
+          agent_secret_status="$(curl --silent --output /tmp/agent-run-secret.json --write-out '%{http_code}' \
+            -X POST -H 'Authorization: Bearer dev:ci-author:author' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            -H 'X-Idempotency-Key: ci-agent-run-secret-denied' -H 'Content-Type: application/json' \
+            --data '{"external_run_id":"ci:agent-run:secret","model":"ci-model","prompt":"Reject secrets.","context":{"access_token":"do-not-store"},"tool_calls":[],"output":{"summary":"denied"},"outcome":"failed","started_at":"2026-11-14T12:00:00Z","completed_at":"2026-11-14T12:01:00Z","outputs":[]}' \
+            "${agent_runs_url}")"
+          test "${agent_secret_status}" = '400'
+          agent_viewer_status="$(curl --silent --output /tmp/agent-run-viewer.json --write-out '%{http_code}' \
+            -X POST -H 'Authorization: Bearer dev:ci-viewer:viewer' \
+            -H "X-OpenRM-Organization: ${organization_id}" \
+            -H 'X-Idempotency-Key: ci-agent-run-viewer-denied' -H 'Content-Type: application/json' \
+            --data "${agent_run_body}" "${agent_runs_url}")"
+          test "${agent_viewer_status}" = '403'
+
           if psql "${DATABASE_URL}" -c \
             "UPDATE audit_events SET event_type = 'tampered' WHERE aggregate_id = '${requirement_id}'"; then
             echo 'Audit history accepted an update' >&2
@@ -754,6 +789,16 @@ jobs:
           if psql "${DATABASE_URL}" -c \
             "UPDATE verification_due_events SET event_type = 'due_soon' WHERE id = '${verification_due_event_id}'"; then
             echo 'Verification due-event evidence accepted an update' >&2
+            exit 1
+          fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE agent_runs SET model = 'tampered' WHERE id = '${agent_run_id}'"; then
+            echo 'Agent run evidence accepted an update' >&2
+            exit 1
+          fi
+          if psql "${DATABASE_URL}" -c \
+            "UPDATE agent_run_outputs SET relation = 'referenced' WHERE id = '${agent_run_output_id}'"; then
+            echo 'Agent run output evidence accepted an update' >&2
             exit 1
           fi
           if psql "${DATABASE_URL}" -c \

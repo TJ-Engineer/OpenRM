@@ -1,5 +1,3 @@
-export const DEVELOPMENT_ORGANIZATION_ID = "00000000-0000-4000-8000-000000000001";
-export const DEVELOPMENT_PROJECT_ID = "00000000-0000-4000-8000-000000000101";
 export const PILOT_ORGANIZATION_ID = "00000000-0000-4000-8000-000000000002";
 export const PILOT_PROJECT_ID = "00000000-0000-4000-8000-000000000102";
 
@@ -10,7 +8,6 @@ export type OpenRmRuntimeConfiguration = {
   projectId: string;
   projectKey: string;
   projectName: string;
-  allowPreviewFallback: boolean;
   developmentToken?: string;
   developmentReviewerToken?: string;
   developmentReviewerSubject?: string;
@@ -24,13 +21,12 @@ export type OpenRmRuntimeConfiguration = {
 const developmentConfiguration: OpenRmRuntimeConfiguration = {
   authMode: "development",
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8080",
-  organizationId: import.meta.env.VITE_OPENRM_ORGANIZATION_ID || DEVELOPMENT_ORGANIZATION_ID,
-  projectId: import.meta.env.VITE_OPENRM_PROJECT_ID || DEVELOPMENT_PROJECT_ID,
-  projectKey: "AURORA-2",
-  projectName: "Aurora Flight Computer",
-  allowPreviewFallback: true,
+  organizationId: import.meta.env.VITE_OPENRM_ORGANIZATION_ID || PILOT_ORGANIZATION_ID,
+  projectId: import.meta.env.VITE_OPENRM_PROJECT_ID || PILOT_PROJECT_ID,
+  projectKey: "OPENRM",
+  projectName: "OpenRM",
   developmentToken: import.meta.env.VITE_OPENRM_TOKEN || "dev:local-user",
-  developmentReviewerToken: import.meta.env.VITE_OPENRM_REVIEWER_TOKEN || "dev:local-reviewer",
+  developmentReviewerToken: import.meta.env.VITE_OPENRM_REVIEWER_TOKEN || "dev:local-reviewer:reviewer",
   developmentReviewerSubject: import.meta.env.VITE_OPENRM_REVIEWER_SUBJECT || "local-reviewer",
 };
 

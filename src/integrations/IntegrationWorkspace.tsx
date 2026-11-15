@@ -14,16 +14,15 @@ import {
 } from "lucide-react";
 
 import type { components } from "../api/generated";
-import { apiRequest, runtimeConfig } from "../api/runtime";
+import { apiRequest } from "../api/runtime";
 
 type Connector = components["schemas"]["JiraConnector"];
 type Delivery = components["schemas"]["JiraDelivery"];
-type Props = { notify: (message: string) => void };
+type Props = { notify: (message: string) => void; projectId: string };
 
 const statusLabel = (value: string) => value.replaceAll("_", " ").toUpperCase();
 
-export function IntegrationWorkspace({ notify }: Props) {
-  const projectId = runtimeConfig().projectId;
+export function IntegrationWorkspace({ notify, projectId }: Props) {
   const [connector, setConnector] = useState<Connector | null>(null);
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [mode, setMode] = useState<"loading" | "live" | "offline">("loading");

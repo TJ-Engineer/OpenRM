@@ -16,6 +16,12 @@ export type AuthenticatedUser = {
   displayName: string;
 };
 
+export type DevelopmentProfileRole = "administrator" | "author" | "reviewer" | "viewer";
+
+export type DevelopmentProfile = AuthenticatedUser & {
+  role: DevelopmentProfileRole;
+};
+
 export type AuthenticationState =
   | { authenticated: true; user: AuthenticatedUser }
   | { authenticated: false; user: null };
@@ -24,6 +30,75 @@ const TOKENS_KEY = "openrm.auth.tokens";
 const STATE_KEY = "openrm.auth.state";
 const VERIFIER_KEY = "openrm.auth.verifier";
 const NONCE_KEY = "openrm.auth.nonce";
+const DEVELOPMENT_PROFILE_KEY_PREFIX = "openrm.auth.development-profile";
+const DEVELOPMENT_ROLES: DevelopmentProfileRole[] = ["administrator", "author", "reviewer", "viewer"];
+
+function developmentProfileKey(): string {
+  return `${DEVELOPMENT_PROFILE_KEY_PREFIX}.${runtimeConfiguration().organizationId}`;
+}
+
+function configuredDevelopmentProfile(): DevelopmentProfile {
+  const configuredToken = runtimeConfiguration().developmentToken || "dev:local-user";
+  const tokenValue = configuredToken.startsWith("dev:") ? configuredToken.slice(4) : "local-user";
+  const separator = tokenValue.lastIndexOf(":");
+  const subjectValue = separator >= 0 ? tokenValue.slice(0, separator) : tokenValue;
+  const roleValue = separator >= 0 ? tokenValue.slice(separator + 1) : "";
+  const hasRole = DEVELOPMENT_ROLES.includes(roleValue as DevelopmentProfileRole);
+  const subject = hasRole ? subjectValue : tokenValue;
+  return {
+    subject: subject || "local-user",
+    displayName: subject === "local-user" || !subject ? "Local user" : subject,
+    role: hasRole ? roleValue as DevelopmentProfileRole : "administrator",
+  };
+}
+
+export function selectedDevelopmentProfile(): DevelopmentProfile | null {
+  if (runtimeConfiguration().authMode !== "development") return null;
+  const stored = localStorage.getItem(developmentProfileKey());
+  if (!stored) return null;
+  try {
+    const profile = JSON.parse(stored) as Partial<DevelopmentProfile>;
+    if (!profile.subject?.trim() || !profile.displayName?.trim() || !DEVELOPMENT_ROLES.includes(profile.role as DevelopmentProfileRole)) {
+      localStorage.removeItem(developmentProfileKey());
+      return null;
+    }
+    return {
+      subject: profile.subject.trim(),
+      displayName: profile.displayName.trim(),
+      email: profile.email?.trim() || undefined,
+      role: profile.role as DevelopmentProfileRole,
+    };
+  } catch {
+    localStorage.removeItem(developmentProfileKey());
+    return null;
+  }
+}
+
+export function selectDevelopmentProfile(profile: DevelopmentProfile): void {
+  if (runtimeConfiguration().authMode !== "development") {
+    throw new Error("Profile switching is available only in development mode");
+  }
+  if (!profile.subject.trim() || !profile.displayName.trim() || !DEVELOPMENT_ROLES.includes(profile.role)) {
+    throw new Error("The selected development profile is invalid");
+  }
+  localStorage.setItem(developmentProfileKey(), JSON.stringify({
+    subject: profile.subject.trim(),
+    displayName: profile.displayName.trim(),
+    email: profile.email?.trim() || undefined,
+    role: profile.role,
+  }));
+}
+
+export function clearDevelopmentProfile(): void {
+  localStorage.removeItem(developmentProfileKey());
+}
+
+export function developmentIdentityToken(): string {
+  const selected = selectedDevelopmentProfile();
+  return selected
+    ? `dev:${selected.subject}:${selected.role}`
+    : runtimeConfiguration().developmentToken || "dev:local-user";
+}
 
 function base64Url(bytes: Uint8Array): string {
   let value = "";
@@ -141,9 +216,10 @@ async function refreshTokens(tokens: StoredTokens): Promise<StoredTokens> {
 export async function initializeAuthentication(): Promise<AuthenticationState> {
   const configuration = runtimeConfiguration();
   if (configuration.authMode === "development") {
+    const profile = selectedDevelopmentProfile() || configuredDevelopmentProfile();
     return {
       authenticated: true,
-      user: { subject: "local-user", displayName: "Local user" },
+      user: { subject: profile.subject, email: profile.email, displayName: profile.displayName },
     };
   }
 
@@ -190,7 +266,7 @@ export async function beginSignIn(): Promise<void> {
 export async function getIdentityToken(): Promise<string> {
   const configuration = runtimeConfiguration();
   if (configuration.authMode === "development") {
-    return configuration.developmentToken || "dev:local-user";
+    return developmentIdentityToken();
   }
   let tokens = storedTokens();
   if (!tokens) throw new Error("Sign in to continue");
@@ -201,7 +277,7 @@ export async function getIdentityToken(): Promise<string> {
 export function currentUserSubject(): string {
   const configuration = runtimeConfiguration();
   if (configuration.authMode === "development") {
-    return configuration.developmentReviewerSubject || "local-reviewer";
+    return selectedDevelopmentProfile()?.subject || configuredDevelopmentProfile().subject;
   }
   const tokens = storedTokens();
   return tokens ? userFromToken(tokens.id_token).subject : "";
@@ -211,7 +287,12 @@ export async function signOut(): Promise<void> {
   const configuration = runtimeConfiguration();
   const tokens = storedTokens();
   sessionStorage.removeItem(TOKENS_KEY);
-  if (configuration.authMode !== "cognito" || !configuration.cognito) {
+  if (configuration.authMode === "development") {
+    clearDevelopmentProfile();
+    window.location.reload();
+    return;
+  }
+  if (!configuration.cognito) {
     window.location.reload();
     return;
   }

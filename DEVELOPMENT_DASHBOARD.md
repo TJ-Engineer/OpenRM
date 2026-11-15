@@ -1,6 +1,6 @@
 # OpenRM development dashboard
 
-**Last verified:** 10 November 2026<br>
+**Last verified:** 14 November 2026<br>
 **Foundation evidence commit:** `fc6687f`<br>
 **Phase 2 evidence commit:** `f498031`<br>
 **Phase 3 implementation evidence commit:** `4f50618`<br>
@@ -8,7 +8,7 @@
 **Phase 5 protected evidence:** [OpenRM CI run 42508760769](https://github.com/TJ-Engineer/OpenRM/actions/runs/42508760769)<br>
 **Phase 6 Help protected evidence:** [OpenRM CI run 42547019573](https://github.com/TJ-Engineer/OpenRM/actions/runs/42547019573)<br>
 **Portable stack protected evidence:** [OpenRM CI run 42518730569](https://github.com/TJ-Engineer/OpenRM/actions/runs/42518730569)<br>
-**Overall status:** 🟡 Phase 6 active; the clean bounded AWS pilot is live, the initial administrator is invited, the first in-product Help increment is protected-CI verified, and the code-aligned maintainer SDD is published. First sign-in and live artifact-creation acceptance remain open.
+**Overall status:** 🟡 Phase 6 active; the clean bounded AWS pilot is live and has been exercised by the initial administrator, the first in-product Help increment is protected-CI verified, and the code-aligned maintainer SDD is published. The pilot-feedback remediation increment is deployed and healthy in AWS; the full live create/derive/invite/profile acceptance journey remains open.
 
 This file is the repository-level status dashboard. It summarizes delivery evidence and immediate priorities; [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) remains the source for scope, architecture, phase definitions, and exit gates.
 
@@ -18,7 +18,7 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 
 | Area | Status | Evidence or next condition |
 | --- | --- | --- |
-| Phase 0 — Prototype and delivery preview | 🟢 AWS deployed | The [interactive React preview](https://d20kr4lr7ux18x.cloudfront.net) is live through CloudFront with a private encrypted S3 origin and restricted deployment role. |
+| Phase 0 — Prototype and delivery preview | ⚫ Retired from product | Historical static-delivery infrastructure remains documented, but demo, guided-tour, funding, illustrative API, overview, and fallback requirement surfaces have been removed from the OpenRM application. |
 | AWS static preview | 🟢 Live and verified | CloudFront returned `HTTP 200` with CSP/HSTS headers; immutable assets and SPA fallback passed; direct S3 access returned `HTTP 403`. |
 | AWS clean pilot | 🟢 Live and healthy | [OpenRM](https://d3785w5m5qzybi.cloudfront.net/) serves the Cognito-protected production UI with no demo artifacts; CloudFront, ECS/Fargate, the Rust API, and private PostgreSQL 17 are healthy in `us-east-2`. |
 | Phase 1 — Foundation | 🟢 Complete | All foundation deliverables, local checks, hosted CI jobs, and protected-branch controls are complete. |
@@ -29,18 +29,20 @@ This file is the repository-level status dashboard. It summarizes delivery evide
 | Phase 3 — Traceability and controlled change | 🟢 Complete | The complete trace, impact, changeset, baseline, comparison, and signed-export slice passed locally and in protected CI. |
 | Phase 4 — Reviews and verification | 🟢 Complete | The complete review-to-verification signed-evidence exit path passes locally and in protected hosted CI. |
 | Phase 5 — Integration and beta hardening | 🟢 Complete | Jira operations, telemetry, recovery, security, load, three-browser accessibility, deployment artifacts, and operator procedures pass locally and in protected hosted CI. |
+| Software-factory agent provenance | 🟢 Locally verified | Migration `0014` and the REST API preserve sanitized model, prompt, context, tool calls, output, exact OpenRM revisions, external Jira/Git references, attributable audit, canonical hashes, and valid evidence signatures; protected hosted CI remains pending. |
 | Phase 6 — Product documentation and maintainability | 🟡 Active | The first-edition manual, persistent Help, quality matrix, and production artifact are protected-CI verified; the first SDD edition is locally source/link verified; its walkthrough, contextual guidance, external-link validation, and governance remain open. |
 | Phase 7 — Controlled development archive | ⚪ Planned | Ten required work items cover evidence-byte transfers, immutable manifests, Jira inbound history, CI evidence, customer acceptance, retention/legal holds/disposition, integrity scans, export/restore, archive search, and coordinated PostgreSQL/object reconstruction. |
 | In-product Help and maintenance design | 🟡 First increments delivered | Help opens from the topbar and sidebar, renders the authoritative manual, filters by search, and passes parser plus three-browser WCAG checks in protected CI. The SDD maps the implementation to its ADRs, interfaces, data, deployment, operations, and maintenance paths. |
 | OpenRM self-verification project | 🟢 Protected CI verified | The isolated `OPENRM` project contains 12 system and 48 derived requirements, 48 decomposition links, four independently executed evidence cases, 100% trace and verification coverage, and a ready gate with no blockers; clean reconstruction passed in [OpenRM CI run 42512977538](https://github.com/TJ-Engineer/OpenRM/actions/runs/42512977538). |
 | Portable container distribution | 🟢 Protected CI verified | PostgreSQL, migrations, API, self-project bootstrap, and the same-origin web gateway build and start with one command; clean reconstruction and hardening passed in [OpenRM CI run 42518730569](https://github.com/TJ-Engineer/OpenRM/actions/runs/42518730569). |
-| Production API and database | 🟡 Pilot commissioned | Cognito OIDC, Secrets Manager, immutable ECR digests, a private deletion-protected RDS instance, and one healthy non-root/read-only ECS task are live. The initial administrator invitation is issued; first sign-in, artifact-creation acceptance, alert receivers, and broader-production hardening remain. |
+| Production API and database | 🟡 Pilot commissioned | Cognito OIDC, Secrets Manager, immutable ECR digests, a private deletion-protected RDS instance, and one healthy non-root/read-only ECS task are live. Initial administrator sign-in is complete; post-remediation artifact acceptance, alert receivers, and broader-production hardening remain. |
+| Pilot feedback remediation | 🟡 AWS deployed; acceptance active | [OPENRM-101 through OPENRM-104](ISSUES.md) implement project setup and application-wide switching, project requirement prefixes with automatic identifiers, atomic derived-requirement creation, and Cognito-backed user invitations with profiles. The clean PostgreSQL path, local browser suite, rolling AWS deployment, authenticated project reads, public health/readiness checks, and Cognito role provisioning pass; the complete live mutation and invitation journey remains. |
 
 ## Phase progress
 
 | Signal | Phase | State | Current result |
 | --- | --- | --- | --- |
-| 🟢 | 0. Prototype and preview | Complete | Product surfaces, guided preview, and static hosting path are available. |
+| ⚫ | 0. Prototype and preview | Retired | Historical delivery evidence remains in the repository; prototype, tour, and funding surfaces are no longer part of the product. |
 | 🟢 | 1. Foundation | Complete | Web, Rust API, PostgreSQL migrations, OpenAPI generation, OIDC/policy harness, ADRs, bootstrap, hosted CI, and branch protection are verified. |
 | 🟢 | 2. Requirements vertical slice | Complete | Live authoring, project roles, organization, validation, immutable history, comparison, import/export, audit, E2E, and accessibility evidence are verified. |
 | 🟢 | 3. Traceability and controlled change | Complete | Directed relationships, trace queries, asynchronous impact, attributable changesets, immutable baselines, comparison, and signed export are protected-CI verified. |
@@ -92,6 +94,10 @@ Usage tracking begins with this dashboard on 8 November 2026 at 07:56 CST. Histo
 | 8 November 2026, 19:42 CST | 6 | `N/R` | `N/R` | Converted the authoritative manual to schema-backed structured JSON, added runtime structure and anchor validation, preserved generated navigation, and passed the full local repository, browser/WCAG, and container gates. Session usage telemetry was unavailable. |
 | 8 November 2026, 19:46 CST | 6 | `N/R` | `N/R` | Deferred the optional schema-aware JSON Help editor and preview workflow as later backlog item `DOC-203`. Session usage telemetry was unavailable. |
 | 8 November 2026, 19:57 CST | 6 | `N/R` | `N/R` | Published the first code-aligned maintainer SDD with system, component, runtime, API, data, security, deployment, operations, testing, maintenance, ADR, and source traceability; all 69 unique local links resolve. Session usage telemetry was unavailable. |
+| 11 November 2026, 20:07 CST | 6 | `N/R` | `N/R` | Deployed OPENRM-101 through OPENRM-104 to the clean `us-east-2` pilot by immutable image digest; CloudFormation reached `UPDATE_COMPLETE`, ECS revision 7 reached steady state, public health/readiness passed, all four Cognito role groups were present, and PostgreSQL 17 remained available and deletion-protected. Session usage telemetry was unavailable. |
+| 11 November 2026, 20:15 CST | 6 | `N/R` | `N/R` | Adopted and verified a local-first release rhythm: cached persistent Compose rebuild, live health/database/authentication checks, one clean-workspace container smoke journey, and all 14 Chromium workflow/accessibility tests passed in 24.9 seconds. Isolated clean-room reconstruction and the full browser matrix remain release-candidate gates before AWS promotion. Session usage telemetry was unavailable. |
+| 12 November 2026 | 6 | `N/R` | `N/R` | Added explicit parent and child requirement-link fields backed by current `DECOMPOSES_TO` evidence, including cross-page linked-requirement navigation. The rebuilt local container passed health/authentication smoke, the clean-workspace browser journey, and all 15 Chromium workflow/accessibility tests. Session usage telemetry was unavailable. |
+| 14 November 2026 | 5 | `N/R` | `N/R` | Added migration `0014` and REST-first immutable signed agent-run provenance with exact internal-revision and external factory-output links, idempotency, tenant policy, audit, credential-field rejection, generated types, unit coverage, and a database-path CI acceptance matrix. Session usage telemetry was unavailable. |
 
 ### Usage accounting rules
 
@@ -134,10 +140,11 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 2. Add contextual links from primary workspaces to the corresponding stable manual sections.
 3. Walk a maintainer through the code-aligned SDD and close any discrepancies found against the running system.
 4. Add documentation ownership and freshness rules plus external-link validation.
-5. Complete the initial administrator's first sign-in and the live create/revise/history artifact acceptance path in the clean AWS tenant.
-6. Complete environment-specific recovery, alert-receiver, SLO, and Jira dry-run acceptance evidence.
-7. Obtain independent external assurance before broader regulated production use.
-8. Decompose and sequence the Phase 7 controlled development archive backlog after the Phase 6 documentation gate, preserving portable S3-compatible storage and coordinated database/object recovery as architectural constraints.
+5. Accept the deployed pilot-feedback remediation increment in [ISSUES.md](ISSUES.md): create and switch projects, confirm configurable prefixes and automatic identifiers, create derived requirements, invite a bounded user, and edit that user's profile.
+6. Capture live create/derive/revise/history, invitation-delivery, first-password-change, group-claim, and project-isolation evidence.
+7. Complete environment-specific recovery, alert-receiver, SLO, and Jira dry-run acceptance evidence.
+8. Obtain independent external assurance before broader regulated production use.
+9. Decompose and sequence the Phase 7 controlled development archive backlog after the Phase 6 documentation gate, preserving portable S3-compatible storage and coordinated database/object recovery as architectural constraints.
 
 **Later backlog:** `DOC-203` — add a maintainer-friendly, schema-aware JSON Help editor and preview workflow after the current Phase 6 documentation and SDD gates.
 
@@ -158,7 +165,7 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 
 | Required capability | State | Completion evidence |
 | --- | --- | --- |
-| S3-compatible evidence transfer | ⚪ Planned | Authorized upload/download, multipart, presigned-transfer, checksum, and portable adapter integration tests pass. |
+| S3-compatible object administration and evidence transfer | 🟡 Partial | Live project-scoped inventory, linked-object protection, audited administrator deletion, versioned local/AWS storage, and focused UI/API checks are implemented. Upload/download, multipart, presigned transfer, checksum enforcement, and full portable integration coverage remain. |
 | Immutable artifact manifests | ⚪ Planned | Signed manifests bind hashes and exact object versions to projects, requirements, baselines, commits, builds, and releases. |
 | Full Jira inbound history | ⚪ Planned | Issue revisions, transitions, comments, links, attachments, users, and synchronization checkpoints reconcile under replay. |
 | CI evidence ingestion | ⚪ Planned | Authenticated pipeline integrations archive test, coverage, analysis, security, provenance, SBOM, build, and release evidence. |
@@ -219,6 +226,7 @@ Local foundation evidence passed on 7 November 2026: clean install, generated ty
 | Capability | State | Evidence |
 | --- | --- | --- |
 | Jira connector operations | 🟢 Locally verified | Administrator policy, external secret references, mapping, idempotent enqueue, fixed HTTPS paths, bounded attempts, rate-limit/backoff classification, dead letters, and attributable replay are implemented. |
+| Agent-run provenance | 🟢 Locally verified | Author-only idempotent writes produce append-only signed run evidence, bind exact internal revisions or external factory references, reject structured credential fields, and verify canonical hashes and historical signing-key IDs on read. |
 | Immutable connector evidence | 🟢 Locally verified | Two configuration versions and ordered delivery attempts were retained; PostgreSQL rejected direct changes to both histories. |
 | Operational telemetry | 🟢 Locally verified | Structured logs, Prometheus request/error/latency and queue metrics, administrator operations status, W3C propagation, optional OTLP/HTTP export, dashboards, and alerts are configured. |
 | Production deployment artifact | 🟢 Locally verified | The 40.1 MB API image built from the frozen candidate and passed health/readiness as UID 10001 with a read-only root filesystem and all capabilities dropped. |

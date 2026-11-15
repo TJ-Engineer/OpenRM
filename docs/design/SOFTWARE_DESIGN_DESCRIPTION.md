@@ -3,10 +3,10 @@
 | Field | Value |
 | --- | --- |
 | Document ID | `OPENRM-SDD-001` |
-| Version | 1.0 |
+| Version | 1.2 |
 | Status | Maintained baseline |
 | Applies to | OpenRM `0.1.0`; repository baseline `d69cfca` and later changes that preserve this document |
-| Last verified | 8 November 2026 |
+| Last verified | 13 November 2026 |
 | Owner | OpenRM maintainers |
 | Primary audience | Developers, reviewers, security engineers, operators, and release maintainers |
 | Authoritative location | `docs/design/SOFTWARE_DESIGN_DESCRIPTION.md` |
@@ -49,6 +49,7 @@ OpenRM is an open, self-hostable configuration and requirements management platf
 - attributable changesets and immutable signed baselines;
 - baseline-bound reviews, signed decisions, and segregation of duties;
 - independent verification cases, runs, signed results, attachment manifests, coverage, and gate readiness;
+- immutable signed agent-run provenance with exact OpenRM revision and external factory-output links;
 - a governed Jira delivery queue with retry, dead-letter, and replay evidence;
 - operational metrics, traces, backup/recovery procedures, and a portable container distribution; and
 - a structured JSON user manual rendered as in-product Help.
@@ -64,9 +65,7 @@ When resolving ambiguity, use the following precedence:
 3. accepted [ADRs](../adr/README.md);
 4. security and operations procedures under [`docs/security`](../security/) and [`docs/operations`](../operations/);
 5. this SDD; and
-6. illustrative dashboard copy.
-
-Dashboard mock data and architecture cards are explanatory product surfaces, not a substitute for the contract or implementation.
+6. maintained operational and user documentation.
 
 ## 2. System status and design boundaries
 
@@ -78,13 +77,13 @@ OpenRM has three deliberately separate operating boundaries.
 | Hardened pilot topology | PostgreSQL, API, OpenTelemetry Collector, Prometheus, and Grafana definition | Yes, when commissioned | Repository artifact verified; environment not commissioned |
 | AWS static preview | Compiled React assets behind CloudFront and a private S3 origin | No | Deployed preview; no API or database |
 
-The AWS preview is not the production topology. It intentionally contains no API, PostgreSQL database, OIDC provider, evidence store, or Jira secret. When its browser cannot reach an API, the Requirements workspace displays explicit sample data and other live workspaces display offline state.
+The legacy AWS static site is not the production topology. It intentionally contains no API, PostgreSQL database, OIDC provider, evidence store, or Jira secret. The web client no longer fabricates project content when an API is unavailable; affected workspaces report an error and controlled actions remain disabled.
 
 ### 2.1 Design classifications
 
 - **Implemented:** behavior present in code and protected by automated evidence.
 - **Configured:** an artifact exists in the repository, but an operator must supply an environment and secrets.
-- **Preview-only:** illustrative behavior that must not receive production data.
+- **Legacy static delivery:** historical hosting infrastructure with no application data or fallback content.
 - **Planned:** accepted direction without a complete runtime path; planned behavior is called out rather than described as current capability.
 
 ## 3. Architectural drivers
@@ -193,8 +192,8 @@ The API is a modular monolith. Domain modules share one `AppState`, one PostgreS
 
 | Component | Responsibility | Primary source |
 | --- | --- | --- |
-| Application shell | Navigation, page selection, preview surfaces, delivery dashboard, guided tour | [`src/main.tsx`](../../src/main.tsx) |
-| Requirements workspace | Live authoring, organization resources, search, compare, import/export; explicit static fallback | [`src/requirements/RequirementsWorkspace.tsx`](../../src/requirements/RequirementsWorkspace.tsx) |
+| Application shell | Live workspace navigation, project selection, authenticated profile access, status presentation, and a development-only role-enforced profile switcher | [`src/main.tsx`](../../src/main.tsx), [`src/api/auth.ts`](../../src/api/auth.ts) |
+| Requirements workspace | Live authoring, organization resources, search, compare, import/export, and fail-closed offline behavior | [`src/requirements/RequirementsWorkspace.tsx`](../../src/requirements/RequirementsWorkspace.tsx) |
 | Traceability workspace | Graph/matrix/coverage reads and suspect-link disposition | [`src/traceability/TraceabilityWorkspace.tsx`](../../src/traceability/TraceabilityWorkspace.tsx) |
 | Baselines workspace | Changeset/baseline creation, comparison, signed export | [`src/baselines/BaselinesWorkspace.tsx`](../../src/baselines/BaselinesWorkspace.tsx) |
 | Review workspace | Package assembly, participants, rounds, comments, resolutions, and decisions | [`src/reviews/ReviewsWorkspace.tsx`](../../src/reviews/ReviewsWorkspace.tsx) |
@@ -214,6 +213,7 @@ The API is a modular monolith. Domain modules share one `AppState`, one PostgreS
 | Policy | Deny-by-default role/action matrix and organization boundary | [`apps/api/src/policy.rs`](../../apps/api/src/policy.rs) |
 | Projects | Project creation, project membership, workspace resources, project authorization, audit helper | [`apps/api/src/projects.rs`](../../apps/api/src/projects.rs) |
 | Requirements | Current records, immutable revisions, search, compare, import/export, optimistic concurrency | [`apps/api/src/requirements.rs`](../../apps/api/src/requirements.rs) |
+| Agent provenance | Sanitized model/prompt/context/tool/output capture, exact internal revisions, external references, canonical signing, and read-time verification | [`apps/api/src/agent_runs.rs`](../../apps/api/src/agent_runs.rs) |
 | Relationships | Typed directed links, cardinality, exact endpoints, history, reviewer resolution | [`apps/api/src/relationships.rs`](../../apps/api/src/relationships.rs) |
 | Controlled change | Trace views, changesets, baselines, comparison, deterministic evidence export | [`apps/api/src/controlled_change.rs`](../../apps/api/src/controlled_change.rs) |
 | Reviews | Baseline-bound lifecycle, participants, comments, blockers, signed decisions | [`apps/api/src/reviews.rs`](../../apps/api/src/reviews.rs) |
@@ -301,13 +301,14 @@ An approval is valid only for the active review round and immutable baseline. Th
 
 ### 8.1 Contract
 
-The [OpenAPI 3.1 contract](../../contracts/openapi.yaml) is the public HTTP source of truth. It currently defines 56 operations. Product routes are versioned under `/api/v1`; `/health`, `/ready`, and `/metrics` are operational routes outside the product namespace. TypeScript definitions are generated into [`src/api/generated.ts`](../../src/api/generated.ts) with `npm run generate:api` and must remain diff-clean under `npm run check:generated`.
+The [OpenAPI 3.1 contract](../../contracts/openapi.yaml) is the public HTTP source of truth. It currently defines 63 operations. Product routes are versioned under `/api/v1`; `/health`, `/ready`, and `/metrics` are operational routes outside the product namespace. TypeScript definitions are generated into [`src/api/generated.ts`](../../src/api/generated.ts) with `npm run generate:api` and must remain diff-clean under `npm run check:generated`.
 
 Endpoint groups are:
 
 - identity and session;
 - projects, membership, and workspace configuration;
 - requirements, revisions, compare, import, and export;
+- immutable agent runs and exact internal or external output links;
 - relationship rules, relationships, history, and resolution;
 - trace summary, matrix, and graph;
 - changesets, baselines, comparison, and evidence;
@@ -329,7 +330,7 @@ Endpoint groups are:
 | CORS | Development origin `http://127.0.0.1:5173`; deployed web is expected to use same-origin proxying |
 | Methods | GET, POST, and PUT only in the current contract |
 
-The implemented concurrency contract is body-based optimistic versioning. Any illustrative dashboard text referring to ETag/`If-Match` is not the current API contract.
+The implemented concurrency contract is body-based optimistic versioning. API consumers must use the request-body `expected_revision` or `expected_version` fields defined by the OpenAPI contract.
 
 ### 8.3 Responses and errors
 
@@ -360,7 +361,7 @@ Clients should branch on HTTP status and stable `error.code`, display `message`,
 
 ### 9.1 Data model overview
 
-The nine migrations define 41 tables. They are grouped below by responsibility.
+The 14 forward migrations define 43 tables. They are grouped below by responsibility.
 
 | Group | Current/materialized tables | Immutable or append-only evidence |
 | --- | --- | --- |
@@ -370,6 +371,7 @@ The nine migrations define 41 tables. They are grouped below by responsibility.
 | Controlled change | — | `changesets`, `changeset_entries`, `baselines`, `baseline_artifacts`, `baseline_relationships` |
 | Reviews | `review_packages` | `review_package_events`, `review_participants`, `review_comments`, `review_comment_resolutions`, `review_decisions` |
 | Verification | `verification_runs` carries current execution status | `verification_cases`, targets, run events, results, attachment manifests, due events |
+| Agent provenance | — | `agent_runs`, `agent_run_outputs` |
 | Integration and work queues | `connector_configurations`, `connector_deliveries`, `outbox_messages` | configuration events and delivery attempts |
 
 ### 9.2 Tenant integrity
@@ -392,13 +394,15 @@ Mutable aggregates are locked before comparing the caller's expected revision/ve
 
 ### 9.5 Deterministic manifests and signatures
 
-Changesets snapshot current artifact revisions and classify entries relative to an optional parent. Baselines snapshot exact artifact and relationship revisions, relevant policy version, optional changeset, and optional superseded baseline. Manifests are serialized in deterministic order and SHA-256 hashed. Baselines, review decisions, verification results, and complete gate exports are signed using HMAC-SHA256 with a stored `signing_key_id`.
+Changesets snapshot current artifact revisions and classify entries relative to an optional parent. Baselines snapshot exact artifact and relationship revisions, relevant policy version, optional changeset, and optional superseded baseline. Manifests are serialized in deterministic order and SHA-256 hashed. Baselines, review decisions, verification results, agent runs, and complete gate exports are signed using HMAC-SHA256 with a stored `signing_key_id`. Agent-run reads reconstruct the canonical envelope from PostgreSQL and fail signature validation when its hash, algorithm, or key-specific signature no longer matches.
 
 The active key signs new evidence. Historical verification keys let the service verify evidence created before an intentional rotation. Unknown key IDs and hash mismatches fail closed. HMAC is the current implementation; installations needing asymmetric or managed-key signing must introduce a versioned signing adapter without changing historical verification semantics.
 
 ### 9.6 Attachments and object storage
 
-OpenRM currently stores attachment manifests only: object key, file name, media type, byte count, and SHA-256. It does not upload, download, virus-scan, authorize, or independently re-hash attachment bytes. The object system shown in product architecture views is an integration boundary, not a completed storage service. Operators must protect object bytes and maintain consistency with the recorded hashes.
+OpenRM stores attachment manifests containing object key, file name, media type, byte count, and SHA-256. Its object-storage adapter also lists objects beneath the authorized organization/project prefix and lets project administrators delete objects that have no verification-attachment reference. Deletion takes a transaction-scoped advisory lock shared with attachment creation, checks both relative and fully prefixed keys, records an attributable audit event, and fails with `409` when the object is linked. The production bucket is private, TLS-only, encrypted, versioned, access-logged, and retained; the local S3-compatible bucket is also versioned.
+
+OpenRM still does not upload, download, virus-scan, or independently re-hash attachment bytes. Operators must protect object bytes and maintain consistency with recorded hashes. Future manifest types must participate in the same guarded-deletion reference check before they can bind object keys.
 
 ### 9.7 Search
 
@@ -454,11 +458,11 @@ Most live workspaces use a small `fetch` wrapper rather than the exported `opena
 
 ### 12.2 Runtime configuration
 
-The web client reads `VITE_API_BASE_URL`, organization ID, project ID, author token, reviewer token, and reviewer subject at build/runtime-module initialization. Defaults point to local development identities and the deterministic seed project. Production builds must inject appropriate non-development values or use a same-origin gateway and real login/session integration; compiled development tokens are not a production authentication solution.
+The web client reads `VITE_API_BASE_URL`, organization ID, project ID, author token, reviewer token, and reviewer subject at build/runtime-module initialization. Development defaults point to the clean `OPENRM` pilot workspace and explicit development identities. Production builds must inject appropriate non-development values or use a same-origin gateway and real login/session integration; compiled development tokens are not a production authentication solution.
 
-### 12.3 Offline and preview behavior
+### 12.3 Offline behavior
 
-The Requirements workspace deliberately falls back to two clearly labeled sample requirements if the API cannot be reached. Trace, baselines, reviews, verification, and integrations report offline state instead of fabricating controlled evidence. The overview, storage, REST API, and architecture pages contain illustrative presentation data.
+Requirements, traceability, baselines, reviews, verification, integrations, and object storage report unavailable services instead of fabricating controlled evidence. The client clears stale requirement results when loading fails and disables persistence-dependent actions until the live API returns.
 
 ### 12.4 Structured Help
 
@@ -601,7 +605,7 @@ Prometheus scrape/alert rules and the OpenTelemetry Collector configuration live
 | Jira rate limit/transient outage | Delivery retries with `Retry-After` or capped backoff | Monitor age/attempts; resolve cause before bounded attempts expire |
 | Jira terminal failure | Delivery enters visible dead-letter state | Correct configuration/remote condition and replay attributable work |
 | Evidence hash/signature mismatch | Export/readiness reports invalid evidence or fails closed | Treat as integrity incident; preserve data and logs |
-| Web cannot reach API | Requirements enters labeled preview; live workspaces report offline | Restore API or use preview only for demonstration |
+| Web cannot reach API | Affected workspaces report offline and do not substitute fabricated project data | Restore API connectivity before continuing controlled work |
 
 ### 17.2 Backup and recovery
 
@@ -676,6 +680,7 @@ Protected `main` requires all five checks, strict up-to-date validation, and adm
 | Change baseline content | `controlled_change.rs` | evidence schema/policy version, historical verification, ADR 0005 | Canonical byte/hash fixtures and export replay |
 | Change review approval policy | `reviews.rs`, `policy.rs` | verification readiness, threat model, manual roles | Role denial, segregation, blocker, signed evidence tests |
 | Change verification evidence | `verification.rs`, migration | gate export, object-manifest boundary, manual | Signature, exact target, coverage/readiness, immutability tests |
+| Change agent provenance | `agent_runs.rs`, migration `0014`, OpenAPI | secret boundary, exact revision/external output semantics, agent REST guide | Canonical hash, idempotency, policy denial, database round trip, append-only triggers |
 | Add a connector operation | `connectors.rs`, OpenAPI | URL allowlist, payload limit, retry policy, threat model, runbook | SSRF validation, retry/dead-letter/replay, audit tests |
 | Change authentication | `auth.rs`, `config.rs`, `policy.rs` | Compose config, threat model, deployment guide, frontend session handling | OIDC validation, production fail-closed, tenant/role matrix |
 | Change HTTP middleware | `lib.rs`, `error.rs` | operations docs, browser proxy/CORS behavior | Security headers, request bounds, request ID, E2E |
@@ -712,10 +717,10 @@ Changes to canonical field names, ordering, policy versions, signing algorithms,
 ## 20. Known limitations and open design work
 
 1. The repository has no commissioned production API/database environment; the production Compose file is a reference artifact.
-2. The AWS deployment is a static preview only. It has no production API, database, identity, storage, or telemetry path, and CloudFront request logging is not yet enabled.
+2. The legacy static-site deployment has no API, database, identity, storage, or telemetry path; it no longer receives a demo-data fallback and should not be treated as an application environment.
 3. OIDC keys are loaded only at process start; automatic JWKS refresh is not implemented.
 4. The web client uses build-provided/default development identities rather than a complete interactive OIDC login/session flow.
-5. Attachment bytes are external; OpenRM stores and signs manifests but does not upload, retrieve, scan, authorize, or re-hash the objects.
+5. OpenRM inventories project object prefixes and guards deletion of verification-linked objects, but it does not upload, retrieve, scan, or re-hash object bytes; reference protection must expand as new manifest types are added.
 6. HMAC evidence signing depends on operator-managed shared-secret material. Managed asymmetric signing is not implemented.
 7. The relationship-impact worker runs in the API process and lacks bounded retries, a dead-letter state, an operator replay endpoint, and independent scaling.
 8. HTTP metrics are process-local and reset on restart. Durable metric/trace retention and alert receivers are not supplied.

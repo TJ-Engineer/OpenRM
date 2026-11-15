@@ -15,11 +15,12 @@ use crate::{
     authorize,
     error::ApiError,
     policy::{Action, Principal},
-    projects::authorize_project,
+    projects::{authorize_project, insert_audit},
 };
 
 const IDEMPOTENCY_HEADER: &str = "x-idempotency-key";
 const CREATE_COMMAND: &str = "requirement.create";
+const DERIVE_COMMAND: &str = "requirement.derive";
 const REVISE_COMMAND: &str = "requirement.revise";
 
 #[derive(Debug, FromRow, Serialize)]
@@ -27,6 +28,8 @@ pub struct ProjectSummary {
     pub id: Uuid,
     pub key: String,
     pub name: String,
+    pub requirement_prefix: String,
+    pub next_requirement_number: i64,
     pub description: String,
     pub created_at: DateTime<Utc>,
 }
@@ -38,7 +41,8 @@ pub struct ProjectListResponse {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct CreateRequirementRequest {
-    pub key: String,
+    #[serde(default)]
+    pub key: Option<String>,
     pub title: String,
     pub statement: String,
     #[serde(default = "empty_object")]
@@ -62,7 +66,7 @@ pub struct ReviseRequirementRequest {
 
 #[derive(Clone, Debug, Serialize)]
 struct ValidatedRequirement {
-    key: String,
+    key: Option<String>,
     title: String,
     statement: String,
     attributes: Value,
@@ -82,6 +86,7 @@ struct RequirementRecord {
     tag_ids: Vec<Uuid>,
     revision: i32,
     created_by: String,
+    author_label: String,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
 }
@@ -98,6 +103,8 @@ pub struct RequirementResponse {
     pub tag_ids: Vec<Uuid>,
     pub revision: i32,
     pub created_by: String,
+    #[serde(default)]
+    pub created_by_name: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -115,6 +122,7 @@ impl From<RequirementRecord> for RequirementResponse {
             tag_ids: record.tag_ids,
             revision: record.revision,
             created_by: record.created_by,
+            created_by_name: abbreviate_author_label(&record.author_label),
             created_at: record.created_at,
             updated_at: record.updated_at,
         }
@@ -138,7 +146,21 @@ pub struct RequirementListResponse {
     pub offset: i64,
 }
 
-#[derive(Debug, FromRow, Serialize)]
+#[derive(Debug, FromRow)]
+struct RequirementRevisionRecord {
+    id: Uuid,
+    revision: i32,
+    title: String,
+    statement: String,
+    attributes: Value,
+    folder_id: Option<Uuid>,
+    tag_ids: Vec<Uuid>,
+    created_by: String,
+    author_label: String,
+    created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize)]
 pub struct RequirementRevisionResponse {
     pub id: Uuid,
     pub revision: i32,
@@ -148,7 +170,25 @@ pub struct RequirementRevisionResponse {
     pub folder_id: Option<Uuid>,
     pub tag_ids: Vec<Uuid>,
     pub created_by: String,
+    pub created_by_name: String,
     pub created_at: DateTime<Utc>,
+}
+
+impl From<RequirementRevisionRecord> for RequirementRevisionResponse {
+    fn from(record: RequirementRevisionRecord) -> Self {
+        Self {
+            id: record.id,
+            revision: record.revision,
+            title: record.title,
+            statement: record.statement,
+            attributes: record.attributes,
+            folder_id: record.folder_id,
+            tag_ids: record.tag_ids,
+            created_by: record.created_by,
+            created_by_name: abbreviate_author_label(&record.author_label),
+            created_at: record.created_at,
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -181,6 +221,12 @@ pub struct RequirementImportResponse {
     pub imported: usize,
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct DerivedRequirementResponse {
+    pub requirement: RequirementResponse,
+    pub relationship_id: Uuid,
+}
+
 #[derive(Debug, FromRow)]
 struct CommandResult {
     request_fingerprint: String,
@@ -203,7 +249,8 @@ pub async fn list_projects(
     let administrator = principal.roles.iter().any(|role| role == "administrator");
     let items = sqlx::query_as::<_, ProjectSummary>(
         r#"
-        SELECT p.id, p.key, p.name, p.description, p.created_at
+        SELECT p.id, p.key, p.name, p.requirement_prefix,
+               p.next_requirement_number, p.description, p.created_at
         FROM projects p
         WHERE p.organization_id = $1
           AND (
@@ -251,7 +298,16 @@ pub async fn list_requirements(
                  WHERE at.organization_id = a.organization_id
                    AND at.project_id = a.project_id AND at.artifact_id = a.id
                ), '{}'::uuid[]) AS tag_ids,
-               a.current_revision_number AS revision, a.created_by, a.created_at, a.updated_at
+               a.current_revision_number AS revision, a.created_by,
+               COALESCE((
+                 SELECT COALESCE(NULLIF(btrim(ui.display_name), ''), NULLIF(btrim(ui.email), ''))
+                 FROM user_identities ui
+                 JOIN organization_memberships om ON om.user_identity_id = ui.id
+                 WHERE om.organization_id = a.organization_id AND ui.subject = a.created_by
+                 ORDER BY ui.updated_at DESC, ui.created_at DESC
+                 LIMIT 1
+               ), a.created_by) AS author_label,
+               a.created_at, a.updated_at
         FROM artifacts a
         JOIN artifact_types t
           ON t.organization_id = a.organization_id
@@ -373,6 +429,14 @@ pub async fn create_requirement(
     .map_err(database_error)?
     .ok_or_else(|| ApiError::not_found("Project does not exist"))?;
 
+    let requirement_key = allocate_requirement_key(
+        &mut transaction,
+        &principal,
+        project_id,
+        requirement.key.as_deref(),
+    )
+    .await?;
+
     let artifact_id = Uuid::new_v4();
     let revision_id = Uuid::new_v4();
     sqlx::query(
@@ -388,7 +452,7 @@ pub async fn create_requirement(
     .bind(principal.organization_id)
     .bind(project_id)
     .bind(artifact_type_id)
-    .bind(&requirement.key)
+    .bind(&requirement_key)
     .bind(&requirement.title)
     .bind(&requirement.statement)
     .bind(&requirement.attributes)
@@ -437,17 +501,26 @@ pub async fn create_requirement(
         project_id,
         artifact_id,
         "requirement.created",
-        json!({"key": requirement.key, "revision": 1}),
+        json!({"key": requirement_key, "revision": 1}),
     )
     .await?;
 
     let created = sqlx::query_as::<_, RequirementRecord>(
         r#"
-        SELECT id, project_id, key, title, statement, attributes, folder_id,
+        SELECT a.id, a.project_id, a.key, a.title, a.statement, a.attributes, a.folder_id,
                $4::uuid[] AS tag_ids,
-               current_revision_number AS revision, created_by, created_at, updated_at
-        FROM artifacts
-        WHERE organization_id = $1 AND project_id = $2 AND id = $3
+               a.current_revision_number AS revision, a.created_by,
+               COALESCE((
+                 SELECT COALESCE(NULLIF(btrim(ui.display_name), ''), NULLIF(btrim(ui.email), ''))
+                 FROM user_identities ui
+                 JOIN organization_memberships om ON om.user_identity_id = ui.id
+                 WHERE om.organization_id = a.organization_id AND ui.subject = a.created_by
+                 ORDER BY ui.updated_at DESC, ui.created_at DESC
+                 LIMIT 1
+               ), a.created_by) AS author_label,
+               a.created_at, a.updated_at
+        FROM artifacts a
+        WHERE a.organization_id = $1 AND a.project_id = $2 AND a.id = $3
         "#,
     )
     .bind(principal.organization_id)
@@ -483,6 +556,272 @@ pub async fn create_requirement(
 
     transaction.commit().await.map_err(database_error)?;
     Ok((StatusCode::CREATED, Json(created)))
+}
+
+pub async fn create_derived_requirement(
+    State(state): State<AppState>,
+    AuthenticatedPrincipal(principal): AuthenticatedPrincipal,
+    Path((project_id, source_requirement_id)): Path<(Uuid, Uuid)>,
+    headers: HeaderMap,
+    Json(mut request): Json<CreateRequirementRequest>,
+) -> Result<(StatusCode, Json<DerivedRequirementResponse>), ApiError> {
+    authorize_project(&state, &principal, project_id, Action::Write).await?;
+    let idempotency_key = parse_idempotency_key(&headers)?.to_owned();
+    request.key = None;
+    let requirement = validate_create(request)?;
+    validate_requirement_workspace(&state.db, &principal, project_id, &requirement).await?;
+    let fingerprint = serde_json::to_string(&(project_id, source_requirement_id, &requirement))
+        .map_err(|_| ApiError::internal("Could not fingerprint derived requirement command"))?;
+    if let Some(command) =
+        find_command_result(&state.db, &principal, DERIVE_COMMAND, &idempotency_key).await?
+    {
+        if command.request_fingerprint != fingerprint {
+            return Err(ApiError::conflict(
+                "Idempotency key was already used with a different derived requirement request",
+            ));
+        }
+        let existing =
+            serde_json::from_value::<DerivedRequirementResponse>(command.response_payload)
+                .map_err(|_| {
+                    ApiError::internal("Stored derived requirement response is invalid")
+                })?;
+        return Ok((StatusCode::OK, Json(existing)));
+    }
+
+    let mut transaction = state.db.begin().await.map_err(database_error)?;
+    let source_revision_id = sqlx::query_scalar::<_, Uuid>(
+        r#"
+        SELECT artifact.current_revision_id
+        FROM artifacts artifact
+        JOIN artifact_types artifact_type
+          ON artifact_type.organization_id = artifact.organization_id
+         AND artifact_type.project_id = artifact.project_id
+         AND artifact_type.id = artifact.artifact_type_id
+        WHERE artifact.organization_id = $1
+          AND artifact.project_id = $2
+          AND artifact.id = $3
+          AND artifact_type.key = 'REQUIREMENT'
+        FOR UPDATE OF artifact
+        "#,
+    )
+    .bind(principal.organization_id)
+    .bind(project_id)
+    .bind(source_requirement_id)
+    .fetch_optional(&mut *transaction)
+    .await
+    .map_err(database_error)?
+    .ok_or_else(|| ApiError::not_found("Base requirement does not exist"))?;
+    let relationship_type_id = sqlx::query_scalar::<_, Uuid>(
+        r#"
+        SELECT id
+        FROM relationship_types
+        WHERE organization_id = $1 AND project_id = $2 AND key = 'DECOMPOSES_TO'
+        "#,
+    )
+    .bind(principal.organization_id)
+    .bind(project_id)
+    .fetch_optional(&mut *transaction)
+    .await
+    .map_err(database_error)?
+    .ok_or_else(|| ApiError::not_found("DECOMPOSES_TO relationship type does not exist"))?;
+    let artifact_type_id = sqlx::query_scalar::<_, Uuid>(
+        r#"
+        SELECT id FROM artifact_types
+        WHERE organization_id = $1 AND project_id = $2 AND key = 'REQUIREMENT'
+        "#,
+    )
+    .bind(principal.organization_id)
+    .bind(project_id)
+    .fetch_one(&mut *transaction)
+    .await
+    .map_err(database_error)?;
+    let requirement_key =
+        allocate_requirement_key(&mut transaction, &principal, project_id, None).await?;
+    let artifact_id = Uuid::new_v4();
+    let artifact_revision_id = Uuid::new_v4();
+    sqlx::query(
+        r#"
+        INSERT INTO artifacts (
+            id, organization_id, project_id, artifact_type_id, key, title, statement,
+            attributes, folder_id, current_revision_id, current_revision_number, created_by
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 1, $11)
+        "#,
+    )
+    .bind(artifact_id)
+    .bind(principal.organization_id)
+    .bind(project_id)
+    .bind(artifact_type_id)
+    .bind(&requirement_key)
+    .bind(&requirement.title)
+    .bind(&requirement.statement)
+    .bind(&requirement.attributes)
+    .bind(requirement.folder_id)
+    .bind(artifact_revision_id)
+    .bind(&principal.subject)
+    .execute(&mut *transaction)
+    .await
+    .map_err(requirement_insert_error)?;
+    sqlx::query(
+        r#"
+        INSERT INTO artifact_revisions (
+            id, organization_id, project_id, artifact_id, revision_number,
+            title, statement, attributes, folder_id, tag_ids, created_by
+        )
+        VALUES ($1, $2, $3, $4, 1, $5, $6, $7, $8, $9, $10)
+        "#,
+    )
+    .bind(artifact_revision_id)
+    .bind(principal.organization_id)
+    .bind(project_id)
+    .bind(artifact_id)
+    .bind(&requirement.title)
+    .bind(&requirement.statement)
+    .bind(&requirement.attributes)
+    .bind(requirement.folder_id)
+    .bind(&requirement.tag_ids)
+    .bind(&principal.subject)
+    .execute(&mut *transaction)
+    .await
+    .map_err(database_error)?;
+    replace_tags(
+        &mut transaction,
+        &principal,
+        project_id,
+        artifact_id,
+        &requirement.tag_ids,
+    )
+    .await?;
+    insert_audit_event(
+        &mut transaction,
+        &principal,
+        project_id,
+        artifact_id,
+        "requirement.derived",
+        json!({
+            "key": requirement_key,
+            "revision": 1,
+            "source_requirement_id": source_requirement_id,
+        }),
+    )
+    .await?;
+
+    let relationship_id = Uuid::new_v4();
+    let relationship_revision_id = Uuid::new_v4();
+    sqlx::query(
+        r#"
+        INSERT INTO relationships (
+            id, organization_id, project_id, relationship_type_id,
+            source_artifact_id, target_artifact_id,
+            current_revision_id, current_version, created_by
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 1, $8)
+        "#,
+    )
+    .bind(relationship_id)
+    .bind(principal.organization_id)
+    .bind(project_id)
+    .bind(relationship_type_id)
+    .bind(source_requirement_id)
+    .bind(artifact_id)
+    .bind(relationship_revision_id)
+    .bind(&principal.subject)
+    .execute(&mut *transaction)
+    .await
+    .map_err(database_error)?;
+    sqlx::query(
+        r#"
+        INSERT INTO relationship_revisions (
+            id, organization_id, project_id, relationship_id, version,
+            relationship_type_id, source_artifact_id, source_revision_id,
+            target_artifact_id, target_revision_id, created_by
+        )
+        VALUES ($1, $2, $3, $4, 1, $5, $6, $7, $8, $9, $10)
+        "#,
+    )
+    .bind(relationship_revision_id)
+    .bind(principal.organization_id)
+    .bind(project_id)
+    .bind(relationship_id)
+    .bind(relationship_type_id)
+    .bind(source_requirement_id)
+    .bind(source_revision_id)
+    .bind(artifact_id)
+    .bind(artifact_revision_id)
+    .bind(&principal.subject)
+    .execute(&mut *transaction)
+    .await
+    .map_err(database_error)?;
+    insert_audit(
+        &mut transaction,
+        &principal,
+        project_id,
+        "relationship.created",
+        "relationship",
+        relationship_id,
+        json!({
+            "relationship_type_id": relationship_type_id,
+            "source_artifact_id": source_requirement_id,
+            "source_revision_id": source_revision_id,
+            "target_artifact_id": artifact_id,
+            "target_revision_id": artifact_revision_id,
+            "version": 1,
+        }),
+    )
+    .await?;
+
+    let created = sqlx::query_as::<_, RequirementRecord>(
+        r#"
+        SELECT a.id, a.project_id, a.key, a.title, a.statement, a.attributes, a.folder_id,
+               $4::uuid[] AS tag_ids,
+               a.current_revision_number AS revision, a.created_by,
+               COALESCE((
+                 SELECT COALESCE(NULLIF(btrim(ui.display_name), ''), NULLIF(btrim(ui.email), ''))
+                 FROM user_identities ui
+                 JOIN organization_memberships om ON om.user_identity_id = ui.id
+                 WHERE om.organization_id = a.organization_id AND ui.subject = a.created_by
+                 ORDER BY ui.updated_at DESC, ui.created_at DESC
+                 LIMIT 1
+               ), a.created_by) AS author_label,
+               a.created_at, a.updated_at
+        FROM artifacts a
+        WHERE a.organization_id = $1 AND a.project_id = $2 AND a.id = $3
+        "#,
+    )
+    .bind(principal.organization_id)
+    .bind(project_id)
+    .bind(artifact_id)
+    .bind(&requirement.tag_ids)
+    .fetch_one(&mut *transaction)
+    .await
+    .map_err(database_error)?;
+    let response = DerivedRequirementResponse {
+        requirement: created.into(),
+        relationship_id,
+    };
+    let response_payload = serde_json::to_value(&response)
+        .map_err(|_| ApiError::internal("Could not store derived requirement response"))?;
+    sqlx::query(
+        r#"
+        INSERT INTO command_results (
+            organization_id, actor_subject, command_name, idempotency_key,
+            request_fingerprint, aggregate_type, aggregate_id, response_revision, response_payload
+        )
+        VALUES ($1, $2, $3, $4, $5, 'requirement', $6, 1, $7)
+        "#,
+    )
+    .bind(principal.organization_id)
+    .bind(&principal.subject)
+    .bind(DERIVE_COMMAND)
+    .bind(&idempotency_key)
+    .bind(fingerprint)
+    .bind(artifact_id)
+    .bind(response_payload)
+    .execute(&mut *transaction)
+    .await
+    .map_err(database_error)?;
+    transaction.commit().await.map_err(database_error)?;
+    Ok((StatusCode::CREATED, Json(response)))
 }
 
 pub async fn get_requirement(
@@ -542,7 +881,16 @@ pub async fn revise_requirement(
                  WHERE at.organization_id = a.organization_id
                    AND at.project_id = a.project_id AND at.artifact_id = a.id
                ), '{}'::uuid[]) AS tag_ids,
-               a.current_revision_number AS revision, a.created_by, a.created_at, a.updated_at
+               a.current_revision_number AS revision, a.created_by,
+               COALESCE((
+                 SELECT COALESCE(NULLIF(btrim(ui.display_name), ''), NULLIF(btrim(ui.email), ''))
+                 FROM user_identities ui
+                 JOIN organization_memberships om ON om.user_identity_id = ui.id
+                 WHERE om.organization_id = a.organization_id AND ui.subject = a.created_by
+                 ORDER BY ui.updated_at DESC, ui.created_at DESC
+                 LIMIT 1
+               ), a.created_by) AS author_label,
+               a.created_at, a.updated_at
         FROM artifacts a
         JOIN artifact_types t
           ON t.organization_id = a.organization_id
@@ -657,11 +1005,20 @@ pub async fn revise_requirement(
 
     let updated = sqlx::query_as::<_, RequirementRecord>(
         r#"
-        SELECT id, project_id, key, title, statement, attributes, folder_id,
+        SELECT a.id, a.project_id, a.key, a.title, a.statement, a.attributes, a.folder_id,
                $4::uuid[] AS tag_ids,
-               current_revision_number AS revision, created_by, created_at, updated_at
-        FROM artifacts
-        WHERE organization_id = $1 AND project_id = $2 AND id = $3
+               a.current_revision_number AS revision, a.created_by,
+               COALESCE((
+                 SELECT COALESCE(NULLIF(btrim(ui.display_name), ''), NULLIF(btrim(ui.email), ''))
+                 FROM user_identities ui
+                 JOIN organization_memberships om ON om.user_identity_id = ui.id
+                 WHERE om.organization_id = a.organization_id AND ui.subject = a.created_by
+                 ORDER BY ui.updated_at DESC, ui.created_at DESC
+                 LIMIT 1
+               ), a.created_by) AS author_label,
+               a.created_at, a.updated_at
+        FROM artifacts a
+        WHERE a.organization_id = $1 AND a.project_id = $2 AND a.id = $3
         "#,
     )
     .bind(principal.organization_id)
@@ -705,13 +1062,22 @@ pub async fn list_requirement_revisions(
 ) -> Result<Json<RequirementRevisionListResponse>, ApiError> {
     authorize_project(&state, &principal, project_id, Action::Read).await?;
     fetch_requirement(&state.db, &principal, project_id, requirement_id).await?;
-    let items = sqlx::query_as::<_, RequirementRevisionResponse>(
+    let items = sqlx::query_as::<_, RequirementRevisionRecord>(
         r#"
-        SELECT id, revision_number AS revision, title, statement, attributes,
-               folder_id, tag_ids, created_by, created_at
-        FROM artifact_revisions
-        WHERE organization_id = $1 AND project_id = $2 AND artifact_id = $3
-        ORDER BY revision_number DESC
+        SELECT r.id, r.revision_number AS revision, r.title, r.statement, r.attributes,
+               r.folder_id, r.tag_ids, r.created_by,
+               COALESCE((
+                 SELECT COALESCE(NULLIF(btrim(ui.display_name), ''), NULLIF(btrim(ui.email), ''))
+                 FROM user_identities ui
+                 JOIN organization_memberships om ON om.user_identity_id = ui.id
+                 WHERE om.organization_id = r.organization_id AND ui.subject = r.created_by
+                 ORDER BY ui.updated_at DESC, ui.created_at DESC
+                 LIMIT 1
+               ), r.created_by) AS author_label,
+               r.created_at
+        FROM artifact_revisions r
+        WHERE r.organization_id = $1 AND r.project_id = $2 AND r.artifact_id = $3
+        ORDER BY r.revision_number DESC
         "#,
     )
     .bind(principal.organization_id)
@@ -720,7 +1086,12 @@ pub async fn list_requirement_revisions(
     .fetch_all(&state.db)
     .await
     .map_err(database_error)?;
-    Ok(Json(RequirementRevisionListResponse { items }))
+    Ok(Json(RequirementRevisionListResponse {
+        items: items
+            .into_iter()
+            .map(RequirementRevisionResponse::from)
+            .collect(),
+    }))
 }
 
 pub async fn compare_requirement_revisions(
@@ -859,13 +1230,22 @@ async fn fetch_revision(
     requirement_id: Uuid,
     revision: i32,
 ) -> Result<RequirementRevisionResponse, ApiError> {
-    sqlx::query_as::<_, RequirementRevisionResponse>(
+    sqlx::query_as::<_, RequirementRevisionRecord>(
         r#"
-        SELECT id, revision_number AS revision, title, statement, attributes,
-               folder_id, tag_ids, created_by, created_at
-        FROM artifact_revisions
-        WHERE organization_id = $1 AND project_id = $2
-          AND artifact_id = $3 AND revision_number = $4
+        SELECT r.id, r.revision_number AS revision, r.title, r.statement, r.attributes,
+               r.folder_id, r.tag_ids, r.created_by,
+               COALESCE((
+                 SELECT COALESCE(NULLIF(btrim(ui.display_name), ''), NULLIF(btrim(ui.email), ''))
+                 FROM user_identities ui
+                 JOIN organization_memberships om ON om.user_identity_id = ui.id
+                 WHERE om.organization_id = r.organization_id AND ui.subject = r.created_by
+                 ORDER BY ui.updated_at DESC, ui.created_at DESC
+                 LIMIT 1
+               ), r.created_by) AS author_label,
+               r.created_at
+        FROM artifact_revisions r
+        WHERE r.organization_id = $1 AND r.project_id = $2
+          AND r.artifact_id = $3 AND r.revision_number = $4
         "#,
     )
     .bind(principal.organization_id)
@@ -876,6 +1256,7 @@ async fn fetch_revision(
     .await
     .map_err(database_error)?
     .ok_or_else(|| ApiError::not_found("Requirement revision does not exist"))
+    .map(RequirementRevisionResponse::from)
 }
 
 async fn fetch_requirement(
@@ -893,7 +1274,16 @@ async fn fetch_requirement(
                  WHERE at.organization_id = a.organization_id
                    AND at.project_id = a.project_id AND at.artifact_id = a.id
                ), '{}'::uuid[]) AS tag_ids,
-               a.current_revision_number AS revision, a.created_by, a.created_at, a.updated_at
+               a.current_revision_number AS revision, a.created_by,
+               COALESCE((
+                 SELECT COALESCE(NULLIF(btrim(ui.display_name), ''), NULLIF(btrim(ui.email), ''))
+                 FROM user_identities ui
+                 JOIN organization_memberships om ON om.user_identity_id = ui.id
+                 WHERE om.organization_id = a.organization_id AND ui.subject = a.created_by
+                 ORDER BY ui.updated_at DESC, ui.created_at DESC
+                 LIMIT 1
+               ), a.created_by) AS author_label,
+               a.created_at, a.updated_at
         FROM artifacts a
         JOIN artifact_types t
           ON t.organization_id = a.organization_id
@@ -965,8 +1355,14 @@ async fn insert_audit_event(
 }
 
 fn validate_create(request: CreateRequirementRequest) -> Result<ValidatedRequirement, ApiError> {
-    let key = request.key.trim().to_owned();
-    if !valid_requirement_key(&key) {
+    let key = request
+        .key
+        .map(|key| key.trim().to_owned())
+        .filter(|key| !key.is_empty());
+    if key
+        .as_deref()
+        .is_some_and(|key| !valid_requirement_key(key))
+    {
         return Err(ApiError::bad_request(
             "key must contain 2-32 uppercase letters, digits, or hyphens and start with a letter",
         ));
@@ -1018,13 +1414,73 @@ fn validate_content(
         ));
     }
     Ok(ValidatedRequirement {
-        key: String::new(),
+        key: None,
         title,
         statement,
         attributes,
         folder_id,
         tag_ids,
     })
+}
+
+async fn allocate_requirement_key(
+    transaction: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    principal: &Principal,
+    project_id: Uuid,
+    requested_key: Option<&str>,
+) -> Result<String, ApiError> {
+    if let Some(requested_key) = requested_key {
+        let prefix = sqlx::query_scalar::<_, String>(
+            r#"
+            SELECT requirement_prefix
+            FROM projects
+            WHERE organization_id = $1 AND id = $2
+            FOR UPDATE
+            "#,
+        )
+        .bind(principal.organization_id)
+        .bind(project_id)
+        .fetch_optional(&mut **transaction)
+        .await
+        .map_err(database_error)?
+        .ok_or_else(|| ApiError::not_found("Project does not exist"))?;
+        if let Some(number) = requested_key
+            .strip_prefix(&format!("{prefix}-"))
+            .and_then(|value| value.parse::<i64>().ok())
+            .filter(|number| *number > 0)
+        {
+            sqlx::query(
+                r#"
+                UPDATE projects
+                SET next_requirement_number = GREATEST(next_requirement_number, $3)
+                WHERE organization_id = $1 AND id = $2
+                "#,
+            )
+            .bind(principal.organization_id)
+            .bind(project_id)
+            .bind(number + 1)
+            .execute(&mut **transaction)
+            .await
+            .map_err(database_error)?;
+        }
+        return Ok(requested_key.to_owned());
+    }
+
+    let (prefix, number) = sqlx::query_as::<_, (String, i64)>(
+        r#"
+        UPDATE projects
+        SET next_requirement_number = next_requirement_number + 1
+        WHERE organization_id = $1 AND id = $2
+        RETURNING requirement_prefix, next_requirement_number - 1
+        "#,
+    )
+    .bind(principal.organization_id)
+    .bind(project_id)
+    .fetch_optional(&mut **transaction)
+    .await
+    .map_err(database_error)?
+    .ok_or_else(|| ApiError::not_found("Project does not exist"))?;
+    Ok(format!("{prefix}-{number:03}"))
 }
 
 async fn validate_requirement_workspace(
@@ -1197,6 +1653,23 @@ fn valid_requirement_key(value: &str) -> bool {
             .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit() || byte == b'-')
 }
 
+fn abbreviate_author_label(value: &str) -> String {
+    let value = value.trim();
+    let mut parts = value.split_whitespace();
+    let Some(first_name) = parts.next() else {
+        return String::new();
+    };
+    let Some(last_name) = parts.last() else {
+        return first_name.to_owned();
+    };
+    let initial = first_name
+        .chars()
+        .next()
+        .map(|character| character.to_uppercase().collect::<String>())
+        .unwrap_or_default();
+    format!("{initial}. {last_name}")
+}
+
 fn empty_object() -> Value {
     json!({})
 }
@@ -1224,8 +1697,24 @@ mod tests {
     use serde_json::json;
 
     use super::{
-        CreateRequirementRequest, parse_idempotency_key, valid_requirement_key, validate_create,
+        CreateRequirementRequest, abbreviate_author_label, parse_idempotency_key,
+        valid_requirement_key, validate_create,
     };
+
+    #[test]
+    fn abbreviates_author_names_without_touching_fallback_identifiers() {
+        assert_eq!(abbreviate_author_label("TJ Johnson"), "T. Johnson");
+        assert_eq!(abbreviate_author_label("Mary Jane Smith"), "M. Smith");
+        assert_eq!(abbreviate_author_label("Cher"), "Cher");
+        assert_eq!(
+            abbreviate_author_label("author@example.com"),
+            "author@example.com"
+        );
+        assert_eq!(
+            abbreviate_author_label("71cb5510-0061-704c-5f38-dfb8278cb70d"),
+            "71cb5510-0061-704c-5f38-dfb8278cb70d"
+        );
+    }
 
     #[test]
     fn validates_requirement_keys() {
@@ -1237,7 +1726,7 @@ mod tests {
     #[test]
     fn normalizes_requirement_content() {
         let validated = validate_create(CreateRequirementRequest {
-            key: "SYS-101".to_owned(),
+            key: Some("SYS-101".to_owned()),
             title: "  Stable control  ".to_owned(),
             statement: "  The controller shall remain stable.  ".to_owned(),
             attributes: json!({"priority": "high"}),
@@ -1247,6 +1736,21 @@ mod tests {
         .expect("request should be valid");
         assert_eq!(validated.title, "Stable control");
         assert_eq!(validated.statement, "The controller shall remain stable.");
+        assert_eq!(validated.key.as_deref(), Some("SYS-101"));
+    }
+
+    #[test]
+    fn accepts_server_assigned_requirement_keys() {
+        let validated = validate_create(CreateRequirementRequest {
+            key: None,
+            title: "Stable control".to_owned(),
+            statement: "The controller shall remain stable.".to_owned(),
+            attributes: json!({}),
+            folder_id: None,
+            tag_ids: Vec::new(),
+        })
+        .expect("request should be valid");
+        assert_eq!(validated.key, None);
     }
 
     #[test]

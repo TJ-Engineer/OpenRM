@@ -728,6 +728,11 @@ pub async fn record_result(
     .map_err(conflict_database_error)?;
     let mut attachments = Vec::with_capacity(request.attachments.len());
     for attachment in &request.attachments {
+        sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))")
+            .bind(&attachment.object_key)
+            .execute(&mut *transaction)
+            .await
+            .map_err(database_error)?;
         let attachment_id = Uuid::new_v4();
         let recorded_at = sqlx::query_scalar::<_, DateTime<Utc>>(
             r#"

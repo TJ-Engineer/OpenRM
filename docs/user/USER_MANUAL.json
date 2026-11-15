@@ -4,11 +4,11 @@
   "title": "OpenRM user manual",
   "summary": "Task-oriented guidance for authors, reviewers, verification personnel, administrators, and stakeholders.",
   "metadata": {
-    "documentVersion": "0.1",
-    "appliesTo": "OpenRM funding preview and Phase 5 application workflows",
+    "documentVersion": "0.4",
+    "appliesTo": "OpenRM 0.1 live application workflows",
     "owner": "OpenRM product and documentation maintainers",
-    "lastVerified": "2026-11-08",
-    "status": "First in-product edition; pilot review remains required"
+    "lastVerified": "2026-11-13",
+    "status": "Maintained in-product edition; pilot review remains required"
   },
   "intro": [
     {
@@ -17,7 +17,7 @@
     },
     {
       "type": "note",
-      "text": "The hosted funding preview includes illustrative project data. Workspaces marked **Live** use the configured API; other preview surfaces demonstrate the intended workflow and information architecture. Do not enter regulated or production-sensitive data in the static preview."
+      "text": "OpenRM workspaces display data returned by the configured API. If a required service is unavailable, the affected workspace reports the error and does not substitute fabricated project content."
     }
   ],
   "sections": [
@@ -81,12 +81,12 @@
         },
         {
           "type": "subheading",
-          "id": "getting-started-understand-the-preview-boundary",
-          "title": "Understand the preview boundary"
+          "id": "getting-started-confirm-live-services",
+          "title": "Confirm live services"
         },
         {
           "type": "paragraph",
-          "text": "The static AWS preview demonstrates the user experience. It is delivered through CloudFront from a private S3 origin and does not include a commissioned production API, database, or identity provider. Live local or pilot deployments connect the same web client to the Rust API, PostgreSQL, and configured object storage."
+          "text": "A working OpenRM environment connects the web client to the Rust API, PostgreSQL, configured object storage, and its identity provider. Stop controlled work and contact an operator if a workspace reports that one of these services is unavailable."
         },
         {
           "type": "subheading",
@@ -96,8 +96,7 @@
         {
           "type": "unordered-list",
           "items": [
-            "Open **Overview** and identify the current project, readiness score, and attention items.",
-            "Open **Requirements** and confirm whether the workspace reports `Live`, `Preview`, or `Offline`.",
+            "Open **Requirements** and confirm that the workspace reports `Live`.",
             "Open **Traceability** and review coverage and gap indicators.",
             "Open **Reviews** and **Verification** to understand the current gate state.",
             "Open **Help** and test a table-of-contents link before beginning controlled work."
@@ -111,7 +110,7 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "The left sidebar groups navigation into Delivery, Workspace, and Platform areas. On smaller screens, select the menu button in the top bar to open the sidebar."
+          "text": "The left sidebar groups navigation into Workspace and Platform areas. On smaller screens, select the menu button in the top bar to open the sidebar."
         },
         {
           "type": "subheading",
@@ -121,13 +120,11 @@
         {
           "type": "unordered-list",
           "items": [
-            "**Overview** summarizes readiness, coverage, attention items, reviews, and recent controlled changes.",
             "**Requirements** supports requirement creation, revision, organization, search, history, comparison, import, and export.",
             "**Traceability** presents directed relationships, coverage, gaps, impact, and suspect-link disposition.",
             "**Baselines** presents changesets, immutable baselines, comparisons, and evidence packages.",
             "**Reviews** manages baseline-bound review packages, participants, comments, resolutions, and decisions.",
-            "**Verification** manages cases, procedures, runs, results, attachments, coverage, and gate readiness.",
-            "**Development** shows repository delivery evidence and implementation status."
+            "**Verification** manages cases, procedures, runs, results, attachments, coverage, and gate readiness."
           ]
         },
         {
@@ -138,11 +135,25 @@
         {
           "type": "unordered-list",
           "items": [
-            "**Object storage** describes and monitors attachment and evidence objects.",
-            "**API & SDK** presents the governed REST/OpenAPI surface used by the browser and integrations.",
+            "**Administration** manages projects, requirement prefixes, users, memberships, and personal profile details.",
+            "**Object storage** lists the selected project's attachment and evidence objects and lets administrators remove unlinked objects.",
             "**Integrations** manages connector configuration and delivery evidence, beginning with Jira.",
             "**Architecture** summarizes the portable application design.",
             "**Help** opens this manual without signing out or changing the selected project."
+          ]
+        },
+        {
+          "type": "subheading",
+          "id": "dashboard-and-navigation-delete-unlinked-object",
+          "title": "Delete an unlinked object"
+        },
+        {
+          "type": "ordered-list",
+          "items": [
+            "Open **Object storage** and confirm the selected project.",
+            "Locate an object marked **Unlinked**. Objects marked **Linked** cannot be deleted because controlled verification evidence references them.",
+            "Choose **Delete**, review the exact object key, and confirm. This action requires project-administrator access and creates an audit event.",
+            "Confirm the object disappears from the live inventory. In the supported versioned storage configurations, the provider retains a recoverable prior version until its lifecycle policy expires."
           ]
         },
         {
@@ -152,7 +163,7 @@
         },
         {
           "type": "paragraph",
-          "text": "The top bar shows the current context and provides direct access to Help, the guided demo, and the user profile. Project selection in the funding preview is illustrative; a commissioned environment must enforce project membership and organization policy through the API."
+          "text": "The top bar shows the current project, provides direct access to Help and the user profile, and lets authorized users switch among projects returned by the API. Select the initials at the right to open the profile menu. In local development, the menu can switch among OpenRM profiles and reloads the workspace under the selected profile's organization and project roles. Production Cognito sessions do not allow profile impersonation; they show the authenticated identity and provide sign-out. Project membership and organization policy are enforced by the API."
         }
       ]
     },
@@ -694,7 +705,7 @@
             "Confirm the browser uses the correct API base URL.",
             "Confirm authentication credentials are present and unexpired.",
             "Review browser and API logs using the request identifier.",
-            "Do not assume preview data was persisted while the workspace was offline."
+            "OpenRM does not fabricate or persist replacement data while a workspace is offline."
           ]
         },
         {
@@ -783,15 +794,6 @@
         {
           "type": "paragraph",
           "text": "No. Readiness also considers exact-revision coverage, review approval, blockers, comments, due events, and signature validity."
-        },
-        {
-          "type": "subheading",
-          "id": "frequently-asked-questions-can-i-use-the-aws-funding-preview-for-production-data",
-          "title": "Can I use the AWS funding preview for production data?"
-        },
-        {
-          "type": "paragraph",
-          "text": "No. The preview is an evaluation surface and does not represent a commissioned production API/database environment."
         },
         {
           "type": "subheading",

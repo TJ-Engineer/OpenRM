@@ -6,6 +6,7 @@ PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SMOKE_PROJECT="${OPENRM_SMOKE_PROJECT:-openrm-portability-smoke}"
 SMOKE_PORT="${OPENRM_SMOKE_PORT:-18080}"
 SMOKE_POSTGRES_PORT="${OPENRM_SMOKE_POSTGRES_PORT:-15432}"
+SMOKE_OBJECT_STORAGE_PORT="${OPENRM_SMOKE_OBJECT_STORAGE_PORT:-14566}"
 BASE_URL="http://127.0.0.1:${SMOKE_PORT}"
 ORGANIZATION_ID="00000000-0000-4000-8000-000000000001"
 PILOT_ORGANIZATION_ID="00000000-0000-4000-8000-000000000002"
@@ -27,6 +28,7 @@ cd "${PROJECT_DIR}"
 compose() {
   OPENRM_PORT="${SMOKE_PORT}" \
   OPENRM_POSTGRES_PORT="${SMOKE_POSTGRES_PORT}" \
+  OPENRM_OBJECT_STORAGE_PORT="${SMOKE_OBJECT_STORAGE_PORT}" \
     docker compose --project-name "${SMOKE_PROJECT}" "$@"
 }
 
@@ -64,6 +66,10 @@ if [[ "${projects}" != *'"key":"OPENRM"'* ]]; then
   echo "The container bootstrap did not create the OPENRM project." >&2
   exit 1
 fi
+if [[ "${projects}" == *'"key":"AURORA-2"'* ]]; then
+  echo "The historical AURORA demo project was not removed." >&2
+  exit 1
+fi
 
 project_id="$(printf '%s' "${projects}" | sed -n 's/.*"id":"\([^"]*\)","key":"OPENRM".*/\1/p')"
 if [[ -z "${project_id}" ]]; then
@@ -77,6 +83,45 @@ requirements="$(curl --fail --silent \
   "${BASE_URL}/api/v1/projects/${project_id}/requirements?limit=1&offset=0")"
 if [[ "${requirements}" != *'"total":60'* ]]; then
   echo "The containerized OPENRM project does not contain all 60 requirements." >&2
+  exit 1
+fi
+
+delete_probe_key="regression/unlinked-delete-probe.txt"
+delete_probe_full_key="organizations/${ORGANIZATION_ID}/projects/${project_id}/${delete_probe_key}"
+compose exec -T object-storage awslocal s3api put-object \
+  --bucket "${OPENRM_OBJECT_STORAGE_BUCKET:-openrm-controlled-objects}" \
+  --key "${delete_probe_full_key}" \
+  --body /etc/hostname >/dev/null
+
+objects="$(curl --fail --silent \
+  -H 'Authorization: Bearer dev:local-user' \
+  -H "X-OpenRM-Organization: ${ORGANIZATION_ID}" \
+  "${BASE_URL}/api/v1/projects/${project_id}/storage/objects")"
+if [[ "${objects}" != *'"items":'* || "${objects}" != *'"prefix":'* ]]; then
+  echo "The S3-compatible project object inventory was unavailable: ${objects}" >&2
+  exit 1
+fi
+if [[ "${objects}" != *"${delete_probe_key}"* || "${objects}" != *'"linked":false'* ]]; then
+  echo "The unlinked object deletion probe was not inventoried correctly: ${objects}" >&2
+  exit 1
+fi
+
+delete_response="$(curl --fail --silent --request DELETE \
+  -H 'Authorization: Bearer dev:local-user' \
+  -H "X-OpenRM-Organization: ${ORGANIZATION_ID}" \
+  --get --data-urlencode "key=${delete_probe_key}" \
+  "${BASE_URL}/api/v1/projects/${project_id}/storage/objects")"
+if [[ "${delete_response}" != *'"deleted":true'* || "${delete_response}" != *'"version_id":'* ]]; then
+  echo "The unlinked object deletion response was unexpected: ${delete_response}" >&2
+  exit 1
+fi
+
+objects_after_delete="$(curl --fail --silent \
+  -H 'Authorization: Bearer dev:local-user' \
+  -H "X-OpenRM-Organization: ${ORGANIZATION_ID}" \
+  "${BASE_URL}/api/v1/projects/${project_id}/storage/objects")"
+if [[ "${objects_after_delete}" == *"${delete_probe_key}"* ]]; then
+  echo "The deleted object remained in the project inventory: ${objects_after_delete}" >&2
   exit 1
 fi
 
@@ -95,7 +140,7 @@ pilot_requirements="$(curl --fail --silent \
   -H "X-OpenRM-Organization: ${PILOT_ORGANIZATION_ID}" \
   "${BASE_URL}/api/v1/projects/${pilot_project_id}/requirements?limit=1&offset=0")"
 if [[ "${pilot_requirements}" != *'"total":0'* ]]; then
-  echo "The clean pilot workspace unexpectedly contains demo requirements." >&2
+  echo "The clean pilot workspace unexpectedly contains requirements." >&2
   exit 1
 fi
 
@@ -118,4 +163,4 @@ for service_name in api web; do
   fi
 done
 
-echo "Portable OpenRM stack verified at ${BASE_URL}: web, API, PostgreSQL, migrations, isolated blank pilot workspace, 60-requirement development bootstrap, and container hardening passed."
+echo "Portable OpenRM stack verified at ${BASE_URL}: web, API, PostgreSQL, S3-compatible object storage, migrations, isolated blank pilot workspace, 60-requirement development bootstrap, and container hardening passed."

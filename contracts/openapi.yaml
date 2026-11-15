@@ -11,13 +11,16 @@ servers:
 tags:
   - name: Operations
   - name: Identity
+  - name: Users
   - name: Projects
   - name: Requirements
+  - name: Agent Provenance
   - name: Traceability
   - name: Controlled Change
   - name: Baselines
   - name: Reviews
   - name: Verification
+  - name: Storage
   - name: Connectors
 paths:
   /health:
@@ -126,6 +129,108 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/users:
+    get:
+      operationId: listUsers
+      tags: [Users]
+      summary: List organization users and their project memberships
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationHeader"
+      responses:
+        "200":
+          description: Organization user profiles.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    post:
+      operationId: inviteUser
+      tags: [Users]
+      summary: Invite a user and assign organization and project roles
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteUserRequest"
+      responses:
+        "201":
+          description: Cognito invitation sent and OpenRM profile created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/profile:
+    get:
+      operationId: getProfile
+      tags: [Users]
+      summary: Read the signed-in user's OpenRM profile
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationHeader"
+      responses:
+        "200":
+          description: Current user profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    put:
+      operationId: updateProfile
+      tags: [Users]
+      summary: Update the signed-in user's editable profile fields
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: Updated current user profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
   /api/v1/projects/{project_id}/members:
@@ -391,6 +496,44 @@ paths:
           $ref: "#/components/responses/Conflict"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/requirements/{requirement_id}/derived:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/RequirementId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    post:
+      operationId: createDerivedRequirement
+      tags: [Requirements, Traceability]
+      summary: Create a requirement derived from a selected base requirement
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRequirementRequest"
+      responses:
+        "201":
+          description: Derived requirement and DECOMPOSES_TO relationship created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DerivedRequirementResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
   /api/v1/projects/{project_id}/requirements/{requirement_id}/revisions:
     parameters:
       - $ref: "#/components/parameters/ProjectId"
@@ -456,6 +599,186 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/agent-runs:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: listAgentRuns
+      tags: [Agent Provenance]
+      summary: List immutable signed agent-run configuration records
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Bounded project-scoped agent-run history with verified signatures.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentRunListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    post:
+      operationId: createAgentRun
+      tags: [Agent Provenance]
+      summary: Record one immutable signed agent execution and its exact outputs
+      description: >-
+        Authors record completed agent executions. Structured credential-bearing
+        fields are rejected; secrets must never be included in prompts or evidence.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAgentRunRequest"
+      responses:
+        "200":
+          description: Idempotent replay of the original agent-run command.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentRun"
+        "201":
+          description: Immutable signed agent-run evidence created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentRun"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/agent-runs/{agent_run_id}:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/AgentRunId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: getAgentRun
+      tags: [Agent Provenance]
+      summary: Read one immutable agent run and verify its evidence signature
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Agent execution, exact output links, and signature state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentRun"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/projects/{project_id}/storage/objects:
+    parameters:
+      - $ref: "#/components/parameters/ProjectId"
+      - $ref: "#/components/parameters/OrganizationHeader"
+    get:
+      operationId: listStorageObjects
+      tags: [Storage]
+      summary: List project-scoped objects and immutable evidence links
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+      responses:
+        "200":
+          description: Project object inventory.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageObjectListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    delete:
+      operationId: deleteStorageObject
+      tags: [Storage]
+      summary: Delete an unlinked project object
+      description: Administrator-only. Objects referenced by immutable evidence are rejected with a conflict.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: key
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 768
+      responses:
+        "200":
+          description: The unlinked object was deleted. Versioned stores may retain a recoverable prior version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteStorageObjectResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
   /api/v1/projects/{project_id}/requirements/import:
@@ -1807,6 +2130,13 @@ components:
       schema:
         type: string
         format: uuid
+    AgentRunId:
+      name: agent_run_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     RelationshipId:
       name: relationship_id
       in: path
@@ -1976,10 +2306,122 @@ components:
         database:
           type: string
           const: available
+    UserProjectMembership:
+      type: object
+      additionalProperties: false
+      required: [project_id, role]
+      properties:
+        project_id:
+          type: string
+          format: uuid
+        project_key:
+          type: [string, "null"]
+        project_name:
+          type: [string, "null"]
+        role:
+          type: string
+          enum: [administrator, author, reviewer, viewer]
+    InviteUserRequest:
+      type: object
+      additionalProperties: false
+      required: [email, organization_role]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        display_name:
+          type: [string, "null"]
+          maxLength: 160
+        title:
+          type: [string, "null"]
+          maxLength: 160
+        department:
+          type: [string, "null"]
+          maxLength: 160
+        organization_role:
+          type: string
+          enum: [administrator, author, reviewer, viewer]
+        project_memberships:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/UserProjectMembership"
+          default: []
+    UpdateProfileRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        display_name:
+          type: [string, "null"]
+          maxLength: 160
+        title:
+          type: [string, "null"]
+          maxLength: 160
+        department:
+          type: [string, "null"]
+          maxLength: 160
+        bio:
+          type: [string, "null"]
+          maxLength: 2000
+    UserProfile:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - subject
+        - email
+        - display_name
+        - title
+        - department
+        - bio
+        - organization_role
+        - project_memberships
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        subject:
+          type: string
+        email:
+          type: [string, "null"]
+          format: email
+        display_name:
+          type: [string, "null"]
+        title:
+          type: [string, "null"]
+        department:
+          type: [string, "null"]
+        bio:
+          type: [string, "null"]
+        organization_role:
+          type: string
+          enum: [administrator, author, reviewer, viewer]
+        project_memberships:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserProjectMembership"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    UserListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserProfile"
     Project:
       type: object
       additionalProperties: false
-      required: [id, key, name, description, created_at]
+      required: [id, key, name, requirement_prefix, next_requirement_number, description, created_at]
       properties:
         id:
           type: string
@@ -1988,6 +2430,12 @@ components:
           type: string
         name:
           type: string
+        requirement_prefix:
+          type: string
+          pattern: "^[A-Z][A-Z0-9]{1,7}$"
+        next_requirement_number:
+          type: integer
+          minimum: 1
         description:
           type: string
         created_at:
@@ -2005,7 +2453,7 @@ components:
     CreateProjectRequest:
       type: object
       additionalProperties: false
-      required: [key, name]
+      required: [key, name, requirement_prefix]
       properties:
         key:
           type: string
@@ -2014,6 +2462,9 @@ components:
           type: string
           minLength: 1
           maxLength: 160
+        requirement_prefix:
+          type: string
+          pattern: "^[A-Z][A-Z0-9]{1,7}$"
         description:
           type: string
           maxLength: 2000
@@ -2087,6 +2538,274 @@ components:
           items:
             type: object
             additionalProperties: true
+    AgentRunOutputInput:
+      type: object
+      additionalProperties: false
+      required: [relation]
+      description: >-
+        Exactly one identity form is required: artifact_id plus
+        artifact_revision_id for an exact OpenRM revision, or external_system
+        plus external_reference for a Jira issue, commit, build, or other output.
+      properties:
+        relation:
+          type: string
+          enum: [created, updated, generated, referenced, verified]
+        artifact_id:
+          type: [string, "null"]
+          format: uuid
+        artifact_revision_id:
+          type: [string, "null"]
+          format: uuid
+        external_system:
+          type: [string, "null"]
+          minLength: 1
+          maxLength: 80
+          pattern: "^[a-z0-9][a-z0-9._-]{0,79}$"
+        external_reference:
+          type: [string, "null"]
+          minLength: 1
+          maxLength: 500
+        external_uri:
+          type: [string, "null"]
+          format: uri
+          maxLength: 2000
+        sha256:
+          type: [string, "null"]
+          pattern: "^[0-9a-f]{64}$"
+    CreateAgentRunRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - external_run_id
+        - model
+        - prompt
+        - output
+        - outcome
+        - started_at
+        - completed_at
+      properties:
+        external_run_id:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: "^[A-Za-z0-9._:/-]+$"
+        model:
+          type: string
+          minLength: 1
+          maxLength: 200
+        prompt:
+          type: string
+          minLength: 1
+          maxLength: 100000
+          description: Sanitized task prompt; credentials and hidden system instructions must not be recorded.
+        context:
+          type: object
+          additionalProperties: true
+          default: {}
+        tool_calls:
+          type: array
+          maxItems: 1000
+          default: []
+          items: {}
+        output:
+          description: Sanitized structured or scalar output produced by the agent execution.
+        outcome:
+          type: string
+          enum: [succeeded, failed, cancelled]
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        outputs:
+          type: array
+          maxItems: 500
+          default: []
+          items:
+            $ref: "#/components/schemas/AgentRunOutputInput"
+    AgentRunOutput:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - relation
+        - artifact_id
+        - artifact_revision_id
+        - artifact_key
+        - external_system
+        - external_reference
+        - external_uri
+        - sha256
+        - recorded_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        relation:
+          type: string
+          enum: [created, updated, generated, referenced, verified]
+        artifact_id:
+          type: [string, "null"]
+          format: uuid
+        artifact_revision_id:
+          type: [string, "null"]
+          format: uuid
+        artifact_key:
+          type: [string, "null"]
+        external_system:
+          type: [string, "null"]
+        external_reference:
+          type: [string, "null"]
+        external_uri:
+          type: [string, "null"]
+          format: uri
+        sha256:
+          type: [string, "null"]
+          pattern: "^[0-9a-f]{64}$"
+        recorded_at:
+          type: string
+          format: date-time
+    AgentRun:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - project_id
+        - external_run_id
+        - model
+        - prompt
+        - context
+        - tool_calls
+        - output
+        - outcome
+        - started_at
+        - completed_at
+        - evidence_hash
+        - signature
+        - signing_algorithm
+        - signing_key_id
+        - recorded_by
+        - recorded_at
+        - signature_valid
+        - outputs
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        external_run_id:
+          type: string
+        model:
+          type: string
+        prompt:
+          type: string
+        context:
+          type: object
+          additionalProperties: true
+        tool_calls:
+          type: array
+          items: {}
+        output: {}
+        outcome:
+          type: string
+          enum: [succeeded, failed, cancelled]
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        evidence_hash:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        signature:
+          type: string
+          pattern: "^[0-9a-f]{64}$"
+        signing_algorithm:
+          type: string
+          const: HMAC-SHA256
+        signing_key_id:
+          type: string
+        recorded_by:
+          type: string
+        recorded_at:
+          type: string
+          format: date-time
+        signature_valid:
+          type: boolean
+        outputs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentRunOutput"
+    AgentRunListResponse:
+      type: object
+      additionalProperties: false
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentRun"
+        total:
+          type: integer
+          minimum: 0
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        offset:
+          type: integer
+          minimum: 0
+    StorageObject:
+      type: object
+      additionalProperties: false
+      required: [key, size_bytes, etag, last_modified, linked, link_count]
+      properties:
+        key:
+          type: string
+        size_bytes:
+          type: integer
+          format: int64
+          minimum: 0
+        etag:
+          type: [string, "null"]
+        last_modified:
+          type: [string, "null"]
+          format: date-time
+        linked:
+          type: boolean
+        link_count:
+          type: integer
+          minimum: 0
+    StorageObjectListResponse:
+      type: object
+      additionalProperties: false
+      required: [items, prefix, total_size_bytes]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/StorageObject"
+        prefix:
+          type: string
+        total_size_bytes:
+          type: integer
+          format: int64
+          minimum: 0
+    DeleteStorageObjectResponse:
+      type: object
+      additionalProperties: false
+      required: [key, deleted, version_id]
+      properties:
+        key:
+          type: string
+        deleted:
+          type: boolean
+        version_id:
+          type: [string, "null"]
     Requirement:
       type: object
       additionalProperties: false
@@ -2101,6 +2820,7 @@ components:
         - tag_ids
         - revision
         - created_by
+        - created_by_name
         - created_at
         - updated_at
       properties:
@@ -2132,6 +2852,9 @@ components:
           minimum: 1
         created_by:
           type: string
+        created_by_name:
+          type: string
+          description: Human-readable author label formatted as first initial and last name.
         created_at:
           type: string
           format: date-time
@@ -2159,7 +2882,7 @@ components:
     CreateRequirementRequest:
       type: object
       additionalProperties: false
-      required: [key, title, statement]
+      required: [title, statement]
       properties:
         key:
           type: string
@@ -2217,7 +2940,7 @@ components:
     RequirementRevision:
       type: object
       additionalProperties: false
-      required: [id, revision, title, statement, attributes, folder_id, tag_ids, created_by, created_at]
+      required: [id, revision, title, statement, attributes, folder_id, tag_ids, created_by, created_by_name, created_at]
       properties:
         id:
           type: string
@@ -2242,6 +2965,9 @@ components:
             format: uuid
         created_by:
           type: string
+        created_by_name:
+          type: string
+          description: Human-readable revision author label formatted as first initial and last name.
         created_at:
           type: string
           format: date-time
@@ -2294,6 +3020,16 @@ components:
         imported:
           type: integer
           minimum: 1
+    DerivedRequirementResponse:
+      type: object
+      additionalProperties: false
+      required: [requirement, relationship_id]
+      properties:
+        requirement:
+          $ref: "#/components/schemas/Requirement"
+        relationship_id:
+          type: string
+          format: uuid
     RelationshipType:
       type: object
       additionalProperties: false

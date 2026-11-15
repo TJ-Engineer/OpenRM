@@ -17,10 +17,15 @@ pub struct Config {
     pub auth_mode: AuthMode,
     pub oidc_issuer: Option<String>,
     pub oidc_audience: Option<String>,
+    pub cognito_user_pool_id: Option<String>,
     pub evidence_signing_key: String,
     pub evidence_signing_key_id: String,
     pub evidence_verification_keys: Vec<(String, String)>,
     pub jira_api_token: Option<String>,
+    pub object_storage_bucket: Option<String>,
+    pub object_storage_region: String,
+    pub object_storage_endpoint: Option<String>,
+    pub object_storage_force_path_style: bool,
 }
 
 #[derive(Debug, Error)]
@@ -64,11 +69,12 @@ impl Config {
             return Err(ConfigError::DevAuthInProduction);
         }
 
-        let (oidc_issuer, oidc_audience) = match auth_mode {
-            AuthMode::Dev => (None, None),
+        let (oidc_issuer, oidc_audience, cognito_user_pool_id) = match auth_mode {
+            AuthMode::Dev => (None, None, None),
             AuthMode::Oidc => (
                 Some(required("OIDC_ISSUER")?),
                 Some(required("OIDC_AUDIENCE")?),
+                Some(required("COGNITO_USER_POOL_ID")?),
             ),
         };
         if app_env.eq_ignore_ascii_case("production")
@@ -120,6 +126,37 @@ impl Config {
         let jira_api_token = env::var("JIRA_API_TOKEN")
             .ok()
             .filter(|value| !value.trim().is_empty());
+        let object_storage_bucket = env::var("OBJECT_STORAGE_BUCKET")
+            .ok()
+            .filter(|value| !value.trim().is_empty());
+        if object_storage_bucket
+            .as_deref()
+            .is_some_and(|value| !valid_bucket_name(value))
+        {
+            return Err(ConfigError::Invalid {
+                name: "OBJECT_STORAGE_BUCKET",
+                message: "expected a valid DNS-compatible bucket name".to_owned(),
+            });
+        }
+        let object_storage_region = env::var("OBJECT_STORAGE_REGION")
+            .or_else(|_| env::var("AWS_REGION"))
+            .unwrap_or_else(|_| "us-east-2".to_owned());
+        let object_storage_endpoint = env::var("OBJECT_STORAGE_ENDPOINT")
+            .ok()
+            .filter(|value| !value.trim().is_empty());
+        if let Some(endpoint) = object_storage_endpoint.as_deref()
+            && !valid_object_storage_endpoint(endpoint, app_env.eq_ignore_ascii_case("production"))
+        {
+            return Err(ConfigError::Invalid {
+                name: "OBJECT_STORAGE_ENDPOINT",
+                message: "expected an HTTP(S) origin without credentials, query, or fragment; production requires HTTPS".to_owned(),
+            });
+        }
+        let object_storage_force_path_style = parse(
+            "OBJECT_STORAGE_FORCE_PATH_STYLE",
+            env::var("OBJECT_STORAGE_FORCE_PATH_STYLE")
+                .unwrap_or_else(|_| object_storage_endpoint.is_some().to_string()),
+        )?;
 
         Ok(Self {
             app_env,
@@ -129,10 +166,15 @@ impl Config {
             auth_mode,
             oidc_issuer,
             oidc_audience,
+            cognito_user_pool_id,
             evidence_signing_key,
             evidence_signing_key_id,
             evidence_verification_keys,
             jira_api_token,
+            object_storage_bucket,
+            object_storage_region,
+            object_storage_endpoint,
+            object_storage_force_path_style,
         })
     }
 }
@@ -278,9 +320,57 @@ fn valid_https_issuer(value: &str) -> bool {
     })
 }
 
+fn valid_bucket_name(value: &str) -> bool {
+    (3..=63).contains(&value.len())
+        && value.bytes().all(|byte| {
+            byte.is_ascii_lowercase() || byte.is_ascii_digit() || matches!(byte, b'.' | b'-')
+        })
+        && value
+            .bytes()
+            .next()
+            .is_some_and(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit())
+        && value
+            .bytes()
+            .last()
+            .is_some_and(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit())
+        && !value.contains("..")
+        && !value.contains(".-")
+        && !value.contains("-.")
+}
+
+fn valid_object_storage_endpoint(value: &str, production: bool) -> bool {
+    reqwest::Url::parse(value).is_ok_and(|url| {
+        matches!(url.scheme(), "http" | "https")
+            && (!production || url.scheme() == "https")
+            && url.host_str().is_some()
+            && url.username().is_empty()
+            && url.password().is_none()
+            && url.query().is_none()
+            && url.fragment().is_none()
+    })
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{AuthMode, database_url_from_parts, parse_verification_keys, valid_https_issuer};
+    use super::{
+        AuthMode, database_url_from_parts, parse_verification_keys, valid_bucket_name,
+        valid_https_issuer, valid_object_storage_endpoint,
+    };
+
+    #[test]
+    fn validates_object_storage_boundaries() {
+        assert!(valid_bucket_name("openrm-controlled-objects"));
+        assert!(!valid_bucket_name("OpenRM Objects"));
+        assert!(valid_object_storage_endpoint("http://minio:9000", false));
+        assert!(valid_object_storage_endpoint(
+            "https://objects.example.com",
+            true
+        ));
+        assert!(!valid_object_storage_endpoint(
+            "http://objects.example.com",
+            true
+        ));
+    }
 
     #[test]
     fn auth_mode_values_are_distinct() {

@@ -8,6 +8,7 @@ import * as ecr from "aws-cdk-lib/aws-ecr";
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as elbv2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import * as logs from "aws-cdk-lib/aws-logs";
+import * as iam from "aws-cdk-lib/aws-iam";
 import * as rds from "aws-cdk-lib/aws-rds";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
@@ -114,13 +115,39 @@ export class OpenRmPlatformStack extends cdk.Stack {
       precedence: 1,
       userPoolId: userPool.userPoolId,
     });
+    [
+      ["AuthorGroup", "author", "OpenRM requirement authors", 2],
+      ["ReviewerGroup", "reviewer", "OpenRM reviewers", 3],
+      ["ViewerGroup", "viewer", "OpenRM read-only users", 4],
+    ].forEach(([id, groupName, description, precedence]) => {
+      new cognito.CfnUserPoolGroup(this, String(id), {
+        groupName: String(groupName),
+        description: String(description),
+        precedence: Number(precedence),
+        userPoolId: userPool.userPoolId,
+      });
+    });
 
     const auditLogs = new s3.Bucket(this, "AccessLogs", {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       encryption: s3.BucketEncryption.S3_MANAGED,
       enforceSSL: true,
-      objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
+      objectOwnership: s3.ObjectOwnership.OBJECT_WRITER,
       lifecycleRules: [{ expiration: cdk.Duration.days(30) }],
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+    const controlledObjects = new s3.Bucket(this, "ControlledObjects", {
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      enforceSSL: true,
+      objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
+      versioned: true,
+      serverAccessLogsBucket: auditLogs,
+      serverAccessLogsPrefix: "controlled-objects/",
+      lifecycleRules: [{
+        abortIncompleteMultipartUploadAfter: cdk.Duration.days(7),
+        noncurrentVersionExpiration: cdk.Duration.days(30),
+      }],
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
@@ -204,6 +231,22 @@ export class OpenRmPlatformStack extends cdk.Stack {
         operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
       },
     });
+    task.taskRole.addToPrincipalPolicy(new iam.PolicyStatement({
+      actions: [
+        "cognito-idp:AdminCreateUser",
+        "cognito-idp:AdminGetUser",
+        "cognito-idp:AdminAddUserToGroup",
+      ],
+      resources: [userPool.userPoolArn],
+    }));
+    task.taskRole.addToPrincipalPolicy(new iam.PolicyStatement({
+      actions: ["s3:ListBucket"],
+      resources: [controlledObjects.bucketArn],
+    }));
+    task.taskRole.addToPrincipalPolicy(new iam.PolicyStatement({
+      actions: ["s3:DeleteObject"],
+      resources: [controlledObjects.arnForObjects("*")],
+    }));
     const apiContainer = task.addContainer("Api", {
       image: ecs.ContainerImage.fromRegistry(apiImage.valueAsString),
       cpu: 384,
@@ -229,6 +272,10 @@ export class OpenRmPlatformStack extends cdk.Stack {
           userPool.userPoolId,
         ]),
         OIDC_AUDIENCE: userPoolClient.userPoolClientId,
+        COGNITO_USER_POOL_ID: userPool.userPoolId,
+        OBJECT_STORAGE_BUCKET: controlledObjects.bucketName,
+        OBJECT_STORAGE_REGION: cdk.Aws.REGION,
+        OBJECT_STORAGE_FORCE_PATH_STYLE: "false",
         EVIDENCE_SIGNING_KEY_ID: `${environmentName}-v1`,
         RUST_LOG: "openrm_api=info,tower_http=info",
       },
@@ -267,7 +314,6 @@ export class OpenRmPlatformStack extends cdk.Stack {
         OPENRM_PROJECT_ID: PILOT_PROJECT_ID,
         OPENRM_PROJECT_KEY: "OPENRM",
         OPENRM_PROJECT_NAME: "OpenRM",
-        OPENRM_ALLOW_PREVIEW_FALLBACK: "false",
         OPENRM_COGNITO_DOMAIN: userPoolDomain.baseUrl(),
         OPENRM_COGNITO_CLIENT_ID: userPoolClient.userPoolClientId,
       },
@@ -468,6 +514,7 @@ export class OpenRmPlatformStack extends cdk.Stack {
     new cdk.CfnOutput(this, "UserPoolId", { value: userPool.userPoolId });
     new cdk.CfnOutput(this, "UserPoolClientId", { value: userPoolClient.userPoolClientId });
     new cdk.CfnOutput(this, "CognitoDomain", { value: userPoolDomain.baseUrl() });
+    new cdk.CfnOutput(this, "ControlledObjectsBucketName", { value: controlledObjects.bucketName });
     new cdk.CfnOutput(this, "PilotOrganizationId", { value: PILOT_ORGANIZATION_ID });
     new cdk.CfnOutput(this, "PilotProjectId", { value: PILOT_PROJECT_ID });
     new cdk.CfnOutput(this, "DatabaseSecretArn", {

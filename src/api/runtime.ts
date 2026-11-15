@@ -1,18 +1,18 @@
-import { currentUserSubject, getIdentityToken } from "./auth";
+import { currentUserSubject, developmentIdentityToken, getIdentityToken } from "./auth";
 import { runtimeConfiguration } from "./config";
 import { sessionHeaders } from "./client";
 
 export function runtimeConfig() {
   const configuration = runtimeConfiguration();
+  const activeDevelopmentToken = configuration.authMode === "development" ? developmentIdentityToken() : "";
   return {
     baseUrl: configuration.apiBaseUrl,
     organizationId: configuration.organizationId,
     projectId: configuration.projectId,
     projectKey: configuration.projectKey,
     projectName: configuration.projectName,
-    allowPreviewFallback: configuration.allowPreviewFallback,
-    token: configuration.developmentToken || "",
-    reviewerToken: configuration.developmentReviewerToken || "",
+    token: activeDevelopmentToken,
+    reviewerToken: activeDevelopmentToken,
     reviewerSubject: currentUserSubject() || configuration.developmentReviewerSubject || "current-user",
   };
 }
@@ -41,7 +41,7 @@ export async function apiRequestAs<T>(path: string, token: string, init: Request
 
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const configuration = runtimeConfiguration();
-  const token = configuration.developmentToken || "dev:local-user";
+  const token = configuration.authMode === "development" ? developmentIdentityToken() : "";
   return apiRequestAs(path, token, init);
 }
 

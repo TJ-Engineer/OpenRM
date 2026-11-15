@@ -83,6 +83,28 @@ describe("OpenRmPlatformStack", () => {
     expect(policies).toContain("repository/openrm-pilot-web");
   });
 
+  it("keeps controlled objects private, versioned, encrypted, and recoverable after deletion", () => {
+    const synthesized = template();
+    synthesized.hasResourceProperties("AWS::S3::Bucket", {
+      BucketEncryption: {
+        ServerSideEncryptionConfiguration: Match.arrayWith([
+          Match.objectLike({ ServerSideEncryptionByDefault: { SSEAlgorithm: "AES256" } }),
+        ]),
+      },
+      PublicAccessBlockConfiguration: {
+        BlockPublicAcls: true,
+        BlockPublicPolicy: true,
+        IgnorePublicAcls: true,
+        RestrictPublicBuckets: true,
+      },
+      VersioningConfiguration: { Status: "Enabled" },
+    });
+    const policies = JSON.stringify(synthesized.findResources("AWS::IAM::Policy"));
+    expect(policies).toContain("s3:ListBucket");
+    expect(policies).not.toContain("s3:GetObject");
+    expect(policies).toContain("s3:DeleteObject");
+  });
+
   it("uses Cognito authorization for the clean pilot workspace", () => {
     const synthesized = template();
     synthesized.hasResourceProperties("AWS::Cognito::UserPool", {
@@ -99,6 +121,16 @@ describe("OpenRmPlatformStack", () => {
     synthesized.hasResourceProperties("AWS::Cognito::UserPoolGroup", {
       GroupName: "administrator",
     });
+    synthesized.resourceCountIs("AWS::Cognito::UserPoolGroup", 4);
+    for (const role of ["author", "reviewer", "viewer"]) {
+      synthesized.hasResourceProperties("AWS::Cognito::UserPoolGroup", {
+        GroupName: role,
+      });
+    }
+    const policies = JSON.stringify(synthesized.findResources("AWS::IAM::Policy"));
+    expect(policies).toContain("cognito-idp:AdminCreateUser");
+    expect(policies).toContain("cognito-idp:AdminGetUser");
+    expect(policies).toContain("cognito-idp:AdminAddUserToGroup");
   });
 
   it("avoids NAT gateways and keeps the database on isolated subnets", () => {
