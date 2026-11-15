@@ -42,6 +42,8 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
         migrate(&db).await?;
     }
     let auth = AuthVerifier::from_config(&config).await?;
+    let user_directory = openrm_api::users::UserDirectory::from_config(&config).await?;
+    let object_store = openrm_api::storage::ObjectStore::from_config(&config).await?;
     let mut evidence_signer = EvidenceSigner::new(
         config.evidence_signing_key.as_bytes(),
         config.evidence_signing_key_id.clone(),
@@ -60,6 +62,8 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
         build: BuildInfo::current(),
         evidence_signer,
         metrics: openrm_api::observability::OperationsMetrics::default(),
+        user_directory,
+        object_store,
     });
     let listener = tokio::net::TcpListener::bind(config.bind_address).await?;
     tracing::info!(address = %config.bind_address, environment = %config.app_env, "OpenRM API listening");

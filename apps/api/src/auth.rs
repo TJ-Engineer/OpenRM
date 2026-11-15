@@ -34,11 +34,11 @@ struct Claims {
     sub: String,
     #[allow(dead_code)]
     exp: u64,
-    #[serde(default, alias = "organization_id")]
+    #[serde(default, alias = "organization_id", alias = "custom:org_id")]
     org_id: Option<Uuid>,
     #[serde(default)]
     organization_ids: Vec<Uuid>,
-    #[serde(default)]
+    #[serde(default, alias = "cognito:groups")]
     roles: Vec<String>,
 }
 

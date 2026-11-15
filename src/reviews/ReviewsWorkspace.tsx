@@ -22,14 +22,13 @@ type Baseline = components["schemas"]["Baseline"];
 type Membership = components["schemas"]["ProjectMembership"];
 type Review = components["schemas"]["ReviewPackage"];
 type ReviewComment = components["schemas"]["ReviewComment"];
-type Props = { notify: (message: string) => void };
+type Props = { notify: (message: string) => void; projectId: string };
 
 const statusLabel = (status: Review["status"]) => status.replaceAll("_", " ").toUpperCase();
 const initials = (subject: string) => subject.split(/[._@ -]+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "RV";
 
-export function ReviewsWorkspace({ notify }: Props) {
+export function ReviewsWorkspace({ notify, projectId }: Props) {
   const config = runtimeConfig();
-  const projectId = config.projectId;
   const [reviews, setReviews] = useState<Review[]>([]);
   const [baselines, setBaselines] = useState<Baseline[]>([]);
   const [members, setMembers] = useState<Membership[]>([]);

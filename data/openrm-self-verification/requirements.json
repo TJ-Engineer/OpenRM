@@ -4,6 +4,7 @@
   "project": {
     "key": "OPENRM",
     "name": "OpenRM Product Requirements",
+    "requirement_prefix": "ORM",
     "description": "Controlled system and derived requirements for the OpenRM platform, traced to repository tests, analyses, documentation, and observation evidence."
   },
   "expected_counts": {

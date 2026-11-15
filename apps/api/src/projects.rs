@@ -24,6 +24,7 @@ const CREATE_PROJECT_COMMAND: &str = "project.create";
 pub struct CreateProjectRequest {
     pub key: String,
     pub name: String,
+    pub requirement_prefix: String,
     #[serde(default)]
     pub description: String,
 }
@@ -33,6 +34,8 @@ pub struct ProjectResponse {
     pub id: Uuid,
     pub key: String,
     pub name: String,
+    pub requirement_prefix: String,
+    pub next_requirement_number: i64,
     pub description: String,
     pub created_at: DateTime<Utc>,
 }
@@ -106,15 +109,19 @@ pub async fn create_project(
     let mut transaction = state.db.begin().await.map_err(database_error)?;
     let project = sqlx::query_as::<_, ProjectResponse>(
         r#"
-        INSERT INTO projects (id, organization_id, key, name, description)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id, key, name, description, created_at
+        INSERT INTO projects (
+            id, organization_id, key, name, requirement_prefix, description
+        )
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING id, key, name, requirement_prefix,
+                  next_requirement_number, description, created_at
         "#,
     )
     .bind(project_id)
     .bind(principal.organization_id)
     .bind(&request.key)
     .bind(&request.name)
+    .bind(&request.requirement_prefix)
     .bind(&request.description)
     .fetch_one(&mut *transaction)
     .await
@@ -197,7 +204,11 @@ pub async fn create_project(
         "project.created",
         "project",
         project_id,
-        json!({"key": project.key, "name": project.name}),
+        json!({
+            "key": project.key,
+            "name": project.name,
+            "requirement_prefix": project.requirement_prefix,
+        }),
     )
     .await?;
     let response_payload = serde_json::to_value(&project)
@@ -632,6 +643,7 @@ pub async fn insert_audit(
 fn validate_project(request: CreateProjectRequest) -> Result<CreateProjectRequest, ApiError> {
     let key = request.key.trim().to_owned();
     let name = request.name.trim().to_owned();
+    let requirement_prefix = request.requirement_prefix.trim().to_owned();
     let description = request.description.trim().to_owned();
     if !(2..=16).contains(&key.len())
         || !key
@@ -649,6 +661,19 @@ fn validate_project(request: CreateProjectRequest) -> Result<CreateProjectReques
             "project name must contain 1-160 characters",
         ));
     }
+    if !(2..=8).contains(&requirement_prefix.len())
+        || !requirement_prefix
+            .bytes()
+            .next()
+            .is_some_and(|byte| byte.is_ascii_uppercase())
+        || !requirement_prefix
+            .bytes()
+            .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit())
+    {
+        return Err(ApiError::bad_request(
+            "requirement_prefix must contain 2-8 uppercase letters or digits and start with a letter",
+        ));
+    }
     if description.chars().count() > 2_000 {
         return Err(ApiError::bad_request(
             "project description must not exceed 2000 characters",
@@ -657,6 +682,7 @@ fn validate_project(request: CreateProjectRequest) -> Result<CreateProjectReques
     Ok(CreateProjectRequest {
         key,
         name,
+        requirement_prefix,
         description,
     })
 }
@@ -694,6 +720,13 @@ fn parse_idempotency_key(headers: &HeaderMap) -> Result<&str, ApiError> {
 }
 
 fn project_insert_error(error: sqlx::Error) -> ApiError {
+    if error
+        .as_database_error()
+        .and_then(|error| error.constraint())
+        == Some("projects_requirement_prefix_unique")
+    {
+        return ApiError::conflict("Requirement prefix already exists in this organization");
+    }
     if is_unique_violation(&error) {
         return ApiError::conflict("Project key already exists in this organization");
     }
@@ -730,6 +763,7 @@ mod tests {
             validate_project(CreateProjectRequest {
                 key: "PROJECT-2".to_owned(),
                 name: "Project two".to_owned(),
+                requirement_prefix: "PRJ".to_owned(),
                 description: String::new(),
             })
             .is_ok()
@@ -738,6 +772,7 @@ mod tests {
             validate_project(CreateProjectRequest {
                 key: "project".to_owned(),
                 name: "Invalid".to_owned(),
+                requirement_prefix: "PRJ".to_owned(),
                 description: String::new(),
             })
             .is_err()

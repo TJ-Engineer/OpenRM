@@ -16,7 +16,7 @@ describe("OpenRM user manual", () => {
     expect(manual.$schema).toBe("./USER_MANUAL.schema.json");
     expect(manual.schemaVersion).toBe(1);
     expect(manual.title).toBe("OpenRM user manual");
-    expect(manual.metadata.documentVersion).toBe("0.1");
+    expect(manual.metadata.documentVersion).toBe("0.4");
     expect(manual.metadata.lastVerified).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(manual.sections.length).toBeGreaterThanOrEqual(19);
     expect(anchors.every(Boolean)).toBe(true);

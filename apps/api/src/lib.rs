@@ -1,3 +1,4 @@
+pub mod agent_runs;
 pub mod auth;
 pub mod config;
 pub mod connectors;
@@ -11,6 +12,8 @@ pub mod projects;
 pub mod relationships;
 pub mod requirements;
 pub mod reviews;
+pub mod storage;
+pub mod users;
 pub mod verification;
 
 use std::time::Duration;
@@ -51,6 +54,8 @@ pub struct AppState {
     pub build: BuildInfo,
     pub evidence_signer: EvidenceSigner,
     pub metrics: observability::OperationsMetrics,
+    pub user_directory: users::UserDirectory,
+    pub object_store: storage::ObjectStore,
 }
 
 #[derive(Clone, Serialize)]
@@ -103,6 +108,7 @@ pub async fn connect(config: &Config) -> Result<PgPool, sqlx::Error> {
 }
 
 pub async fn migrate(pool: &PgPool) -> Result<(), sqlx::migrate::MigrateError> {
+    // Compile the complete forward-migration set into the API and migration binary.
     sqlx::migrate!("../../db/migrations").run(pool).await
 }
 
@@ -121,13 +127,21 @@ pub fn router(state: AppState) -> Router {
             HeaderName::from_static("x-openrm-organization"),
             HeaderName::from_static("x-idempotency-key"),
         ])
-        .allow_methods([Method::GET, Method::POST, Method::PUT]);
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE]);
 
     Router::new()
         .route("/health", get(health))
         .route("/ready", get(ready))
         .route("/metrics", get(observability::prometheus_metrics))
         .route("/api/v1/session", get(session))
+        .route(
+            "/api/v1/users",
+            get(users::list_users).post(users::invite_user),
+        )
+        .route(
+            "/api/v1/profile",
+            get(users::get_profile).put(users::update_profile),
+        )
         .route(
             "/api/v1/operations/status",
             get(observability::operations_status),
@@ -161,12 +175,28 @@ pub fn router(state: AppState) -> Router {
             get(requirements::get_requirement).put(requirements::revise_requirement),
         )
         .route(
+            "/api/v1/projects/{project_id}/requirements/{requirement_id}/derived",
+            axum::routing::post(requirements::create_derived_requirement),
+        )
+        .route(
             "/api/v1/projects/{project_id}/requirements/{requirement_id}/revisions",
             get(requirements::list_requirement_revisions),
         )
         .route(
             "/api/v1/projects/{project_id}/requirements/{requirement_id}/compare",
             get(requirements::compare_requirement_revisions),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/agent-runs",
+            get(agent_runs::list_agent_runs).post(agent_runs::create_agent_run),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/agent-runs/{agent_run_id}",
+            get(agent_runs::get_agent_run),
+        )
+        .route(
+            "/api/v1/projects/{project_id}/storage/objects",
+            get(storage::list_objects).delete(storage::delete_object),
         )
         .route(
             "/api/v1/projects/{project_id}/relationship-types",
@@ -403,6 +433,8 @@ mod tests {
             build: BuildInfo::current(),
             evidence_signer: EvidenceSigner::development(),
             metrics: OperationsMetrics::default(),
+            user_directory: crate::users::UserDirectory::development(),
+            object_store: crate::storage::ObjectStore::disabled(),
         }
     }
 

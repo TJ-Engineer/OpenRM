@@ -11,9 +11,38 @@ x-api-environment: &api-environment
   EVIDENCE_VERIFICATION_KEYS: ${OPENRM_EVIDENCE_VERIFICATION_KEYS:-}
   JIRA_API_TOKEN: ${OPENRM_JIRA_API_TOKEN:-}
   OTEL_EXPORTER_OTLP_ENDPOINT: ${OPENRM_OTEL_EXPORTER_OTLP_ENDPOINT:-}
+  OBJECT_STORAGE_BUCKET: ${OPENRM_OBJECT_STORAGE_BUCKET:-openrm-controlled-objects}
+  OBJECT_STORAGE_REGION: ${OPENRM_OBJECT_STORAGE_REGION:-us-east-2}
+  OBJECT_STORAGE_ENDPOINT: http://object-storage:4566
+  OBJECT_STORAGE_FORCE_PATH_STYLE: "true"
+  AWS_ACCESS_KEY_ID: test
+  AWS_SECRET_ACCESS_KEY: test
+  AWS_EC2_METADATA_DISABLED: "true"
   RUST_LOG: ${OPENRM_RUST_LOG:-openrm_api=info,tower_http=info}
 
 services:
+  object-storage:
+    image: localstack/localstack:4.12.0
+    restart: unless-stopped
+    environment:
+      SERVICES: s3
+      PERSISTENCE: "1"
+      AWS_DEFAULT_REGION: ${OPENRM_OBJECT_STORAGE_REGION:-us-east-2}
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      OBJECT_STORAGE_BUCKET: ${OPENRM_OBJECT_STORAGE_BUCKET:-openrm-controlled-objects}
+    ports:
+      - "${OPENRM_OBJECT_STORAGE_BIND_ADDRESS:-127.0.0.1}:${OPENRM_OBJECT_STORAGE_PORT:-4566}:4566"
+    healthcheck:
+      test: ["CMD-SHELL", "awslocal s3api head-bucket --bucket \"$${OBJECT_STORAGE_BUCKET}\" >/dev/null 2>&1"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - openrm-objects:/var/lib/localstack
+      - ./deploy/localstack/init-s3.sh:/etc/localstack/init/ready.d/init-s3.sh:ro
+    security_opt: ["no-new-privileges:true"]
+
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
@@ -55,6 +84,8 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      object-storage:
+        condition: service_healthy
     environment: *api-environment
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/ready"]
@@ -95,6 +126,13 @@ services:
     depends_on:
       bootstrap:
         condition: service_completed_successfully
+    environment:
+      OPENRM_AUTH_MODE: development
+      OPENRM_API_BASE_URL: /
+      OPENRM_ORGANIZATION_ID: 00000000-0000-4000-8000-000000000002
+      OPENRM_PROJECT_ID: 00000000-0000-4000-8000-000000000102
+      OPENRM_PROJECT_KEY: OPENRM
+      OPENRM_PROJECT_NAME: OpenRM
     ports:
       - "${OPENRM_BIND_ADDRESS:-127.0.0.1}:${OPENRM_PORT:-8080}:8080"
     healthcheck:
@@ -112,5 +150,6 @@ services:
     security_opt: ["no-new-privileges:true"]
 
 volumes:
+  openrm-objects:
   openrm-postgres:
 

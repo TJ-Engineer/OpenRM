@@ -14,12 +14,25 @@ curl --fail http://127.0.0.1:8080/ready
 The single command builds and starts:
 
 - PostgreSQL 17 with a named persistent volume and loopback-only development port;
+- a pinned LocalStack S3 service with a persistent volume, an automatically initialized versioned bucket, and a loopback-only development port;
 - a one-shot, forward-only database migration container;
 - the non-root Rust API with a read-only root filesystem and health check;
 - a one-shot non-root bootstrap container that creates or verifies the 60-requirement `OPENRM` project;
 - the non-root Nginx web image with a read-only root filesystem, SPA fallback, security headers, and same-origin API proxy.
 
 The browser entry point is `http://127.0.0.1:8080`. The API is intentionally not published as a separate host port; `/api`, `/health`, and `/ready` pass through the web gateway. Change `OPENRM_PORT` to avoid a port conflict, or set `OPENRM_BIND_ADDRESS=0.0.0.0` for an intentionally network-accessible host. The latter requires appropriate host firewall and network controls.
+
+### Local-first regression loop
+
+Use the persistent local stack for routine feature work and regression testing:
+
+```bash
+npm run regress:local
+```
+
+This command rebuilds with Docker's layer cache, starts or updates the persistent Compose stack, checks the real web/API/PostgreSQL path and authentication boundary, runs a read-only Chromium smoke journey against the clean container, and then runs the full mocked Chromium UI regression suite. The container browser targets the clean `OpenRM` workspace with the `ORM` requirement prefix, development authentication, and fail-closed API behavior with no fabricated fallback. The command deliberately leaves the stack running at `http://127.0.0.1:8080` for interactive testing. Use `npm run check:local` to repeat only the fast runtime checks, and `npm run local:down` when the persistent environment is no longer needed.
+
+Routine development iterations stop at this local gate. Run the isolated `npm run check:containers` clean-room reconstruction plus the full repository and three-browser gates only when preparing a release candidate. Promote immutable images to AWS only after those release-candidate gates pass.
 
 Portable-stack settings:
 
@@ -32,6 +45,10 @@ Portable-stack settings:
 | `OPENRM_POSTGRES_DB` | `openrm` | Database name. |
 | `OPENRM_POSTGRES_USER` | `openrm` | Database role. |
 | `OPENRM_POSTGRES_PASSWORD` | `openrm` | Development database password; replace outside local evaluation. |
+| `OPENRM_OBJECT_STORAGE_BIND_ADDRESS` | `127.0.0.1` | Local S3-compatible API bind address. |
+| `OPENRM_OBJECT_STORAGE_PORT` | `4566` | Local S3-compatible API port. |
+| `OPENRM_OBJECT_STORAGE_BUCKET` | `openrm-controlled-objects` | Project object bucket used by the storage adapter. |
+| `OPENRM_OBJECT_STORAGE_REGION` | `us-east-2` | Selected Region used for object-storage signing. |
 | `OPENRM_EVIDENCE_SIGNING_KEY` | Development-only value | Evidence-signing material. |
 | `OPENRM_EVIDENCE_SIGNING_KEY_ID` | `portable-development` | Evidence-signing key identifier. |
 | `OPENRM_EVIDENCE_VERIFICATION_KEYS` | Empty | JSON object mapping historical key identifiers to keys during rotation. |
@@ -49,7 +66,7 @@ Verify a completely fresh, isolated container deployment with:
 npm run check:containers
 ```
 
-The smoke script uses a dedicated Compose project and volume, verifies web/API readiness, confirms the `OPENRM` project has all 60 requirements, checks non-root/read-only execution, and then removes only its isolated test resources.
+The smoke script uses a dedicated Compose project and volumes, verifies web/API/object-storage readiness, confirms the `OPENRM` project has all 60 requirements, checks non-root/read-only execution, and then removes only its isolated test resources.
 
 ## Required services
 

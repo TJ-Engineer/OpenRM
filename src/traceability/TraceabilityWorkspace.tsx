@@ -13,14 +13,14 @@ import {
 } from "lucide-react";
 
 import type { components } from "../api/generated";
-import { apiRequest, downloadJson, runtimeConfig } from "../api/runtime";
+import { apiRequest, downloadJson } from "../api/runtime";
 
 type TraceGraph = components["schemas"]["TraceGraph"];
 type TraceMatrixRow = components["schemas"]["TraceMatrixRow"];
 type TraceSummary = components["schemas"]["TraceSummary"];
 type Relationship = components["schemas"]["Relationship"];
 
-type Props = { notify: (message: string) => void };
+type Props = { notify: (message: string) => void; projectId: string };
 type Direction = "both" | "upstream" | "downstream";
 
 const EMPTY_SUMMARY: TraceSummary = {
@@ -32,8 +32,7 @@ const EMPTY_SUMMARY: TraceSummary = {
   coverage_percent: 0,
 };
 
-export function TraceabilityWorkspace({ notify }: Props) {
-  const projectId = runtimeConfig().projectId;
+export function TraceabilityWorkspace({ notify, projectId }: Props) {
   const [graph, setGraph] = useState<TraceGraph>({ nodes: [], edges: [], summary: EMPTY_SUMMARY });
   const [matrix, setMatrix] = useState<TraceMatrixRow[]>([]);
   const [summary, setSummary] = useState<TraceSummary>(EMPTY_SUMMARY);
