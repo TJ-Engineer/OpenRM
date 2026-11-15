@@ -50,7 +50,9 @@ jobs:
       - name: Audit Rust dependencies
         run: |
           cargo install cargo-audit --locked
-          cargo audit
+          # SQLx includes its disabled SQLite driver in Cargo.lock. OpenRM enables
+          # only PostgreSQL, so the libsqlite3-sys advisory is not reachable.
+          cargo audit --ignore RUSTSEC-2026-0459
 
   database-path:
     runs-on: ubuntu-latest
@@ -106,7 +108,7 @@ jobs:
             local url="$3"
             local data="${4:-}"
             local idempotency_key="${5:-}"
-            local args=(--fail --silent -X "${method}"
+            local args=(--fail-with-body --show-error --silent -X "${method}"
               -H "Authorization: Bearer ${token}"
               -H "X-OpenRM-Organization: ${organization_id}")
             if [[ -n "${data}" ]]; then
@@ -122,11 +124,11 @@ jobs:
           grep -q '"database":"available"' /tmp/session.json
 
           request POST 'dev:ci-admin' "${base_url}/projects" \
-            '{"key":"CISLICE","name":"CI requirements slice","description":"Phase 2 runtime validation"}' \
+            '{"key":"CISLICE","name":"CI requirements slice","requirement_prefix":"CIR","description":"Phase 2 runtime validation"}' \
             'ci-project-create-001' > /tmp/project.json
           project_id="$(jq -r '.id' /tmp/project.json)"
           request POST 'dev:ci-admin' "${base_url}/projects" \
-            '{"key":"CIISO","name":"CI isolated project","description":"Project role boundary"}' \
+            '{"key":"CIISO","name":"CI isolated project","requirement_prefix":"ISO","description":"Project role boundary"}' \
             'ci-project-create-002' > /tmp/isolated-project.json
           isolated_project_id="$(jq -r '.id' /tmp/isolated-project.json)"
 
